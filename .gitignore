@@ -1,0 +1,37 @@
+# --- ROS 2 / colcon: carpetas que genera `colcon build` (se regeneran, no se versionan)
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+build/
+install/
+log/
+
+# --- Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# --- PlatformIO (firmware de las ESP32): binarios y librerías descargadas
+.pio/
+
+# --- Grabaciones rosbag2: son pesadas y se guardan fuera del repo.
+#     Excepción: grabaciones cortas que usan los tests, dentro de cualquier test/data/
+rosbag2_*/
+*.mcap
+*.db3
+!**/test/data/**
+
+# --- Memoria técnica compilada (el PDF se genera a partir de los .md)
+docs/memoria/build/
+
+# --- Secretos locales (claves Wi-Fi, tokens). Se versiona solo el ejemplo: secrets.example.h
+secrets.h
+.env
+
+# --- Editores y sistema operativo
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
