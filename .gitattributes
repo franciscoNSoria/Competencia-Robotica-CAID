@@ -1,0 +1,18 @@
+# Finales de línea: siempre LF dentro del repo (evita diffs falsos entre sistemas)
+* text=auto eol=lf
+
+# Archivos binarios: git no intenta mostrar diferencias ni convertir finales de línea
+*.stl   binary
+*.STL   binary
+*.step  binary
+*.STEP  binary
+*.stp   binary
+*.f3d   binary
+*.SLDPRT binary
+*.SLDASM binary
+*.pdf   binary
+*.ods   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.mcap  binary
