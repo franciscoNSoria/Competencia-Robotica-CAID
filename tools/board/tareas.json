@@ -1,0 +1,2223 @@
+{
+ "columnas": [
+  "INF Infraestructura",
+  "DESC Modelo 3D",
+  "FW Firmware",
+  "CAM Camara y red",
+  "PER Percepcion",
+  "NAV Navegacion",
+  "MAN Brazo",
+  "SIM Simulacion",
+  "VIS Ver y agarrar",
+  "MIS Mision",
+  "REAL Hardware real",
+  "CIE Cierre"
+ ],
+ "hitos": [
+  {
+   "id": "H0",
+   "titulo": "H0 Base y contrato",
+   "fecha": "2026-10-17",
+   "descripcion": "En una PC recién clonada: check_env.sh sin faltantes y colcon build/test en verde; 'ros2 interface show caid_mcu_msgs/msg/WheelTicks' funciona y contract-v1 está publicado; 'ros2 launch caid_description display.launch.xml' muestra el robot 4WD con brazo, cámara y sensores y los sliders mueven brazo y pan; el stream de la ESP32-CAM se ve en el navegador; pinout.md con la cuenta de canales del driver; consultas enviadas con acuse y repuestos pedidos."
+  },
+  {
+   "id": "H1",
+   "titulo": "H1 Teleop de punta a punta (simulación y banco)",
+   "fecha": "2026-10-20",
+   "descripcion": "(1) Gazebo con el emulador: el robot del URDF se maneja con el teclado, con /wheel_ticks y /ultrasonic/* a la vista, y frena en < 0,3 s al cortar el teleop. (2) Banco: el mismo teclado mueve un motor real por Wi-Fi con rampa y frena en < 300 ms al matar el agente, con el video de la ESP32-CAM como tópico ROS; go/no-go de red decidido. (3) Detector de cubos con tests verdes sobre fotos. (4) Tablero de GitHub Projects con todas las tareas y CI requerido en dev."
+  },
+  {
+   "id": "H2",
+   "titulo": "H2 Ver y acercarse; pasillo, giros y mapa abstracto",
+   "fecha": "2026-10-24",
+   "descripcion": "En Gazebo: (1) el robot sigue pasillos y gira en legacy_maze2 sin tocar paredes, con odometría desde ticks y /walls; (2) en una arena barre con el pan, ve el cubo rojo, se acerca y se detiene a la distancia de agarre. En gridsim: el grafo de legacy_maze2 tiene los 9 ciclos y Dijkstra da 44 celdas. En banco: ticks, ultrasonidos y servos por micro-ROS, cámara calibrada. Maqueta armada. Opcional si el robot ya está: cableado y conformidad (REAL-02)."
+  },
+  {
+   "id": "H3",
+   "titulo": "H3 Agarrar al ver y explorar con islas",
+   "fecha": "2026-10-28",
+   "descripcion": "En Gazebo: (1) agarrar al ver (ve un cubo, se acerca, lo agarra, verifica y lo deja en su depósito); (2) exploración de legacy_maze2, de un aleatorio con islas y de la zona abierta con Trémaux, con regreso al inicio por el camino más corto y 0 contactos. En gridsim: política con 200/200 misiones. Percepción validada con imágenes reales y brazo real calibrado. Memoria v1 en PDF (<= 20 páginas). Opcional si el robot está: cableado, mediciones de alimentación (REAL-02 y REAL-03)."
+  },
+  {
+   "id": "H4",
+   "titulo": "H4 Misión completa en simulación",
+   "fecha": "2026-10-30",
+   "descripcion": "Misión autónoma completa en Gazebo (3 cubos entregados y regreso) en legacy_maze2 y en un aleatorio con islas, con flechas que aceleran y decisions.csv que explica cada giro; presentación ensayada una vez. Opcional si el robot está: calibración de movimiento, teleop por la red de competencia y agarre real (REAL-04 a REAL-06)."
+  },
+  {
+   "id": "H5",
+   "titulo": "H5 Versión de competencia 1.0.0",
+   "fecha": "2026-10-31",
+   "descripcion": "Ensayo general cronometrado: inspección con el kit en < 60 s, arranque desde la PC sin internet, misión autónoma completa en simulación con regresión en verde y, si el robot llegó a tiempo, navegación y misión en la maqueta en dos configuraciones (REAL-07, REAL-08); presentación ensayada y memoria final entregada. Lo real que no entre el 31/10 se cierra en la reserva del 1 al 5/11 (tag v1.0.1, solo ramas fix/ y config/real)."
+  }
+ ],
+ "tareas": [
+  {
+   "id": "INF-01",
+   "columna": "INF Infraestructura",
+   "orden": 1,
+   "titulo": "Repo publicado, entorno de las 5 PC, consultas a la organización y repuestos",
+   "para_que": "El repo existe solo en local; sin main y dev publicadas y dev por defecto, 'Closes #n' no cierra issues y las plantillas no aparecen. Las respuestas de la organización tardan días y los envíos de repuestos también, así que ambos salen el día 1.",
+   "microtareas": [
+    "Publicar main, crear dev y fijarla como rama por defecto (gh repo edit --default-branch dev); invitar colaboradores; squash y merge commit activos, rebase desactivado, borrar rama al mergear.",
+    "Crear dos rulesets activos: dev (PR, 1 aprobación, solo squash, sin force push ni borrado) y main (PR, 1 aprobación, solo merge commit). Los checks requeridos se agregan en INF-04 solo cuando hayan corrido en verde.",
+    "Cada integrante corre tools/setup/check_env.sh y anota versiones y faltantes en docs/guias/entorno.md (ROS Jazzy, Gazebo Harmonic, PlatformIO, docker, gh >= 2.97, ROS_DOMAIN_ID=42).",
+    "Enviar la lista questions_for_organizers por el canal oficial (hardware y red primero), guardar el acuse en docs/organizacion/acuses/ y crear respuestas.md con una fila por pregunta y el 'supuesto por defecto si no hay respuesta el 20/10'.",
+    "Pedir repuestos antes del viernes 16/10: 2 SG90, 2 TT con rueda, 1 ESP32, 1 ESP32-CAM, 1 L9110S, un segundo par de 18650 apareadas, cargador externo, cables. Issue de compras con fecha de pedido.",
+    "Publicar este plan en docs/roadmap/ y corregir CONTRIBUTING.md (dev por defecto; las ramas salen de dev)."
+   ],
+   "depende_de": [],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "Repo con main y dev protegidas, tabla de entorno, acuse de consultas, respuestas.md con supuestos y pedido de repuestos.",
+   "criterio": "git ls-remote muestra main y dev; un push directo a dev es rechazado; check_env.sh sin [FALTA] en las 5 PC (o faltante con comando pendiente); el acuse está en el repo con fecha del día 1 o 2; hay issue de compras con fecha de pedido.",
+   "rama": "feature/INF-01-repo-consultas",
+   "archivos": [
+    "CONTRIBUTING.md",
+    "docs/guias/entorno.md",
+    "docs/organizacion/",
+    "docs/roadmap/"
+   ],
+   "documentar_en": "docs/guias/entorno.md, docs/organizacion/respuestas.md y CONTRIBUTING.md",
+   "hito": "H0",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "INF-02",
+   "columna": "INF Infraestructura",
+   "orden": 2,
+   "titulo": "Contrato de interfaces v1 (mensajes, TF y formato de laberintos)",
+   "para_que": "Es la unión más importante: firmware, emulador, navegación, percepción y brazo hablan por estos tipos. Fijarlo en 1-2 días deja que cada columna construya su nodo sin esperar. Va en dos paquetes porque micro-ROS solo compila mensajes chicos, de tamaño fijo y sin dependencias.",
+   "microtareas": [
+    "caid_mcu_msgs (solo builtin_interfaces, sin strings): WheelTicks, ArmCommand, ArmState, RobotStatus, RobotCommand, cada uno < 500 B serializado; tools/contracts/check_msg_size.py.",
+    "caid_interfaces: WallState, MazeEvent, TopoMap, ArrowDetection(Array), CubeDetection(Array), DepositDetection(Array), MissionState; servicios VerifyGrasp, SetPan, ScanJunction; acciones Navigate, Pick, Place, MoveArm.",
+    "docs/arquitectura/contrato.md: tópico, tipo, publicador, suscriptor, QoS y frecuencia; árbol TF (REP-103/105); convenciones (REP-117, metros y radianes).",
+    "docs/arquitectura/laberintos.md: grilla ASCII (# pared, . libre, S inicio, R/G/B cubos, 1/2/3 depósitos, flechas con celda, pared, dirección, largo, color e inclinación, zonas abiertas) + YAML con ancho de pasillo y alto de pared.",
+    "ADR 0003 con la regla de cambios (PR propio con label 'contrato', dos aprobaciones de quienes consumen el contrato). Tag contract-v1."
+   ],
+   "depende_de": [
+    "INF-01"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "Paquetes caid_mcu_msgs y caid_interfaces, contrato.md, laberintos.md, ADR 0003 y tag contract-v1.",
+   "criterio": "colcon build y colcon test pasan; 'ros2 interface show caid_mcu_msgs/msg/WheelTicks' funciona; check_msg_size.py pasa; el PR tiene dos aprobaciones de integrantes que consumirán el contrato desde columnas distintas; tag contract-v1 publicado.",
+   "rama": "feature/INF-02-contrato-v1",
+   "archivos": [
+    "ros2_ws/src/caid_mcu_msgs/",
+    "ros2_ws/src/caid_interfaces/",
+    "docs/arquitectura/",
+    "docs/decisiones/0003-contrato-de-interfaces.md",
+    "tools/contracts/check_msg_size.py"
+   ],
+   "documentar_en": "docs/arquitectura/contrato.md, laberintos.md y memoria 02-arquitectura.md",
+   "hito": "H0",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "INF-03",
+   "columna": "INF Infraestructura",
+   "orden": 3,
+   "titulo": "Tablero de GitHub Projects, parte A: base y primeras tareas",
+   "para_que": "Es la vista diaria del roadmap y el lead pidió armarlo él mismo para aprender. Se hace temprano para practicar con tareas reales y no con un .md.",
+   "microtareas": [
+    "Instalar gh >= 2.97 y correr 'gh auth refresh -s project'.",
+    "Crear el Project, vincularlo al repo (Default repository) y crear campos Columna (single select, nombres ASCII sin comas), Orden (número) y Hito. Dejar los nombres de Status por defecto salvo que el ensayo confirme que las automatizaciones siguen funcionando al renombrar.",
+    "Crear labels (necesita-robot, espera-externa, stretch, contrato, union) y milestones H0-H5 con fecha.",
+    "Cargar a mano las primeras 8 tareas del roadmap.json y hacer un PR de prueba con 'Closes #n' que cierre el issue y lo mueva a Done."
+   ],
+   "depende_de": [
+    "INF-02"
+   ],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "Project vinculado con campos, labels, milestones y 8 tareas cargadas.",
+   "criterio": "Un PR de prueba a dev con 'Closes #n' cierra el issue y mueve la tarjeta a Done; labels y milestones existen.",
+   "rama": "feature/INF-03-tablero-parte-a",
+   "archivos": [
+    "docs/guias/github-projects.md"
+   ],
+   "documentar_en": "docs/guias/github-projects.md (secciones 1 a 3)",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "INF-04",
+   "columna": "INF Infraestructura",
+   "orden": 4,
+   "titulo": "CI mínimo y plantillas de PR e issue",
+   "para_que": "Que dev no quede roto sin que nadie lo note, con lo mínimo: compilar y correr tests. Las pruebas con hardware y el reglamento quedan como casillas del PR.",
+   "microtareas": [
+    ".github/workflows/ci.yml con jobs colcon-build (contenedor ros:jazzy) y pio-build (pio run y pio test -e native); pio-build con paths filter en firmware/** y que pase 'en verde' si no hay nada que compilar.",
+    "Cachear pip y PlatformIO. Objetivo: < 10 min con caché tibia y < 25 min en frío.",
+    "Cuando ambos jobs hayan pasado una vez, marcarlos como checks requeridos en el ruleset de dev, sin 'require up to date'.",
+    "Plantilla de PR con casillas: DoD cumplido, documentación actualizada, 'probado en el robot o label necesita-robot', 'cumple reglas', 'si es contrato: dos aprobaciones'. Formulario de issue 1-tarea.yml y config.yml."
+   ],
+   "depende_de": [
+    "INF-03"
+   ],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "Workflow de CI verde en dev, checks requeridos y plantillas.",
+   "criterio": "Un PR que rompe el build queda bloqueado; uno correcto pasa en < 10 min (caché tibia); las plantillas aparecen al abrir PR e issue.",
+   "rama": "feature/INF-04-ci-plantillas",
+   "archivos": [
+    ".github/workflows/ci.yml",
+    ".github/pull_request_template.md",
+    ".github/ISSUE_TEMPLATE/"
+   ],
+   "documentar_en": "CONTRIBUTING.md sección 4 (CI y checklist del PR)",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "INF-05",
+   "columna": "INF Infraestructura",
+   "orden": 5,
+   "titulo": "Tablero de GitHub Projects, parte B: carga masiva, uniones y vistas",
+   "para_que": "Completa el tablero para que cada columna se vea en orden y cada unión muestre su 'blocked by'. Cierra el aprendizaje del lead con una guía escrita.",
+   "microtareas": [
+    "tools/board/load_issues.py que lee docs/roadmap/roadmap.json y crea el resto de los issues con Columna, Orden e Hito.",
+    "Marcar 'blocked by' solo en las tareas que cierran una unión o dependen de una compuerta externa (G-BANCO, G-BRAZO, G-ROBOT) y comprobar el ícono Blocked.",
+    "Vistas: 'Columnas' (board por Columna ordenado por Orden), 'Columnas libres' (columnas sin tarea En curso), 'Kanban' por Status, 'Roadmap' por hito. Auto-add is:issue.",
+    "Escribir docs/guias/github-projects.md con capturas."
+   ],
+   "depende_de": [
+    "INF-04"
+   ],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "Proyecto con todas las tareas, uniones marcadas y guía de uso.",
+   "criterio": "Toda tarea que cierra una unión tiene 'blocked by'; la vista Columnas muestra cada columna en orden; la guía fue seguida por alguien que no la escribió.",
+   "rama": "feature/INF-05-tablero-parte-b",
+   "archivos": [
+    "tools/board/",
+    "docs/guias/github-projects.md"
+   ],
+   "documentar_en": "docs/guias/github-projects.md",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "INF-06",
+   "columna": "INF Infraestructura",
+   "orden": 6,
+   "titulo": "Plantilla de la memoria técnica y generación del PDF",
+   "para_que": "La memoria vale 20 puntos y su plazo no se conoce. Con la plantilla y el PDF automatizados cada tarea escribe en su sección y nadie redacta 20 páginas de golpe al final.",
+   "microtareas": [
+    "docs/memoria/secciones/01..10 con objetivo y presupuesto de páginas (total <= 20).",
+    "tools/memoria/build.sh con pandoc: portada, índice, figuras; falla si el PDF supera 20 páginas.",
+    "Convención de figuras y tablas (nombre, fuente, fecha de medición) en docs/memoria/README.md.",
+    "Sección 02-arquitectura con el diagrama físico y el de nodos y tópicos a partir del contrato."
+   ],
+   "depende_de": [
+    "INF-05"
+   ],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "Esqueleto de 10 secciones, script de armado y sección 02 en borrador.",
+   "criterio": "build.sh genera el PDF en una PC limpia, informa páginas y falla con más de 20.",
+   "rama": "feature/INF-06-plantilla-memoria",
+   "archivos": [
+    "docs/memoria/",
+    "tools/memoria/build.sh"
+   ],
+   "documentar_en": "docs/memoria/README.md y memoria 02-arquitectura.md",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "INF-07",
+   "columna": "INF Infraestructura",
+   "orden": 7,
+   "titulo": "Maqueta modular con isla, flechas, cubos y depósitos",
+   "para_que": "El robot real, el dataset y las pruebas de agarre necesitan dónde probar pasillos, islas, flechas y depósitos. Las medidas oficiales no se conocen: la maqueta es modular con pasillo ajustable.",
+   "microtareas": [
+    "Paneles modulares (cartón pluma, MDF o cajas) de 0,2-0,3 m de alto con pasillo de 0,30 a 0,45 m; supuestos anotados hasta tener respuesta oficial.",
+    "Configuración A con isla y zona abierta; configuración B obtenida moviendo 3 paneles; armables en < 15 min desde un plano impreso.",
+    "Marcar zona de inicio y los 3 depósitos; usar flechas y cubos impresos de PER-01.",
+    "Fotos, plano y YAML de cada configuración (formato de INF-02) en docs/pruebas/maqueta.md."
+   ],
+   "depende_de": [
+    "INF-06"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "Maqueta en dos configuraciones con plano, fotos y YAML.",
+   "criterio": "Las dos configuraciones se armaron y fotografiaron; el armado tarda < 15 min; otra persona la arma con solo el plano.",
+   "rama": "feature/INF-07-maqueta",
+   "archivos": [
+    "docs/pruebas/maqueta.md",
+    "ros2_ws/src/caid_gazebo/mazes/"
+   ],
+   "documentar_en": "docs/pruebas/maqueta.md y memoria 10-pruebas-y-resultados.md",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "DESC-01",
+   "columna": "DESC Modelo 3D",
+   "orden": 1,
+   "titulo": "STL oficiales en el repo y cotas en dimensions.yaml",
+   "para_que": "Es el comienzo del caracterizado tridimensional y no necesita el robot armado. Una sola fuente de cotas evita que URDF, odometría, proyección de cámara y firmware usen números distintos.",
+   "microtareas": [
+    "Subir a hardware/stl/ los STL originales sin modificar (ARM2-CUDAR-*); avisar si alguno pesa > 50 MB.",
+    "hardware/stl/INDEX.md: pieza, conjunto, cantidad según la BOM y si se usa como malla visual.",
+    "Medir en el CAD: trocha, batalla, radio de rueda, contorno del chasis, pose de los 3 HC-SR04, eje del pan, cámara con inclinación y base del brazo.",
+    "hardware/cad/dimensions.yaml (metros y radianes; cada valor con 'fuente: CAD' o 'provisorio'). La sección del brazo vive en hardware/cad/arm.yaml (MAN-01) y dimensions.yaml la incluye.",
+    "Exportar mallas decimadas (< 1 MB) con origen en cada articulación."
+   ],
+   "depende_de": [],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "STL con índice, dimensions.yaml v0 y mallas livianas.",
+   "criterio": "dimensions.yaml carga con yaml.safe_load y tiene todas las claves que usa DESC-02, cada una con su fuente; INDEX.md cubre las piezas impresas de la BOM.",
+   "rama": "feature/DESC-01-stl-y-cotas",
+   "archivos": [
+    "hardware/stl/",
+    "hardware/cad/dimensions.yaml",
+    "ros2_ws/src/caid_description/meshes/"
+   ],
+   "documentar_en": "hardware/cad/README.md y memoria 03-hardware.md (tabla de cotas)",
+   "hito": "H0",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "DESC-02",
+   "columna": "DESC Modelo 3D",
+   "orden": 2,
+   "titulo": "Caracterizado tridimensional: caid_description en xacro",
+   "para_que": "Sin el modelo no hay TF para proyectar cubos al piso, ni simulación, ni figuras para la memoria. Reutiliza las macros de inercia del repo previo y corrige sus defectos (rueda loca flotando, set_env, dependencias faltantes).",
+   "microtareas": [
+    "Paquete caid_description con hook DSV de GZ_SIM_RESOURCE_PATH (no set_env), package.xml con todos los exec_depend e inertia.xacro del repo previo (agregar esfera).",
+    "caid_bot.urdf.xacro: base_footprint -> base_link; macro de rueda x4 (continuous); colisiones primitivas, visual con las mallas; cotas de dimensions.yaml.",
+    "Links us_front, us_left, us_right; camera_pan_link (revolute) -> camera_link -> camera_optical_frame (REP-103).",
+    "arm.xacro: yaw de base, hombro, codo, muñeca virtual del paralelogramo, pinza y gripper_tcp; arg arm:=none|fixed|actuated; valores provisorios hasta que MAN-01 complete arm.yaml.",
+    "display.launch.xml con joint_state_publisher_gui y RViz; check_urdf sin errores; capturas del modelo y view_frames."
+   ],
+   "depende_de": [
+    "DESC-01"
+   ],
+   "bloqueada_por": [],
+   "dias": 1.5,
+   "entregable": "Paquete caid_description con URDF/xacro, mallas, hook DSV y display.launch.xml.",
+   "criterio": "check_urdf pasa; en RViz se ven 4 ruedas, 3 sensores, cámara y brazo a escala; los sliders mueven brazo y pan; el árbol TF coincide con contrato.md; colcon test pasa.",
+   "rama": "feature/DESC-02-urdf-xacro",
+   "archivos": [
+    "ros2_ws/src/caid_description/"
+   ],
+   "documentar_en": "memoria 09-simulacion.md (modelo y árbol TF) y docs/arquitectura/contrato.md",
+   "hito": "H0",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "DESC-03",
+   "columna": "DESC Modelo 3D",
+   "orden": 3,
+   "titulo": "Gazebo: tracción 4WD, ultrasonidos, cámara y servos",
+   "para_que": "Gazebo tiene que exponer los mismos sensores y actuadores que el robot real para que el software sea el mismo. Sistemas nativos de gz-sim, sin ros2_control (ADR 0001).",
+   "microtareas": [
+    "gazebo.xacro: DiffDrive con 2 left_joint y 2 right_joint repetidos, max_velocity y max_acceleration, publish_odom_tf=false, tópico /sim/cmd_vel; JointStatePublisher en /sim/joint_states.",
+    "3 gpu_lidar angostos (cono 15°, 0,02-4 m, con ruido) con gz_frame_id del URDF; puente LaserScan -> Range en /sim/ultrasonic/*.",
+    "Cámara 640x480 a 15 Hz en camera_optical_frame; JointPositionController para pan y brazo en /sim/arm/<joint>/cmd.",
+    "Fricción de ruedas para que el skid-steer gire en el lugar; mundo de prueba con 3 paredes.",
+    "caid_bringup/config/sim/bridge.yaml sin nombre de mundo y launch que mueve el robot por /sim/cmd_vel."
+   ],
+   "depende_de": [
+    "DESC-02"
+   ],
+   "bloqueada_por": [],
+   "dias": 1.5,
+   "entregable": "gazebo.xacro, bridge.yaml y mundo de prueba.",
+   "criterio": "En el mundo de prueba el robot avanza y gira en el lugar con /sim/cmd_vel; /sim/ultrasonic/front baja al acercarse a una pared; la cámara publica imagen; el pan responde.",
+   "rama": "feature/DESC-03-gazebo-sensores",
+   "archivos": [
+    "ros2_ws/src/caid_description/urdf/gazebo.xacro",
+    "ros2_ws/src/caid_gazebo/worlds/",
+    "ros2_ws/src/caid_bringup/config/sim/bridge.yaml"
+   ],
+   "documentar_en": "memoria 09-simulacion.md (sensores simulados y sus límites)",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "DESC-04",
+   "columna": "DESC Modelo 3D",
+   "orden": 4,
+   "titulo": "Generador de laberintos: legacy_maze2 y variantes con islas, zona abierta, flechas, cubos y depósitos",
+   "para_que": "La navegación debe probarse en laberintos distintos, con islas, zonas abiertas y medidas variables para no sobreajustar. legacy_maze2 es la regresión obligatoria (ahí seguir paredes no llega a la meta). Usa el formato ASCII de INF-02, el mismo que gridsim.",
+   "microtareas": [
+    "scripts/gen_maze.py: formato ASCII/YAML -> SDF con paredes estáticas, sistemas Sensors y Physics, piso claro.",
+    "legacy_maze2 desde su grilla con un test que reproduce los 234 bloques; variante de celda 0,30 m con islas; aleatorio con N islas por semilla; mundo con zona abierta (cubo al centro, depósito en rincón).",
+    "Flechas como planos con textura PNG a escala (cuerpo 30, 60 o 100 mm; punta 70x50 mm) con inclinación hasta +-30°.",
+    "Cubos de 20 mm rojo, verde y azul, 3 depósitos y zona de inicio como marcas en el piso."
+   ],
+   "depende_de": [
+    "DESC-03",
+    "INF-02"
+   ],
+   "bloqueada_por": [
+    "INF-02"
+   ],
+   "dias": 1,
+   "entregable": "gen_maze.py y 4 mundos (legacy_maze2, celda 0,30 m, aleatorio con islas, zona abierta).",
+   "criterio": "gz sim carga los 4 mundos sin errores; el test de legacy_maze2 pasa (234 bloques); se ven flechas inclinadas, cubos y depósitos; los mundos se regeneran con el script sin editar SDF a mano.",
+   "rama": "feature/DESC-04-generador-laberintos",
+   "archivos": [
+    "ros2_ws/src/caid_gazebo/mazes/",
+    "ros2_ws/src/caid_gazebo/scripts/gen_maze.py",
+    "ros2_ws/src/caid_gazebo/worlds/",
+    "ros2_ws/src/caid_gazebo/models/"
+   ],
+   "documentar_en": "memoria 09-simulacion.md y docs/pruebas/escenarios.md",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "FW-01",
+   "columna": "FW Firmware",
+   "orden": 1,
+   "titulo": "Proyecto PlatformIO, pin map A y mediciones de banco",
+   "para_que": "Fijar toolchain, versiones y pines antes de cablear evita recompilar micro-ROS varias veces y que dos personas usen el mismo GPIO. Las mediciones de banco (canales del driver, niveles de entrada, polaridad del FC-03) deciden el mapa.",
+   "microtareas": [
+    "platformio.ini: espressif32 fija, framework arduino, micro_ros_platformio en commit fijo, board_microros_distro = jazzy; envs esp32_wifi y esp32_usb.",
+    "include/pins.h con el mapa A (motores 25/26/27/16, servos 18/19/21/22/23, triggers 5/14/15, ecos 13/4/17, encoders 34/35/36/39, ADC 32/33, LED 2, GPIO12 libre); canales LEDC, PCNT y MCPWM fijados a mano; pines de motor en LOW primero en setup().",
+    "Contar chips y pines del L9110S (2 o 4 canales), medir tensión en IA/IB sin ESP32, polaridad y pull-up del FC-03, modelo de HC-SR04 y ranuras del disco.",
+    "hardware/electronica/pinout.md y mediciones.md con fecha; secrets.example.h versionado y secrets.h ignorado."
+   ],
+   "depende_de": [],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "Proyecto PlatformIO compilable, pins.h, pinout.md y primera tanda de mediciones.",
+   "criterio": "pio run compila los dos envs en una PC limpia; otra persona revisó pins.h contra pinout.md; ningún pin de strapping maneja motores; mediciones en mediciones.md.",
+   "rama": "feature/FW-01-platformio-pinmap",
+   "archivos": [
+    "firmware/esp32_motion/",
+    "hardware/electronica/pinout.md",
+    "hardware/electronica/mediciones.md"
+   ],
+   "documentar_en": "hardware/electronica/pinout.md, mediciones.md y memoria 03-hardware.md",
+   "hito": "H0",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "FW-02",
+   "columna": "FW Firmware",
+   "orden": 2,
+   "titulo": "Motores L9110S: 2 PWM por canal, rampa, tope de giro, corte por bloqueo y watchdog",
+   "para_que": "El elevador de 5 V se cae si 4 motores TT arrancan sin rampa (3,4-5,6 A contra 2,2-3 A disponibles). Sin esto el robot se reinicia en cada arranque y la ESP32-CAM con él.",
+   "microtareas": [
+    "lib/motion (lógica pura): mezcla diferencial, rampa (salto inicial <= 0,45, luego +0,03 cada 10 ms), paso por 0/0 al invertir, tope 0,6 en giros en el lugar.",
+    "Corte por bloqueo: |duty| > 0,5 con 0 flancos en los dos encoders de un lado durante 300 ms corta ese lado 1 s y levanta bandera.",
+    "Tests nativos (pio test -e native); driver LEDC de alta velocidad con MOTOR_PWM_HZ parametrizable.",
+    "Tarea FreeRTOS de control a 100 Hz en el núcleo 1 con watchdog de 300 ms.",
+    "Banco: probar 1, 5 y 20 kHz (duty mínima de arranque y temperatura) y anotar en mediciones.md."
+   ],
+   "depende_de": [
+    "FW-01"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "Control de motores con protecciones, tests nativos y frecuencia de PWM elegida.",
+   "criterio": "pio test -e native pasa; en banco el motor va de 0 a 100 % en ~330 ms y frena en < 300 ms al dejar de recibir órdenes; frecuencia elegida en mediciones.md.",
+   "rama": "feature/FW-02-motores-rampa-watchdog",
+   "archivos": [
+    "firmware/esp32_motion/lib/motion/",
+    "firmware/esp32_motion/src/motors.cpp",
+    "firmware/esp32_motion/test/"
+   ],
+   "documentar_en": "hardware/electronica/mediciones.md y memoria 04-firmware-y-comunicacion.md (seguridad)",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "FW-03",
+   "columna": "FW Firmware",
+   "orden": 3,
+   "titulo": "micro-ROS por Wi-Fi: /cmd_vel a los motores, con reconexión",
+   "para_que": "Es la mitad de hardware del primer extremo a extremo. La reconexión y el frenado ante pérdida de enlace tienen que estar desde el primer día.",
+   "microtareas": [
+    "tools/agent/run_agent.sh (docker jazzy) con modos udp y serial.",
+    "Nodo micro-ROS con suscripción best-effort a /cmd_vel que alimenta la tarea de control.",
+    "Máquina de 4 estados de ping al agente, WiFi.setSleep(false), parpadeo del LED por estado.",
+    "Bajar la potencia de transmisión (esp_wifi_set_max_tx_power) y medir con 8, 11 y 15 dBm.",
+    "Prueba: teleop mueve el motor; matar el agente o apagar el router frena en < 300 ms y reconecta solo, 5 de 5."
+   ],
+   "depende_de": [
+    "FW-02"
+   ],
+   "bloqueada_por": [],
+   "dias": 1.5,
+   "entregable": "Firmware que sigue /cmd_vel por Wi-Fi y script del agente.",
+   "criterio": "Con el router de desarrollo, teleop mueve el motor; 10 cortes provocados frenan en < 300 ms y reconectan sin reiniciar la ESP32; el env esp32_usb también funciona.",
+   "rama": "feature/FW-03-microros-cmdvel",
+   "archivos": [
+    "firmware/esp32_motion/src/comms.cpp",
+    "firmware/esp32_motion/src/main.cpp",
+    "tools/agent/"
+   ],
+   "documentar_en": "docs/guias/micro-ros.md y memoria 04-firmware-y-comunicacion.md",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "FW-04",
+   "columna": "FW Firmware",
+   "orden": 4,
+   "titulo": "Encoders, ultrasonidos y estado del robot con los mensajes del contrato",
+   "para_que": "Sin ticks no hay odometría y sin distancias no hay navegación. Se miden por hardware (PCNT y captura MCPWM) para dejar la CPU a micro-ROS. /robot/status con versión es lo que revisa la inspección.",
+   "microtareas": [
+    "tools/fw/sync_interfaces.sh copia caid_mcu_msgs a extra_packages (con --check para CI) y recompila micro-ROS.",
+    "PCNT en GPIO34/35/36/39 con filtro 5-10 us; /wheel_ticks a 20 Hz con el signo según el duty comandado.",
+    "HC-SR04 con captura MCPWM, disparo secuencial F-L-R cada 25 ms; /ultrasonic/* con +inf sin eco y -inf demasiado cerca (REP-117); freno frontal local configurable.",
+    "/robot/status a 2 Hz (versión, hash, uptime, reset_reason, armado, fallas) y /robot/cmd (ARM, DISARM, ESTOP, CLEAR_ESTOP, SET_FRONT_STOP_CM).",
+    "Banco: 10 vueltas = 400 flancos; HC-SR04 a 10, 30 y 100 cm y pared a 0, 15, 30 y 45°, esquina, a 10, 30 y 60 cm: guardar CSV en caid_navigation/test/data/ para los tests de NAV-02."
+   ],
+   "depende_de": [
+    "FW-03",
+    "INF-02"
+   ],
+   "bloqueada_por": [
+    "INF-02"
+   ],
+   "dias": 1.5,
+   "entregable": "Firmware que publica /wheel_ticks, /ultrasonic/*, /robot/status y atiende /robot/cmd, más CSV reales de ultrasonido.",
+   "criterio": "Tópicos a la tasa del contrato; una vuelta suma 40 flancos (+-1); error < 1 cm a 10, 30 y 100 cm; frenar la rueda con la mano dispara el corte; ESTOP frena y en DISARM se ignora /cmd_vel; /robot/status muestra fw_version y git_hash iguales a version.h y reset_reason correcto tras un reinicio; cada mensaje < 500 B.",
+   "rama": "feature/FW-04-encoders-ultrasonidos",
+   "archivos": [
+    "firmware/esp32_motion/src/encoders.cpp",
+    "firmware/esp32_motion/src/ultrasonic.cpp",
+    "firmware/esp32_motion/src/status.cpp",
+    "tools/fw/sync_interfaces.sh"
+   ],
+   "documentar_en": "memoria 04-firmware-y-comunicacion.md (sensores) y docs/arquitectura/contrato.md",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "FW-05",
+   "columna": "FW Firmware",
+   "orden": 5,
+   "titulo": "Servos del brazo y del pan: /arm/cmd interpolado y de a uno",
+   "para_que": "Mover los 5 SG90 a la vez pide ~1,7 A y, sumado a los motores, tumba el 5 V. El firmware garantiza interpolación, un servo por vez y arranque escalonado.",
+   "microtareas": [
+    "LEDC de baja velocidad a 50 Hz y 14 bits con canales fijos, offset y signo por servo en header de calibración; no usar el timer 0 en la ESP32-CAM.",
+    "/arm/cmd (5 ángulos, duration_ms, seq): interpolación a 60-90 °/s, un servo a la vez (cola).",
+    "Arranque: servos a pose inicial de a uno cada 300 ms, después de motores en LOW y Wi-Fi.",
+    "/arm/state a 10 Hz; rechazar /arm/cmd con el robot en movimiento salvo el pan.",
+    "Banco: secuencia de 5 poses con ros2 topic pub; tag fw-esp32-v0.1.0."
+   ],
+   "depende_de": [
+    "FW-04"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "Servos con interpolación, cola y /arm/state; tag fw-esp32-v0.1.0.",
+   "criterio": "Una secuencia de 5 poses termina con last_seq correcto; el log muestra que nunca se mueven dos servos a la vez; un /arm/cmd con el robot en movimiento se rechaza salvo el pan.",
+   "rama": "feature/FW-05-servos",
+   "archivos": [
+    "firmware/esp32_motion/src/servos.cpp",
+    "firmware/README.md"
+   ],
+   "documentar_en": "firmware/README.md y memoria 04 y 07-manipulacion.md",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "CAM-01",
+   "columna": "CAM Camara y red",
+   "orden": 1,
+   "titulo": "Firmware de la ESP32-CAM: MJPEG, /control, /status y modo AP o STA",
+   "para_que": "El video alimenta toda la percepción y su Wi-Fi sería la red de competencia. El mismo firmware sirve en casa (STA) y en competencia (AP) y permite fijar el color desde la PC.",
+   "microtareas": [
+    "firmware/esp32_cam en PlatformIO desde CameraWebServer: MJPEG en :81/stream (VGA, calidad 10-12, fb_count 2, GRAB_LATEST).",
+    "GET /control?var=&val= (awb, aec, agc, gain, saturation, framesize, quality) y GET /status JSON con versión y hash.",
+    "SoftAP (SSID CAID-ROBOT, WPA2) o estación por NVS o secrets.h sin recompilar; WiFi.setSleep(false); flash GPIO4 apagado.",
+    "Medir fps en STA y AP; tag fw-cam-v0.1.0."
+   ],
+   "depende_de": [],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "Firmware esp32_cam con stream, control, estado y los dos modos de red.",
+   "criterio": "Stream VGA a >= 10 fps en STA y en AP; /status devuelve la versión; cambiar framesize por /control funciona.",
+   "rama": "feature/CAM-01-firmware-cam",
+   "archivos": [
+    "firmware/esp32_cam/"
+   ],
+   "documentar_en": "memoria 04-firmware-y-comunicacion.md (video) y docs/decisiones/0002-topologia-de-red.md",
+   "hito": "H0",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "CAM-02",
+   "columna": "CAM Camara y red",
+   "orden": 2,
+   "titulo": "Puente de video: MJPEG a CompressedImage y CameraInfo",
+   "para_que": "Convierte el stream HTTP en tópicos ROS sin recomprimir y con el frame del contrato, para que percepción, grabación y RViz usen lo mismo en sim y robot.",
+   "microtareas": [
+    "Paquete caid_hw_bridge con esp32cam_bridge: hilo que lee el multipart y corta cada JPEG entre FFD8 y FFD9.",
+    "Publicar /camera/image_raw/compressed (stamp = llegada - latencia) y /camera/camera_info desde ost.yaml; image_raw solo con suscriptores.",
+    "Reconexión automática y /diagnostics (fps, edad del cuadro, reconexiones); perfiles network/{router,cam_ap}.yaml.",
+    "Test pytest con servidor MJPEG falso; medir latencia filmando un cronómetro."
+   ],
+   "depende_de": [
+    "CAM-01"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "Nodo esp32cam_bridge con tests y perfiles de red.",
+   "criterio": "/camera/image_raw/compressed da >= 10 Hz durante 5 min; al apagar y prender la cámara se recupera en < 5 s; el test pasa en CI.",
+   "rama": "feature/CAM-02-puente-video",
+   "archivos": [
+    "ros2_ws/src/caid_hw_bridge/",
+    "ros2_ws/src/caid_bringup/config/network/"
+   ],
+   "documentar_en": "memoria 04-firmware-y-comunicacion.md (video y latencia)",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "CAM-03",
+   "columna": "CAM Camara y red",
+   "orden": 3,
+   "titulo": "Prueba go/no-go de la red de competencia (AP de la ESP32-CAM)",
+   "para_que": "El reglamento pide usar solo la red de la ESP32-CAM. Hay que saber ya si su AP aguanta video y micro-ROS a la vez o si se activa el plan B por UART (CAM-05).",
+   "microtareas": [
+    "ESP32-CAM en SoftAP; PC con IP fija 192.168.4.100 y ESP32 con el firmware de FW-03 (o sketch UDP).",
+    "Medir 10 min: fps de video y pérdida y latencia de UDP a 50 Hz; repetir a 3 y 6 m y con otras redes cerca (canales 1, 6, 11).",
+    "Decidir go/no-go con criterio escrito de antemano (>= 10 fps y < 2 % de pérdida); actualizar ADR 0002."
+   ],
+   "depende_de": [
+    "CAM-02"
+   ],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "docs/pruebas/red.md con mediciones y ADR 0002 actualizado.",
+   "criterio": "Tabla de fps, pérdida y latencia en red.md; ADR 0002 en Aceptado (go) o CAM-05 activada (no-go), con el criterio usado.",
+   "rama": "feature/CAM-03-go-no-go-red",
+   "archivos": [
+    "docs/pruebas/red.md",
+    "docs/decisiones/0002-topologia-de-red.md"
+   ],
+   "documentar_en": "docs/decisiones/0002-topologia-de-red.md y memoria 04",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "CAM-04",
+   "columna": "CAM Camara y red",
+   "orden": 4,
+   "titulo": "Calibración intrínseca y color fijo de la cámara",
+   "para_que": "La distancia a cubos y flechas sale de proyectar el píxel al piso, que necesita los intrínsecos. Con AWB y AEC automáticos el color cambia cuando una pared blanca llena la imagen.",
+   "microtareas": [
+    "Damero impreso medido con calibre, camera_calibration a 640x480; versionar ost.yaml.",
+    "Fijar AWB y AEC sobre cartulina gris por /control y guardar camera_settings.yaml; el puente lo aplica al conectar.",
+    "Medir el FOV y cargarlo en dimensions.yaml para la cámara de Gazebo.",
+    "Verificar objeto a 0,3, 0,6 y 1,0 m (error de tamaño < 5 %) y escribir el procedimiento para repetirlo en la sede."
+   ],
+   "depende_de": [
+    "CAM-03"
+   ],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "ost.yaml, camera_settings.yaml y guía de calibración.",
+   "criterio": "Reproyección < 1 px; el puente carga ost.yaml y camera_settings.yaml solo; con el damero a 50 cm la distancia tiene error < 3 %.",
+   "rama": "feature/CAM-04-calibracion",
+   "archivos": [
+    "ros2_ws/src/caid_hw_bridge/config/",
+    "docs/guias/calibracion-camara.md"
+   ],
+   "documentar_en": "docs/guias/calibracion-camara.md y memoria 05-percepcion.md",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "CAM-05",
+   "columna": "CAM Camara y red",
+   "orden": 5,
+   "titulo": "Plan B condicional (stretch): micro-ROS por UART a través de la ESP32-CAM",
+   "para_que": "Solo si CAM-03 da no-go o la organización exige que únicamente la ESP32-CAM use Wi-Fi. Mantiene los mismos tópicos cambiando solo el transporte.",
+   "microtareas": [
+    "Env esp32_uart_bridge en la ESP32 de movimiento (Serial2).",
+    "La ESP32-CAM reenvía UART <-> UDP hacia la PC sin cortar el video.",
+    "PC: socat UDP <-> PTY y micro_ros_agent serial; arg link:=bridge en real.launch.xml.",
+    "Repetir la prueba de CAM-03 por este camino."
+   ],
+   "depende_de": [
+    "CAM-04"
+   ],
+   "bloqueada_por": [],
+   "dias": 1.5,
+   "entregable": "Transporte por UART funcionando, o tarea cerrada como no necesaria.",
+   "criterio": "Teleop y video simultáneos 10 min por el puente con las métricas de CAM-03; o cierre 'no necesaria' enlazando el go de CAM-03 y la respuesta de la organización.",
+   "rama": "feature/CAM-05-plan-b-uart",
+   "archivos": [
+    "firmware/esp32_motion/platformio.ini",
+    "firmware/esp32_cam/",
+    "tools/agent/run_agent.sh"
+   ],
+   "documentar_en": "docs/decisiones/0002-topologia-de-red.md",
+   "hito": "H5",
+   "etiquetas": [
+    "tarea",
+    "stretch"
+   ]
+  },
+  {
+   "id": "PER-01",
+   "columna": "PER Percepcion",
+   "orden": 1,
+   "titulo": "Generador de flechas y escenas sintéticas, material impreso y evaluador",
+   "para_que": "Permite desarrollar y medir los detectores desde el día 1 sin cámara ni robot, y genera las mismas flechas para Gazebo y para imprimir.",
+   "microtareas": [
+    "tools/arrows/gen_arrows.py: flecha del anexo (cuerpo 30, 60 o 100 mm; punta 70x50 mm) en SVG, PNG y PDF a escala 1:1 en rojo, verde, azul y gris oscuro.",
+    "Escenas sintéticas: perspectiva, inclinación +-30°, ruido, desenfoque y JPEG de calidad 10-30; cubos de 20 mm; etiquetas JSON.",
+    "tools/perception/eval.py: precisión de dirección, largo y color y matriz de confusión.",
+    "Imprimir flechas y 6 cubos de 20 mm (2 por color) y sacar >= 30 fotos de celular."
+   ],
+   "depende_de": [],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "Generador, evaluador, material impreso y set de fotos.",
+   "criterio": "Con semilla fija se generan 500 escenas etiquetadas; eval.py corre en CI sobre 50; flechas impresas con error < 1 mm; >= 30 fotos en el repo.",
+   "rama": "feature/PER-01-sinteticas-y-material",
+   "archivos": [
+    "tools/arrows/",
+    "tools/perception/",
+    "ros2_ws/src/caid_perception/test/data/celular/"
+   ],
+   "documentar_en": "memoria 05-percepcion.md (método de evaluación)",
+   "hito": "H0",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "PER-02",
+   "columna": "PER Percepcion",
+   "orden": 2,
+   "titulo": "Detector de cubos y depósitos por color (núcleo puro) y calibrador HSV",
+   "para_que": "Agarrar al ver necesita el color y la posición del cubo en el piso. Los umbrales son parámetros para poder recalibrar entre fases en minutos.",
+   "microtareas": [
+    "core/color.py: máscaras HSV con umbrales en config/colors.yaml (rojo en dos rangos, clase 'oscuro').",
+    "core/cubes.py: morfología, contornos, filtros de área, solidez > 0,85, aspecto 0,6-1,6; descartar blobs sobre el horizonte (flechas).",
+    "core/ground.py: proyección del píxel al piso con intrínsecos y pose de cámara -> (x, y) en base_link.",
+    "core/deposits.py (marca parametrizable hasta la respuesta oficial) y hsv_tuner con trackbars.",
+    "pytest con sintéticas y fotos de celular, incluyendo negativos."
+   ],
+   "depende_de": [
+    "PER-01"
+   ],
+   "bloqueada_por": [],
+   "dias": 1.5,
+   "entregable": "Núcleo de cubos y depósitos, hsv_tuner y colors.yaml inicial con tests.",
+   "criterio": "Color correcto en >= 98 % de las sintéticas y >= 95 % de los cubos a <= 1 m en fotos; error de posición < 2 cm a 0,4 m; sin falsos positivos por flechas; ninguna función importa rclpy.",
+   "rama": "feature/PER-02-cubos-y-depositos",
+   "archivos": [
+    "ros2_ws/src/caid_perception/caid_perception/core/",
+    "ros2_ws/src/caid_perception/config/colors.yaml"
+   ],
+   "documentar_en": "memoria 05-percepcion.md (color, cubos, depósitos, proyección)",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "PER-03",
+   "columna": "PER Percepcion",
+   "orden": 3,
+   "titulo": "Detector de flechas: dirección, largo y color (núcleo puro)",
+   "para_que": "Reconocer e interpretar flechas se evalúa y acelera el recorrido. El largo se clasifica con una proporción que no depende de la distancia ni del ángulo de la pared.",
+   "microtareas": [
+    "core/arrows.py: máscara por color más clase oscura, apertura y cierre, contornos que no toquen el borde.",
+    "Casco convexo y convexityDefects (2 hombros) y approxPolyDP de 7 vértices; dirección = cola -> ápice ajustada a derecha, arriba, izquierda o abajo con tolerancia +-30°.",
+    "Largo: relación largo total / alto de punta (L+50)/50 = 1,6 / 2,2 / 3,0 con umbrales intermedios.",
+    "Confianza y oblicuidad (needs_reobserve) y confirmación temporal 3 de 5 cuadros.",
+    "pytest sobre sintéticas y fotos."
+   ],
+   "depende_de": [
+    "PER-02"
+   ],
+   "bloqueada_por": [],
+   "dias": 1.5,
+   "entregable": "core/arrows.py con tests y métricas.",
+   "criterio": "En eval.py: dirección >= 95 %, largo >= 90 % y color >= 95 % en sintéticas y 90 % en fotos; flecha cortada, dos flechas y pared vacía sin falsos positivos; CI corre los tests.",
+   "rama": "feature/PER-03-detector-flechas",
+   "archivos": [
+    "ros2_ws/src/caid_perception/caid_perception/core/arrows.py",
+    "ros2_ws/src/caid_perception/test/"
+   ],
+   "documentar_en": "memoria 05-percepcion.md (pipeline de flechas, con figura)",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "PER-04",
+   "columna": "PER Percepcion",
+   "orden": 4,
+   "titulo": "Nodos ROS de percepción, proyección con TF y barrido con el pan",
+   "para_que": "Convierte los núcleos en nodos con los tipos del contrato para que navegación y manipulación los usen igual en simulación y robot.",
+   "microtareas": [
+    "cube_detector: imagen comprimida (KEEP_LAST 1) -> /perception/cubes y /perception/deposits con TF base_link <- camera_optical_frame en el stamp de la imagen.",
+    "arrow_detector -> /perception/arrows con confirmación 3 de 5.",
+    "camera_scanner: servicio /perception/scan que barre el pan en un nodo.",
+    "debug_image bajo demanda, parámetros en YAML, perception.launch.xml y launch_testing con fixture sintético y TF estático."
+   ],
+   "depende_de": [
+    "PER-03",
+    "INF-02"
+   ],
+   "bloqueada_por": [
+    "INF-02"
+   ],
+   "dias": 0.5,
+   "entregable": "Nodos cube_detector, arrow_detector y camera_scanner con launch y tests.",
+   "criterio": "Con el fixture, un cubo a 0,5 m se ubica con error < 2 cm; flechas confirmadas 3 de 5; con 10 fps de entrada < 30 % de un núcleo; tests en CI.",
+   "rama": "feature/PER-04-nodos-percepcion",
+   "archivos": [
+    "ros2_ws/src/caid_perception/",
+    "ros2_ws/src/caid_bringup/launch/perception.launch.xml"
+   ],
+   "documentar_en": "memoria 05-percepcion.md (integración) y docs/arquitectura/contrato.md",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "PER-05",
+   "columna": "PER Percepcion",
+   "orden": 5,
+   "titulo": "Verificación de agarre por imagen (grasp_verifier)",
+   "para_que": "Los SG90 no informan si agarraron algo y los sensores extra están prohibidos, así que la verificación sale de la cámara. Sin ella el robot puede 'entregar' un cubo que se le cayó.",
+   "microtareas": [
+    "Servicio /perception/verify_grasp (color esperado): el cubo desapareció del ROI del piso y, en la pose 'mostrar', aparece el color en el ROI de los dedos.",
+    "ROI calculado proyectando gripper_tcp a la imagen con TF.",
+    "Tests con imágenes de simulación y sintéticas de pinza vacía y con cubo; 20 reales cuando haya robot.",
+    "Responder en < 1 s."
+   ],
+   "depende_de": [
+    "PER-04",
+    "MAN-02",
+    "DESC-02"
+   ],
+   "bloqueada_por": [
+    "MAN-02",
+    "DESC-02"
+   ],
+   "dias": 0.5,
+   "entregable": "Servicio grasp_verifier con tests.",
+   "criterio": "Acierta >= 95 % de los casos de prueba y responde en < 1 s.",
+   "rama": "feature/PER-05-verificacion-agarre",
+   "archivos": [
+    "ros2_ws/src/caid_perception/caid_perception/grasp_verifier.py"
+   ],
+   "documentar_en": "memoria 07-manipulacion.md (verificación)",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "PER-06",
+   "columna": "PER Percepcion",
+   "orden": 6,
+   "titulo": "Dataset real con la ESP32-CAM, validación y ajuste",
+   "para_que": "Medir con la cámara real lo que antes se midió con sintéticas; lo que no se mide no se puede defender en la memoria ni ajustar entre fases.",
+   "microtareas": [
+    "tools/bags/record.sh con perfil 'dataset' (solo compressed y camera_info).",
+    "Grabar flechas de los 3 largos y todos los colores a 0,3-1,5 m, rotadas 0, +-15 y +-30°, y cubos en piso y depósitos, más negativos; luz normal y una variante.",
+    "Etiquetar a mano ~50 cuadros (<= 20 MB en el repo) y correr eval.py; ajustar colors.yaml.",
+    "Agregar 20 cuadros reales como regresión de CI y escribir docs/guias/calibracion-color.md (recalibrar en < 10 min)."
+   ],
+   "depende_de": [
+    "PER-05",
+    "CAM-04"
+   ],
+   "bloqueada_por": [
+    "CAM-04"
+   ],
+   "dias": 1,
+   "entregable": "Dataset etiquetado, tabla de métricas, colors.yaml real y guía de recalibración.",
+   "criterio": "En el dataset real: flechas 9/10 de frente y 8/10 con +-30°, cubos >= 95 % a <= 1 m; la tabla está en la memoria; la regresión corre en CI; alguien que no escribió la guía la siguió con éxito.",
+   "rama": "feature/PER-06-dataset-real",
+   "archivos": [
+    "ros2_ws/src/caid_perception/test/data/",
+    "tools/bags/record.sh",
+    "docs/guias/calibracion-color.md"
+   ],
+   "documentar_en": "memoria 05-percepcion.md (resultados) y docs/guias/calibracion-color.md",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "PER-07",
+   "columna": "PER Percepcion",
+   "orden": 7,
+   "titulo": "YOLO como verificador de flechas (stretch)",
+   "para_que": "Solo si sobra tiempo: una segunda opinión suma robustez e innovación. Nunca reemplaza al detector clásico.",
+   "microtareas": [
+    "Autoetiquetar con el detector clásico y corregir a mano.",
+    "Entrenar YOLO nano (flecha y cubo) y exportar a ONNX.",
+    "yolo_verifier que confirma o rechaza detecciones clásicas; medir latencia.",
+    "Comparar métricas con y sin verificador."
+   ],
+   "depende_de": [
+    "PER-06"
+   ],
+   "bloqueada_por": [],
+   "dias": 1.5,
+   "entregable": "Modelo ONNX, nodo verificador y comparación de métricas.",
+   "criterio": "Mejora >= 3 puntos en dirección o menos falsos positivos sin pasar de 50 ms por cuadro; si no mejora se documenta y descarta.",
+   "rama": "feature/PER-07-yolo-stretch",
+   "archivos": [
+    "ros2_ws/src/caid_perception/caid_perception/yolo_verifier.py",
+    "tools/dataset/"
+   ],
+   "documentar_en": "memoria 05-percepcion.md",
+   "hito": "H5",
+   "etiquetas": [
+    "tarea",
+    "stretch"
+   ]
+  },
+  {
+   "id": "NAV-01",
+   "columna": "NAV Navegacion",
+   "orden": 1,
+   "titulo": "Núcleo puro migrado del repo previo",
+   "para_que": "Rescata lo que funcionó en maze_2 (cardinales, giros, ley de pasillo con análisis de zeta, árbitro) sin arrastrar el monolito ni sus bugs. Sin rclpy, para testear sin simulador.",
+   "microtareas": [
+    "Crear caid_navigation (ament_python) con core/ y pytest.",
+    "core/angles.py (normalizar, yaw, cardinal más cercana) y core/turns.py (P saturado hacia cardinal +-90°).",
+    "core/corridor.py (ley de pasillo y zeta) y core/arbiter.py (menos visitada + mano derecha como desempate).",
+    "Tests con zeta 0,994, 1,361, 0,203 y 0,703; ament_flake8 y pep257 limpios; commit cita franciscoNSoria/ros2-navegacionautonoma@ed523fc."
+   ],
+   "depende_de": [],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "Módulos core de ángulos, giros, pasillo y árbitro con tests.",
+   "criterio": "pytest y linters pasan en CI; ningún módulo importa rclpy; cada función reutilizada cita su línea de origen.",
+   "rama": "feature/NAV-01-nucleo-migrado",
+   "archivos": [
+    "ros2_ws/src/caid_navigation/caid_navigation/core/",
+    "ros2_ws/src/caid_navigation/test/"
+   ],
+   "documentar_en": "memoria 06-navegacion-y-mapeo.md (antecedentes y análisis de zeta)",
+   "hito": "H0",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "NAV-02",
+   "columna": "NAV Navegacion",
+   "orden": 2,
+   "titulo": "Estado de paredes con 3 ultrasonidos (núcleo puro)",
+   "para_que": "Con un solo haz por lado hay que filtrar ecos perdidos y paredes oblicuas y estimar el rumbo con los encoders. Corrige el bug B1 (-inf tratado como libre).",
+   "microtareas": [
+    "core/walls.py con semántica REP-117 (-inf bloqueado, +inf libre, NaN inválido), mediana de 3-5 lecturas y descarte de saltos.",
+    "Aperturas laterales confirmadas tras N lecturas y distancia mínima recorrida, compensando x_s.",
+    "Rumbo relativo a la pared theta = atan(Δd/Δs) en ventanas >= 5 cm; ancho de pasillo estimado en línea.",
+    "Tests con secuencias CSV sintéticas y, cuando FW-04 las entregue, los CSV reales de banco."
+   ],
+   "depende_de": [
+    "NAV-01"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "core/walls.py con tests.",
+   "criterio": "Todos los casos CSV dan el estado esperado; ninguna lectura -inf se interpreta como libre; error de rumbo < 3° en la secuencia de pasillo.",
+   "rama": "feature/NAV-02-estado-de-paredes",
+   "archivos": [
+    "ros2_ws/src/caid_navigation/caid_navigation/core/walls.py",
+    "ros2_ws/src/caid_navigation/test/data/"
+   ],
+   "documentar_en": "memoria 06-navegacion-y-mapeo.md (percepción de paredes)",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "NAV-03",
+   "columna": "NAV Navegacion",
+   "orden": 3,
+   "titulo": "Nodos base: odometría, filtro de distancias y compuerta de /cmd_vel",
+   "para_que": "Los necesitan todas las rebanadas: sin /odom, /walls y una sola compuerta de /cmd_vel con freno no hay teleop seguro ni autonomía. La IMU está prohibida: la odometría sale de 4 encoders de un canal con el sentido tomado del comando.",
+   "microtareas": [
+    "core/odometry.py (diferencial con b_eff calibrable) y odom_node: /wheel_ticks -> /odom, TF odom -> base_footprint y /joint_states de ruedas; nueva base si el MCU se reinicia.",
+    "range_filter: /ultrasonic/* -> /walls con core/walls.py.",
+    "cmd_vel_gate: prioridad teleop > manip > nav, timeout 0,25 s, freno frontal según /safety/mode, detección de STUCK, salida única a /cmd_vel a 20 Hz.",
+    "Timers fijos y timeouts en segundos (bugs B5, B6); base.launch.xml y parámetros en config/common/; tests con fixtures."
+   ],
+   "depende_de": [
+    "NAV-02",
+    "INF-02"
+   ],
+   "bloqueada_por": [
+    "INF-02"
+   ],
+   "dias": 1,
+   "entregable": "Nodos odom_node, range_filter y cmd_vel_gate con launch y tests.",
+   "criterio": "Con el fixture, un cuadrado de 1 m cierra con error < 1 cm y 1 m en recta da 1,00 +- 0,01 m; la compuerta publica cero si su entrada se corta > 0,25 s y frena con el frente bajo el umbral.",
+   "rama": "feature/NAV-03-nodos-base",
+   "archivos": [
+    "ros2_ws/src/caid_navigation/caid_navigation/",
+    "ros2_ws/src/caid_bringup/launch/base.launch.xml",
+    "ros2_ws/src/caid_bringup/config/common/"
+   ],
+   "documentar_en": "docs/arquitectura/contrato.md y memoria 06 (odometría y seguridad)",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "NAV-04",
+   "columna": "NAV Navegacion",
+   "orden": 4,
+   "titulo": "Simulador abstracto de grilla y mapa topológico en línea",
+   "para_que": "Permite desarrollar exploración y mapa sin Gazebo ni robot y probarlos en cientos de laberintos con islas en segundos. Reemplaza la grilla fija de 0,45 m del repo previo, que era en la práctica un mapa preprogramado.",
+   "microtareas": [
+    "tools/gridsim: lee el formato ASCII de INF-02 (incluye zona abierta), mueve al robot y emite los mismos eventos que junction_detector con ruido opcional.",
+    "core/topo_graph.py: nodos (INICIO, intersección, callejón, OPEN_AREA, BOUNDARY, avistamientos) y aristas con largo, rumbo, marcas Trémaux y anotaciones.",
+    "Cierre de lazos: fusión si cae dentro de 0,5 x ancho de pasillo y salidas compatibles; Dijkstra sobre largos medidos.",
+    "Tests con legacy_maze2 y 20 laberintos aleatorios: el grafo construido coincide con el real."
+   ],
+   "depende_de": [
+    "NAV-03"
+   ],
+   "bloqueada_por": [],
+   "dias": 2,
+   "entregable": "gridsim y core/topo_graph.py con tests.",
+   "criterio": "En legacy_maze2 el grafo tiene los 9 ciclos y Dijkstra hasta el inicio da 44 celdas; con 5 % de ruido en largos y 3° en rumbo el cierre de lazos acierta >= 95 %; tests en CI < 30 s.",
+   "rama": "feature/NAV-04-mapa-topologico",
+   "archivos": [
+    "tools/gridsim/",
+    "ros2_ws/src/caid_navigation/caid_navigation/core/topo_graph.py"
+   ],
+   "documentar_en": "memoria 06-navegacion-y-mapeo.md (mapa topológico en línea, con figura)",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "NAV-05",
+   "columna": "NAV Navegacion",
+   "orden": 5,
+   "titulo": "Explorador Trémaux por aristas, zona abierta y benchmark en islas",
+   "para_que": "Seguir paredes falla con islas. Trémaux con marcas por arista recorre todo el laberinto sin depender del tamaño de celda; el árbitro previo queda solo como desempate. Las zonas abiertas se recorren por el perímetro porque ahí pueden estar cubos o depósitos. Es el corazón de la innovación algorítmica.",
+   "microtareas": [
+    "core/explorer.py: marcas 0/1/2 por extremo, regla de Trémaux, prioridades enchufables (flechas, de NAV-06) y desempate 'menos visitada + mano derecha'.",
+    "BOUNDARY (salida hacia el inicio) nunca se explora; OPEN_AREA se entra con barrido y vuelta acotada por el perímetro con presupuesto de distancia; arista con obstáculo = BLOCKED y replanificación.",
+    "tools/nav/benchmark.py: 100 laberintos aleatorios con islas y zona abierta; cobertura y distancia contra camino más corto, a CSV.",
+    "ADR 0004 (mapa y exploración)."
+   ],
+   "depende_de": [
+    "NAV-04"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "core/explorer.py, benchmark en CSV y ADR 0004.",
+   "criterio": "En legacy_maze2 llega a la celda junto a la isla y vuelve al inicio por 44 celdas; explora por completo los 100 laberintos; en el caso con zona abierta encuentra un cubo central y un depósito en un rincón; resultados en CSV.",
+   "rama": "feature/NAV-05-explorador-tremaux",
+   "archivos": [
+    "ros2_ws/src/caid_navigation/caid_navigation/core/explorer.py",
+    "tools/nav/benchmark.py",
+    "docs/decisiones/0004-mapa-y-exploracion.md"
+   ],
+   "documentar_en": "docs/decisiones/0004-mapa-y-exploracion.md y memoria 06 (exploración e innovación)",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "NAV-06",
+   "columna": "NAV Navegacion",
+   "orden": 6,
+   "titulo": "Política de misión y flechas como acelerador (núcleo puro)",
+   "para_que": "Implementa la política del lead: agarrar el primer cubo visto con pinza vacía, entregarlo si el depósito se conoce o seguir explorando con él, recordar todo y volver por el camino más corto. Las flechas solo reordenan.",
+   "microtareas": [
+    "caid_mission/core/policy.py: estados y transiciones como función pura (estado + mapa + eventos -> próxima meta).",
+    "Memoria de objetos: cubos y depósitos vistos con nodo o arista y color; cubos 'pendientes' tras fallas; el más cercano por Dijkstra.",
+    "Prioridades de flechas (dirección, tramos esperados, color en bifurcaciones) y presupuesto de tiempo (volver si el restante < regreso estimado + margen).",
+    "Benchmark en gridsim con cubos, depósitos, flechas (correctas y 10 % erróneas) y zona abierta: 200 misiones contra 'explorar todo y recoger' y contra sin flechas."
+   ],
+   "depende_de": [
+    "NAV-05"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "core/policy.py y tabla comparativa de distancia media.",
+   "criterio": "200 de 200 misiones completas en gridsim, también con 10 % de flechas mal leídas; la tabla con y sin flechas y con y sin política oportunista se genera con un script.",
+   "rama": "feature/NAV-06-politica-mision",
+   "archivos": [
+    "ros2_ws/src/caid_mission/caid_mission/core/policy.py",
+    "tools/gridsim/"
+   ],
+   "documentar_en": "memoria 08-mision.md (estados y benchmark)",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "NAV-07",
+   "columna": "NAV Navegacion",
+   "orden": 7,
+   "titulo": "mission_manager con acciones simuladas (mocks)",
+   "para_que": "Lleva la política pura a un nodo ROS que maneja las acciones (Navigate, Pick, Place, MoveArm) antes de que existan los servidores reales, así la integración se reduce a enchufar.",
+   "microtareas": [
+    "Paquete caid_mission con mission_manager: /mission/start, /mission/abort, /mission/state, /safety/mode y /robot/cmd.",
+    "Clientes de acción con timeout y cancelación; retomar EXPLORE en la misma arista tras APROXIMAR; registro decisions.csv de cada decisión.",
+    "mocks/: servidores falsos de Navigate, Pick y Place con guion (éxito, falla, timeout).",
+    "launch_testing: misión completa con mocks; un Pick que falla 2 veces marca el cubo como difícil y la misión sigue."
+   ],
+   "depende_de": [
+    "NAV-06"
+   ],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "Paquete caid_mission con mission_manager y mocks.",
+   "criterio": "Los tests de launch_testing pasan en CI y /mission/state recorre todos los estados esperados.",
+   "rama": "feature/NAV-07-mission-manager",
+   "archivos": [
+    "ros2_ws/src/caid_mission/"
+   ],
+   "documentar_en": "memoria 08-mision.md (máquina de estados)",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "MAN-01",
+   "columna": "MAN Brazo",
+   "orden": 1,
+   "titulo": "Geometría y cinemática del brazo de paralelogramo",
+   "para_que": "Para agarrar un cubo de 20 mm donde lo mide la cámara hay que pasar de (x, y, z) a ángulos de servo; el paralelogramo acopla hombro y codo y mantiene la pinza horizontal.",
+   "microtareas": [
+    "Medir en el CAD (ARM2-CUDAR-0-1-*) largos de eslabones, offsets de base y apertura de pinza; escribir hardware/cad/arm.yaml (archivo propio, para no pisar dimensions.yaml).",
+    "core/kinematics.py: cinemática directa e inversa (yaw de base + plano hombro-codo con muñeca horizontal).",
+    "Espacio de trabajo alcanzable sobre el piso delante del robot y límites articulares (figura).",
+    "pytest: ida y vuelta con error < 1 mm en todo el espacio de trabajo."
+   ],
+   "depende_de": [],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "core/kinematics.py, arm.yaml y figura del espacio de trabajo.",
+   "criterio": "pytest pasa; la figura marca la zona de agarre sobre el piso; los valores de arm.yaml reemplazan los provisorios de DESC-02 en un PR de una línea por clave.",
+   "rama": "feature/MAN-01-cinematica-brazo",
+   "archivos": [
+    "ros2_ws/src/caid_manipulation/caid_manipulation/core/kinematics.py",
+    "hardware/cad/arm.yaml"
+   ],
+   "documentar_en": "memoria 07-manipulacion.md (cinemática)",
+   "hito": "H0",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "MAN-02",
+   "columna": "MAN Brazo",
+   "orden": 2,
+   "titulo": "Mapeo servo-articulación, límites y poses nombradas",
+   "para_que": "Los servos no miden lo mismo que las articulaciones por el acople del paralelogramo; sin límites el brazo puede golpear chasis, cámara o piso.",
+   "microtareas": [
+    "Relación ángulo de servo <-> articular con offset y signo en config/arm_calibration.yaml.",
+    "Límites contra chasis, cámara y piso con chequeo simple contra cajas.",
+    "config/named_poses.yaml: reposo, transporte, pre-agarre, agarre, depósito y mostrar (pinza visible a la cámara).",
+    "pytest: ninguna pose viola los límites."
+   ],
+   "depende_de": [
+    "MAN-01"
+   ],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "arm_calibration.yaml, named_poses.yaml y chequeo de límites.",
+   "criterio": "pytest pasa; las poses se ven correctas en RViz con joint_state_publisher_gui (cuando DESC-02 esté en dev).",
+   "rama": "feature/MAN-02-poses-y-limites",
+   "archivos": [
+    "ros2_ws/src/caid_manipulation/config/",
+    "ros2_ws/src/caid_manipulation/caid_manipulation/core/"
+   ],
+   "documentar_en": "memoria 07-manipulacion.md (poses y límites)",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "MAN-03",
+   "columna": "MAN Brazo",
+   "orden": 3,
+   "titulo": "arm_driver: acción /arm/move, servicio de pan y /joint_states del brazo",
+   "para_que": "Un único dueño de /arm/cmd evita que navegación y manipulación se pisen por el pan y los servos, y publica los joints para que el TF de la cámara siga al pan.",
+   "microtareas": [
+    "Nodo arm_driver: acción /arm/move (pose nombrada, joints o punto cartesiano) -> /arm/cmd con seq; termina con last_seq == seq y moving = false, con timeout.",
+    "Servicio /camera/set_pan con prioridad de manipulación.",
+    "/joint_states del brazo, muñeca virtual, pinza y pan a 30 Hz.",
+    "Tests con un fake de /arm/state."
+   ],
+   "depende_de": [
+    "MAN-02",
+    "INF-02"
+   ],
+   "bloqueada_por": [
+    "INF-02"
+   ],
+   "dias": 1,
+   "entregable": "Nodo arm_driver con acción, servicio y tests.",
+   "criterio": "Con el fake, una secuencia de 4 poses se completa en orden; el pan en /joint_states sigue a /camera/set_pan; colcon test pasa.",
+   "rama": "feature/MAN-03-arm-driver",
+   "archivos": [
+    "ros2_ws/src/caid_manipulation/caid_manipulation/arm_driver.py",
+    "ros2_ws/src/caid_manipulation/test/"
+   ],
+   "documentar_en": "memoria 07-manipulacion.md y docs/arquitectura/contrato.md",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "MAN-04",
+   "columna": "MAN Brazo",
+   "orden": 4,
+   "titulo": "Secuencias de agarre y depósito (pick_place_server) con mocks",
+   "para_que": "La captura autónoma es lo que más puntos mueve. Separarla en fases con verificación permite reintentar y explicar cada falla.",
+   "microtareas": [
+    "Acción /manipulation/pick: PRE_GRASP, GRASP, LIFT, VERIFY con /perception/verify_grasp y hasta 2 reintentos con micro-reposicionamiento.",
+    "Acción /manipulation/place (deposit_id): pose de depósito, abrir, retroceder y verificar pinza vacía.",
+    "Antes de mover el brazo, cero en /cmd_vel/manip y esperar robot quieto según /odom; volver a transporte.",
+    "Mocks de /arm/move y verify_grasp; motivo de falla (no visto, fuera de alcance, agarre fallido)."
+   ],
+   "depende_de": [
+    "MAN-03"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "pick_place_server con acciones Pick y Place y tests con mocks.",
+   "criterio": "Los tests con mocks cubren éxito, reintento y falla; colcon test pasa.",
+   "rama": "feature/MAN-04-pick-place",
+   "archivos": [
+    "ros2_ws/src/caid_manipulation/caid_manipulation/pick_place_server.py",
+    "ros2_ws/src/caid_manipulation/test/"
+   ],
+   "documentar_en": "memoria 07-manipulacion.md (secuencia de agarre)",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "MAN-05",
+   "columna": "MAN Brazo",
+   "orden": 5,
+   "titulo": "Calibración del brazo real y poses enseñadas",
+   "para_que": "Los SG90 tienen holgura y offsets propios; las poses del CAD no alcanzan para agarrar un cubo de 20 mm. Se hace sobre el brazo armado, en banco o en el robot.",
+   "microtareas": [
+    "Medir con transportador offset y signo de cada servo y pulso <-> ángulo; actualizar arm_calibration.yaml.",
+    "teach_tool: mover articulaciones por teclado y guardar poses en named_poses.yaml.",
+    "Calibrar el cierre de la pinza sobre el cubo de 20 mm sin trabarla apretando (medir corriente).",
+    "Registrar (u*, v*, tamaño) del cubo en pre-agarre y verificar que en transporte el brazo no tapa cámara ni ultrasonidos; 10 intentos con el cubo puesto a mano."
+   ],
+   "depende_de": [
+    "MAN-04",
+    "FW-05"
+   ],
+   "bloqueada_por": [
+    "FW-05"
+   ],
+   "dias": 1,
+   "entregable": "Calibración real del brazo, teach_tool y poses enseñadas.",
+   "criterio": "8 de 10 agarres con el cubo en posición nominal; las 6 poses funcionan 10 de 10 sin choques; calibración y poses versionadas; corriente con la pinza cerrada anotada.",
+   "rama": "feature/MAN-05-brazo-real",
+   "archivos": [
+    "ros2_ws/src/caid_manipulation/config/",
+    "ros2_ws/src/caid_manipulation/caid_manipulation/teach_tool.py"
+   ],
+   "documentar_en": "memoria 07-manipulacion.md (calibración) y hardware/electronica/mediciones.md",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea",
+    "necesita-robot",
+    "espera-externa"
+   ]
+  },
+  {
+   "id": "SIM-01",
+   "columna": "SIM Simulacion",
+   "orden": 1,
+   "titulo": "Emulador de firmware y teleop de punta a punta en Gazebo",
+   "para_que": "Primera rebanada vertical: el mismo /cmd_vel y los mismos tópicos del robot real funcionan en Gazebo. El emulador aplica las protecciones que el DiffDrive de gz no tiene.",
+   "microtareas": [
+    "sim_fw_emulator.py: /cmd_vel -> /sim/cmd_vel con watchdog 300 ms, rampa y ARM/ESTOP como el firmware.",
+    "/sim/joint_states -> /wheel_ticks cuantizado a 40 flancos/vuelta con el signo del comando; /sim/ultrasonic/* -> /ultrasonic/* (ULTRASOUND, +-inf) con opción degraded:=true (ruido, 5 % de pérdidas, sin eco a > 40°, odometría +-8 %).",
+    "/arm/cmd -> JointPositionController interpolado, /arm/state y /robot/status con versión 'sim'.",
+    "sim.launch.xml (args world, x, y, yaw, rviz; use_sim_time) y test launch_testing: sin /cmd_vel 0,5 s el robot se detiene."
+   ],
+   "depende_de": [
+    "DESC-03",
+    "INF-02"
+   ],
+   "bloqueada_por": [
+    "DESC-03",
+    "INF-02"
+   ],
+   "dias": 1.5,
+   "entregable": "Emulador de firmware y sim.launch.xml.",
+   "criterio": "Un comando levanta Gazebo, emulador y RViz; con teleop el robot recorre el mundo de prueba; al cortar el teleop frena en < 0,3 s; /wheel_ticks y /ultrasonic/* cumplen el contrato.",
+   "rama": "feature/SIM-01-emulador-teleop",
+   "archivos": [
+    "ros2_ws/src/caid_gazebo/caid_gazebo/sim_fw_emulator.py",
+    "ros2_ws/src/caid_bringup/launch/sim.launch.xml"
+   ],
+   "documentar_en": "memoria 09-simulacion.md (paridad simulación-robot)",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "SIM-02",
+   "columna": "SIM Simulacion",
+   "orden": 2,
+   "titulo": "Odometría, paredes y freno en simulación",
+   "para_que": "Junta los nodos base con el emulador: punto de partida común de las rebanadas de navegación y de 'ver y agarrar'. No se fusiona con SIM-01 para que el teleop de H1 no espere a NAV-03.",
+   "microtareas": [
+    "Sumar base.launch.xml a sim.launch.xml; el teleop pasa a /cmd_vel/teleop.",
+    "Comparar /odom con /sim/ground_truth en un cuadrado de 1 m.",
+    "RViz con frame odom, /walls como marcadores e imagen de cámara.",
+    "Freno frontal: avanzar contra una pared con teleop se detiene a la distancia configurada."
+   ],
+   "depende_de": [
+    "SIM-01",
+    "NAV-03"
+   ],
+   "bloqueada_por": [
+    "NAV-03"
+   ],
+   "dias": 0.5,
+   "entregable": "Simulación con odometría desde ticks, /walls y compuerta.",
+   "criterio": "Error de cierre del cuadrado < 5 cm; la compuerta frena sin contacto 10 de 10; matar range_filter frena en < 0,3 s.",
+   "rama": "feature/SIM-02-odom-paredes-sim",
+   "archivos": [
+    "ros2_ws/src/caid_bringup/launch/sim.launch.xml",
+    "ros2_ws/src/caid_bringup/rviz/"
+   ],
+   "documentar_en": "docs/pruebas/H2.md y memoria 09-simulacion.md",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "SIM-03",
+   "columna": "SIM Simulacion",
+   "orden": 3,
+   "titulo": "Pasillo, giros y U en simulación",
+   "para_que": "El lead pidió una base simple y robusta antes del mapa: seguir el pasillo y girar sin tocar paredes en laberintos de distintas medidas. Se portan las secuencias del repo previo corrigiendo B2, B3, B5.",
+   "microtareas": [
+    "maze_navigator con timer de 20 Hz, watchdog de datos viejos, estado WAIT_INPUTS y timeouts en segundos; pasillo con core/corridor.py con ganancias recalculadas para la velocidad real.",
+    "Primitivas: avance previo compensando x_s, giro a cardinal +-90° con realineación por Δd/Δs, U como 2 x 90° sin marcha atrás a ciegas, debounce por distancia.",
+    "Modos ENTER_MAZE y FOLLOW_RIGHT (respaldo simple).",
+    "Escenarios en legacy_maze2 y en la variante de 0,30 m con degraded:=true contando contactos con /sim/contacts."
+   ],
+   "depende_de": [
+    "SIM-02",
+    "DESC-04"
+   ],
+   "bloqueada_por": [
+    "DESC-04"
+   ],
+   "dias": 1.5,
+   "entregable": "maze_navigator con pasillo, giros y U.",
+   "criterio": "20 de 20 giros y 5 min de recorrido sin contacto en legacy_maze2 y en la variante de 0,30 m; todos los estados tienen timeout.",
+   "rama": "feature/SIM-03-pasillo-giros",
+   "archivos": [
+    "ros2_ws/src/caid_navigation/caid_navigation/maze_navigator.py",
+    "ros2_ws/src/caid_navigation/caid_navigation/behaviors/"
+   ],
+   "documentar_en": "memoria 06-navegacion-y-mapeo.md (comportamientos y primitivas)",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "SIM-04",
+   "columna": "SIM Simulacion",
+   "orden": 4,
+   "titulo": "Detección de intersecciones y acción /nav/navigate",
+   "para_que": "El mapa y la exploración necesitan eventos de nodo confiables y una acción con modos. Se separa de SIM-03 para mantener tareas de <= 2 días.",
+   "microtareas": [
+    "junction_detector: eventos JUNCTION, DEAD_END, OPEN_AREA y CORRIDOR_END en /nav/events con salidas libres, rumbo k·90° y largo desde el último nodo.",
+    "Acción /nav/navigate con ENTER_MAZE y FOLLOW_RIGHT y stop_on (CUBE_SEEN, DEPOSIT_SEEN).",
+    "Grabar bags de /nav/events para que SIM-05 pueda arrancar con eventos grabados.",
+    "Escenarios con degraded:=true en legacy_maze2 y la zona abierta."
+   ],
+   "depende_de": [
+    "SIM-03"
+   ],
+   "bloqueada_por": [],
+   "dias": 1.5,
+   "entregable": "junction_detector y acción /nav/navigate.",
+   "criterio": ">= 95 % de las intersecciones con el tipo correcto y sin eventos falsos en pasillos rectos; la acción cancela y retoma en la misma arista.",
+   "rama": "feature/SIM-04-intersecciones-navigate",
+   "archivos": [
+    "ros2_ws/src/caid_navigation/caid_navigation/junction_detector.py",
+    "ros2_ws/src/caid_navigation/caid_navigation/maze_navigator.py"
+   ],
+   "documentar_en": "memoria 06-navegacion-y-mapeo.md (intersecciones)",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "SIM-05",
+   "columna": "SIM Simulacion",
+   "orden": 5,
+   "titulo": "Mapa topológico en línea y localizador en simulación",
+   "para_que": "Lleva el grafo de NAV-04 a datos reales de simulación (odometría con deriva y eventos ruidosos) antes de confiarle la misión.",
+   "microtareas": [
+    "Nodo topo_map: crea nodos y aristas desde /nav/events y /odom con core/topo_graph.py; publica /nav/topo_map y /nav/markers.",
+    "Localizador: TF map->odom con ajuste de rumbo a k·90° contra pared válida y fusión de nodos conocidos.",
+    "Anotar cubos y depósitos vistos en el nodo o arista más cercano.",
+    "Recorrido FOLLOW_RIGHT en legacy_maze2 y comparación automática del grafo con la grilla."
+   ],
+   "depende_de": [
+    "SIM-04",
+    "NAV-04"
+   ],
+   "bloqueada_por": [
+    "NAV-04"
+   ],
+   "dias": 1,
+   "entregable": "Nodo topo_map con localizador y visualización en RViz.",
+   "criterio": "Tras recorrer legacy_maze2 el grafo tiene los nodos y aristas esperados y el rumbo de map no deriva más de 5°.",
+   "rama": "feature/SIM-05-mapa-en-linea",
+   "archivos": [
+    "ros2_ws/src/caid_navigation/caid_navigation/topo_map_node.py"
+   ],
+   "documentar_en": "memoria 06-navegacion-y-mapeo.md (mapa en línea y localización)",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "SIM-06",
+   "columna": "SIM Simulacion",
+   "orden": 6,
+   "titulo": "Exploración Trémaux con islas y regreso por el camino más corto",
+   "para_que": "Demuestra en simulación lo que el reglamento exige (cualquier laberinto, con islas, sin mapa precargado) y lo que pidió el lead: mapear una vez y volver rápido.",
+   "microtareas": [
+    "Modo EXPLORE de /nav/navigate con core/explorer.py; modos GOTO_NODE y RETURN_START con Dijkstra.",
+    "BOUNDARY y OPEN_AREA según NAV-05; obstáculo en el pasillo = arista BLOCKED y replanificación.",
+    "Registro por corrida (distancia, tiempo, nodos, contactos) en CSV.",
+    "Pruebas en legacy_maze2, la variante de 0,30 m, 2 aleatorios con islas y la zona abierta, con degraded:=true."
+   ],
+   "depende_de": [
+    "SIM-05",
+    "NAV-05"
+   ],
+   "bloqueada_por": [
+    "NAV-05"
+   ],
+   "dias": 1,
+   "entregable": "Exploración Trémaux y regreso por camino más corto en simulación, con CSV de corridas.",
+   "criterio": "En los 4 mundos explora todo con 0 contactos y sin salir por BOUNDARY; en legacy_maze2 vuelve por el camino más corto (44 celdas = 19,8 m +- 5 %); en la zona abierta encuentra el cubo central y el depósito del rincón.",
+   "rama": "feature/SIM-06-exploracion-tremaux",
+   "archivos": [
+    "ros2_ws/src/caid_navigation/caid_navigation/maze_navigator.py",
+    "docs/pruebas/corridas.csv"
+   ],
+   "documentar_en": "memoria 06-navegacion-y-mapeo.md y 10-pruebas-y-resultados.md (simulación)",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "VIS-01",
+   "columna": "VIS Ver y agarrar",
+   "orden": 1,
+   "titulo": "Ver y acercarse a un cubo en simulación",
+   "para_que": "Prueba juntos cámara simulada, detector, TF con pan, compuerta de velocidad y odometría, antes de que existan el mapa o la misión.",
+   "microtareas": [
+    "visual_approach: rumbo del cubo -> w y distancia en el piso -> v por /cmd_vel/manip con /safety/mode = MANIP; se detiene a la distancia de pre-agarre con el cubo en (u*, v*) +- 12 px.",
+    "Barrido con camera_scanner si no hay cubo; readquisición si se pierde > 1 s; abandono a los 10 s.",
+    "Escenarios con el cubo a 0,3-1,0 m y +-45° en arena abierta y en pasillo (mundos de DESC-04)."
+   ],
+   "depende_de": [
+    "SIM-02",
+    "PER-04",
+    "MAN-03",
+    "DESC-04"
+   ],
+   "bloqueada_por": [
+    "SIM-02",
+    "PER-04",
+    "MAN-03",
+    "DESC-04"
+   ],
+   "dias": 1,
+   "entregable": "visual_approach y escenarios de aproximación.",
+   "criterio": "En 8 de 10 escenarios termina con el cubo a la distancia de pre-agarre +- 1 cm y centrado +- 5 mm, sin tocar paredes.",
+   "rama": "feature/VIS-01-ver-y-acercarse",
+   "archivos": [
+    "ros2_ws/src/caid_manipulation/caid_manipulation/visual_approach.py",
+    "ros2_ws/src/caid_gazebo/mazes/"
+   ],
+   "documentar_en": "memoria 07-manipulacion.md (aproximación visual)",
+   "hito": "H2",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "VIS-02",
+   "columna": "VIS Ver y agarrar",
+   "orden": 2,
+   "titulo": "Agarrar al ver en simulación",
+   "para_que": "Junta percepción, aproximación y brazo como los usa la misión, con un agarre simulado confiable.",
+   "microtareas": [
+    "Un DetachableJoint por cubo y nodo grasp_oracle: attach cuando gripper_tcp está a < 1-2 cm del cubo con la pinza cerrada (si falla, teletransporte con set_pose).",
+    "Encadenar visual_approach con /manipulation/pick y verificación por imagen (u oráculo si PER-05 no está en dev).",
+    "Escenarios con 10 cubos en posiciones alcanzables al azar."
+   ],
+   "depende_de": [
+    "VIS-01",
+    "MAN-04"
+   ],
+   "bloqueada_por": [
+    "MAN-04"
+   ],
+   "dias": 1,
+   "entregable": "Agarre simulado y secuencia ver -> acercarse -> agarrar.",
+   "criterio": ">= 8 de 10 agarres; cada falla devuelve su motivo; RViz y Gazebo muestran la misma pose del brazo.",
+   "rama": "feature/VIS-02-agarrar-al-ver",
+   "archivos": [
+    "ros2_ws/src/caid_gazebo/caid_gazebo/grasp_oracle.py",
+    "ros2_ws/src/caid_description/urdf/gazebo.xacro"
+   ],
+   "documentar_en": "memoria 07-manipulacion.md y 09-simulacion.md",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "VIS-03",
+   "columna": "VIS Ver y agarrar",
+   "orden": 3,
+   "titulo": "Depositar en el depósito correcto en simulación",
+   "para_que": "La precisión del depósito y la clasificación correcta se puntúan aparte; hay que medirlas antes de integrarlas en la misión.",
+   "microtareas": [
+    "Aproximación al depósito con /perception/deposits (centrado y distancia).",
+    "/manipulation/place con verificación contra ground truth de que el cubo quedó completamente dentro.",
+    "Escenarios: cada color con su depósito a 1 m y el depósito equivocado también a la vista."
+   ],
+   "depende_de": [
+    "VIS-02"
+   ],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "Secuencia de depósito y escenarios medidos.",
+   "criterio": ">= 8 de 10 cubos completamente dentro del depósito correcto; ninguno en uno equivocado.",
+   "rama": "feature/VIS-03-depositar-sim",
+   "archivos": [
+    "ros2_ws/src/caid_manipulation/caid_manipulation/",
+    "ros2_ws/src/caid_gazebo/mazes/"
+   ],
+   "documentar_en": "memoria 07-manipulacion.md (depósito y clasificación)",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "MIS-01",
+   "columna": "MIS Mision",
+   "orden": 1,
+   "titulo": "Misión completa en Gazebo",
+   "para_que": "Primera vez que todo funciona junto, en laberintos que no se usaron para ajustar, y se verifica que se cumple la política del lead y no cualquier camino que complete la misión.",
+   "microtareas": [
+    "Reemplazar los mocks de NAV-07 por los servidores reales; barrido con el pan en nodos nuevos; interrumpir EXPLORE al ver un cubo con pinza vacía y retomar en la misma arista.",
+    "Escenarios con 3 cubos, 3 depósitos, islas y una zona abierta, con 5 semillas; métricas por corrida (misión, tiempo, distancia, colisiones, entregas).",
+    "Verificación automática sobre decisions.csv con semilla fija: (a) cubo visto con pinza vacía -> APROXIMAR sin más de un nodo extra; (b) depósito en el mapa -> GOTO_NODE con distancia <= 1,1 x el camino más corto; (c) depósito desconocido -> EXPLORAR_CARGANDO anota sin recoger; (d) 3 entregados -> VOLVER por el más corto.",
+    "Test: el arranque tiene solo el nodo INICIO y no se lee ningún mapa de disco."
+   ],
+   "depende_de": [
+    "SIM-06",
+    "VIS-03",
+    "NAV-07"
+   ],
+   "bloqueada_por": [
+    "SIM-06",
+    "VIS-03",
+    "NAV-07"
+   ],
+   "dias": 1.5,
+   "entregable": "Misión integrada en Gazebo con métricas y verificación de la política.",
+   "criterio": ">= 3 de 5 misiones completas en 2 laberintos con islas no vistos, 0 contactos; los 4 chequeos (a)-(d) y el de mapa vacío pasan.",
+   "rama": "feature/MIS-01-mision-gazebo",
+   "archivos": [
+    "ros2_ws/src/caid_mission/",
+    "ros2_ws/src/caid_bringup/launch/"
+   ],
+   "documentar_en": "memoria 08-mision.md (integración) y 10-pruebas-y-resultados.md",
+   "hito": "H4",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "MIS-02",
+   "columna": "MIS Mision",
+   "orden": 2,
+   "titulo": "Flechas como aceleradores de la exploración",
+   "para_que": "Reconocer e interpretar flechas se evalúa y reduce el tiempo. Se suman sobre una misión que ya funciona sin ellas, así nunca la rompen.",
+   "microtareas": [
+    "arrow_interpreter: asocia cada flecha confirmada a la arista o nodo y publica ARROW_ASSOCIATED; barrido con el pan en cada intersección antes de decidir.",
+    "Enchufar prioridades de NAV-06 (dirección, tramos, color en bifurcaciones); decisions.csv con la flecha que motivó cada giro.",
+    "Comparar tiempo con y sin flechas en 3 mundos, y con 10 % de flechas invertidas."
+   ],
+   "depende_de": [
+    "MIS-01"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "arrow_interpreter, decisions.csv y comparación con y sin flechas.",
+   "criterio": "Con flechas, la distancia al primer cubo baja >= 20 % en los 3 mundos (o se documenta por qué no); con 10 % de flechas invertidas la misión se completa igual; >= 90 % de las flechas confirmadas quedan asociadas a la arista correcta.",
+   "rama": "feature/MIS-02-flechas-aceleradores",
+   "archivos": [
+    "ros2_ws/src/caid_navigation/caid_navigation/arrow_interpreter.py",
+    "ros2_ws/src/caid_mission/"
+   ],
+   "documentar_en": "memoria 06-navegacion-y-mapeo.md (uso de flechas) y 08-mision.md",
+   "hito": "H4",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "MIS-03",
+   "columna": "MIS Mision",
+   "orden": 3,
+   "titulo": "Lanzador de competencia, registro por ronda y vista del jurado",
+   "para_que": "En competencia el operador solo inicia el sistema desde la PC. Un comando levanta todo, sin teleop, graba la ronda y muestra al jurado qué entiende el robot.",
+   "microtareas": [
+    "competition.launch.xml con sim:=true|false y network:=cam_ap|router, sin teleop; pytest sobre el XML.",
+    "Al arrancar, verificar versiones de firmware, enlace y batería; /mission/start es la única acción humana.",
+    "Grabación por ronda (rosbag2 mcap sin imágenes crudas, decisions.csv, runs.csv) en ~/caid_runs/<fecha>_<fase>_<ronda>/.",
+    "RViz 'vista del jurado': mapa, robot, detecciones, flechas interpretadas y estado."
+   ],
+   "depende_de": [
+    "MIS-02"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "competition.launch.xml, perfil de grabación y vista del jurado.",
+   "criterio": "'ros2 launch caid_bringup competition.launch.xml sim:=true' corre una misión completa con un solo /mission/start y deja la carpeta de la ronda con bag y CSV.",
+   "rama": "feature/MIS-03-lanzador-competencia",
+   "archivos": [
+    "ros2_ws/src/caid_bringup/launch/competition.launch.xml",
+    "ros2_ws/src/caid_bringup/rviz/jurado.rviz",
+    "tools/bags/record.sh"
+   ],
+   "documentar_en": "docs/runbooks/competencia.md y memoria 08-mision.md (operación)",
+   "hito": "H5",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "MIS-04",
+   "columna": "MIS Mision",
+   "orden": 4,
+   "titulo": "Recuperación autónoma y presupuesto de tiempo",
+   "para_que": "Un reinicio del MCU por caída de tensión, un atasco o un cubo perdido no pueden terminar la ronda ni exigir intervención humana, que está penalizada.",
+   "microtareas": [
+    "RECUPERAR ante reinicio del MCU (baja el uptime): frenar, esperar enlace, re-ARM, re-anclar en el nodo más cercano; también con el cubo cargado (re-ARM, verificar agarre, volver a LLEVAR).",
+    "Atasco: retroceso acotado, giro y arista BLOCKED. Cubo caído en LLEVAR: volver a buscarlo en la última posición.",
+    "Presupuesto de tiempo con el máximo de ronda como parámetro; fallas inyectadas en Gazebo (matar el emulador 2 s, bloquear pasillo, detach del cubo)."
+   ],
+   "depende_de": [
+    "MIS-03"
+   ],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "Estado RECUPERAR en mission_manager con pruebas.",
+   "criterio": "Cada uno de los 4 casos provocados (incluido reinicio con cubo cargado) se recupera solo en Gazebo, 3 de 3 veces.",
+   "rama": "feature/MIS-04-recuperacion",
+   "archivos": [
+    "ros2_ws/src/caid_mission/"
+   ],
+   "documentar_en": "memoria 08-mision.md (recuperación)",
+   "hito": "H5",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "MIS-05",
+   "columna": "MIS Mision",
+   "orden": 5,
+   "titulo": "Regresión de escenarios y métricas para la memoria",
+   "para_que": "La adaptación a distintas configuraciones se evalúa; una regresión automática evita que un ajuste rompa otro laberinto y produce los números de la memoria.",
+   "microtareas": [
+    "tools/regression/run_scenarios.sh: N mundos x M semillas sin interfaz (gz sim -s) con timeout.",
+    "Métricas: misión completa, cubos entregados, contactos, salidas del circuito y tiempo; modo degradado.",
+    "CSV acumulado en docs/pruebas/regresion.csv, tabla y gráfico para la memoria; la corrida es casilla del PR de dev a main."
+   ],
+   "depende_de": [
+    "MIS-04"
+   ],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "Script de regresión y tabla de resultados.",
+   "criterio": "Una corrida de >= 20 misiones genera la tabla sola; la tasa de misión completa en modo degradado es >= 70 % o cada falla tiene su issue priorizado.",
+   "rama": "feature/MIS-05-regresion",
+   "archivos": [
+    "tools/regression/",
+    "docs/pruebas/regresion.csv"
+   ],
+   "documentar_en": "docs/pruebas/regresion.md y memoria 10-pruebas-y-resultados.md",
+   "hito": "H5",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "REAL-01",
+   "columna": "REAL Hardware real",
+   "orden": 1,
+   "titulo": "Teleop de punta a punta en banco: PC -> Wi-Fi -> motor, con video",
+   "para_que": "Primera rebanada con hardware real sin esperar el robot armado: valida agente, red, compuerta de /cmd_vel y video al mismo tiempo.",
+   "microtareas": [
+    "real.launch.xml con network:=router|cam_ap: agente micro-ROS, esp32cam_bridge y base.launch.xml.",
+    "Teleop por /cmd_vel/teleop mueve el motor del banco con el video en rqt_image_view o RViz.",
+    "Cortes provocados (matar agente, matar puente, apagar router) midiendo el tiempo de freno; docs/pruebas/H1.md con video corto."
+   ],
+   "depende_de": [
+    "FW-03",
+    "CAM-02",
+    "NAV-03"
+   ],
+   "bloqueada_por": [
+    "FW-03",
+    "CAM-02",
+    "NAV-03"
+   ],
+   "dias": 0.5,
+   "entregable": "real.launch.xml y prueba de punta a punta en banco.",
+   "criterio": "5 min de teleop con video >= 10 fps sin cortes; freno < 300 ms en los 3 cortes; un solo comando levanta todo.",
+   "rama": "feature/REAL-01-teleop-banco",
+   "archivos": [
+    "ros2_ws/src/caid_bringup/launch/real.launch.xml",
+    "docs/pruebas/H1.md"
+   ],
+   "documentar_en": "docs/pruebas/H1.md y memoria 02-arquitectura.md",
+   "hito": "H1",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "REAL-02",
+   "columna": "REAL Hardware real",
+   "orden": 2,
+   "titulo": "Recepción del robot, cableado final y checklist de conformidad",
+   "para_que": "Con el robot ensamblado hay que dejar el cableado definitivo según el pin map y lo autorizado por escrito, con checklist de conformidad (una modificación no autorizada descalifica). Va antes de las mediciones porque medir exige el robot ya cableado.",
+   "microtareas": [
+    "Verificar contra la BOM que el robot está ensamblado con piezas originales; cerrar el issue G-ROBOT.",
+    "Cablear según pinout.md: tierra en estrella, rama de motores de 20 AWG y conector 5V_ESP separado para programar por USB.",
+    "Agregar solo los pasivos autorizados por escrito en respuestas.md (si no hay respuesta, aplica el supuesto por defecto: nada).",
+    "Checklist en hardware/conformidad.md con fotos (sin sensores extra, solo la red de la CAM, piezas originales).",
+    "Prueba de arranque: 10 encendidos sin tirones de ruedas ni movimientos bruscos de servos."
+   ],
+   "depende_de": [
+    "REAL-01",
+    "FW-04",
+    "INF-01"
+   ],
+   "bloqueada_por": [
+    "FW-04",
+    "INF-01"
+   ],
+   "dias": 1,
+   "entregable": "Robot cableado y checklist de conformidad con fotos.",
+   "criterio": "Checklist completo con fotos; cada pasivo extra tiene respuesta escrita enlazada; arranque limpio 10 de 10.",
+   "rama": "feature/REAL-02-cableado-conformidad",
+   "archivos": [
+    "hardware/conformidad.md",
+    "hardware/electronica/pinout.md"
+   ],
+   "documentar_en": "hardware/conformidad.md y memoria 03-hardware.md (conexionado)",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea",
+    "necesita-robot",
+    "espera-externa"
+   ]
+  },
+  {
+   "id": "REAL-03",
+   "columna": "REAL Hardware real",
+   "orden": 3,
+   "titulo": "Mediciones de alimentación y puesta en marcha",
+   "para_que": "Las mediciones de corriente y caída del 5 V deciden la rampa, el tope de giro y si alcanza el módulo de baterías. Solo se pueden hacer con el robot armado y en el piso, antes de cualquier prueba autónoma.",
+   "microtareas": [
+    "Corrientes con tester en serie con el 5 V del driver: crucero, giro en el lugar, arranque con y sin rampa y rueda trabada (<= 2 s).",
+    "Caída del 5 V en la ESP32-CAM durante arranques y servos (objetivo >= 4,5 V, sin reinicios); temperatura del L9110S tras 2 min de giros.",
+    "Módulo de baterías: chips, paralelo, llave HOLD/NORMAL, hasta qué corriente sostiene 5 V; celdas: capacidad y tensión.",
+    "Si /robot/status informa BROWNOUT o battery_mv bajo durante una prueba, se aborta y se anota. Ajustar config.h y crear el tag fw-esp32-v0.2.0."
+   ],
+   "depende_de": [
+    "REAL-02"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "mediciones.md y alimentacion.md completos y firmware fw-esp32-v0.2.0.",
+   "criterio": "2 min de marcha con giros, 10 arranques y 10 giros seguidos sin reiniciar el MCU (esp_reset_reason sin BROWNOUT); mediciones con robot en mediciones.md.",
+   "rama": "feature/REAL-03-mediciones-alimentacion",
+   "archivos": [
+    "hardware/electronica/mediciones.md",
+    "hardware/electronica/alimentacion.md",
+    "firmware/esp32_motion/include/config.h"
+   ],
+   "documentar_en": "hardware/electronica/mediciones.md, alimentacion.md y memoria 03-hardware.md (alimentación)",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea",
+    "necesita-robot"
+   ]
+  },
+  {
+   "id": "REAL-04",
+   "columna": "REAL Hardware real",
+   "orden": 4,
+   "titulo": "Calibración de movimiento, odometría y modelo medido",
+   "para_que": "La navegación y el mapa dependen de que el robot avance y gire lo que se le pide. En un 4WD con motores TT el giro en el lugar patina, así que la trocha efectiva se mide. También cierra el caracterizado 3D ajustando el URDF a las medidas reales.",
+   "microtareas": [
+    "Tabla duty-velocidad por lado y duty mínima de arranque (prealimentación, sin lazo PI); mm por flanco con 3 m en recta, 3 repeticiones.",
+    "b_eff: 4 giros de 360° por sentido sobre el piso de la maqueta; cuadrado de 1 m con error de cierre.",
+    "Pesar el robot y medir con calibre la pose real de HC-SR04, pan, cámara y base del brazo; actualizar dimensions.yaml ('fuente: medido') y regenerar el URDF.",
+    "Cargar valores en config/real/robot.yaml."
+   ],
+   "depende_de": [
+    "REAL-03",
+    "DESC-02"
+   ],
+   "bloqueada_por": [
+    "DESC-02"
+   ],
+   "dias": 1,
+   "entregable": "Parámetros de odometría y control calibrados y dimensions.yaml medido.",
+   "criterio": "Recta de 2 m con error < 3 cm, giro de 360° con error < 5°, cuadrado de 1 m con cierre < 10 cm; dimensions.yaml sin 'provisorio' en sensores, cámara ni ruedas; diferencia modelo-medición < 5 mm.",
+   "rama": "feature/REAL-04-calibracion-movimiento",
+   "archivos": [
+    "ros2_ws/src/caid_bringup/config/real/robot.yaml",
+    "hardware/cad/dimensions.yaml",
+    "docs/pruebas/odometria.md"
+   ],
+   "documentar_en": "docs/pruebas/odometria.md y memoria 06 (odometría) y 09-simulacion.md",
+   "hito": "H4",
+   "etiquetas": [
+    "tarea",
+    "necesita-robot"
+   ]
+  },
+  {
+   "id": "REAL-05",
+   "columna": "REAL Hardware real",
+   "orden": 5,
+   "titulo": "Teleop en el robot por la red de competencia y extrínseca de la cámara",
+   "para_que": "Primera prueba del sistema completo en la topología real (ESP32 y PC al AP de la ESP32-CAM) y confirmación de que un cubo se proyecta al piso donde realmente está.",
+   "microtareas": [
+    "Perfil network:=cam_ap, teleop de 5 min con video y odometría en RViz grabando un bag.",
+    "Pruebas de seguridad, 5 veces cada una: matar el agente, apagar el AP y cerrar el teleop; frenar en < 300 ms.",
+    "Medir la pose real de la cámara y validar la proyección con un cubo a 0,3, 0,5 y 0,8 m; verificar el TF moviendo el pan."
+   ],
+   "depende_de": [
+    "REAL-04",
+    "CAM-04",
+    "CAM-03"
+   ],
+   "bloqueada_por": [
+    "CAM-04",
+    "CAM-03"
+   ],
+   "dias": 0.5,
+   "entregable": "Bag de teleop y resultados en docs/pruebas/real.md.",
+   "criterio": "5 min sin desconexiones ni reinicios con video >= 10 fps; 3 pruebas de seguridad 5 de 5; error de proyección < 1,5 cm a 0,5 m.",
+   "rama": "feature/REAL-05-teleop-red-competencia",
+   "archivos": [
+    "docs/pruebas/real.md",
+    "hardware/cad/dimensions.yaml"
+   ],
+   "documentar_en": "docs/pruebas/real.md y memoria 04 (comunicación) y 05 (extrínseca)",
+   "hito": "H4",
+   "etiquetas": [
+    "tarea",
+    "necesita-robot"
+   ]
+  },
+  {
+   "id": "REAL-06",
+   "columna": "REAL Hardware real",
+   "orden": 6,
+   "titulo": "Ver, acercarse, agarrar y depositar un cubo real",
+   "para_que": "La manipulación real es el mayor riesgo técnico (SG90 con holgura, cubo de 20 mm, error de proyección). Se prueba antes que la exploración, con el robot ya calibrado, porque no depende del mapa.",
+   "microtareas": [
+    "Repetir los escenarios de VIS-01, VIS-02 y VIS-03 en la maqueta con cubos impresos; ajustar pasos de aproximación, tolerancia en píxeles y distancia de pre-agarre.",
+    "10 intentos desde 0,5 m con el cubo en posiciones distintas (0,2-0,6 m, hasta +-30°) y depósito a 1 m.",
+    "Verificación de agarre real con grasp_verifier (19 de 20 casos).",
+    "Medir la caída del 5 V durante el agarre con un servo por vez; abortar la prueba ante BROWNOUT; grabar bags."
+   ],
+   "depende_de": [
+    "REAL-05",
+    "VIS-03",
+    "MAN-05",
+    "PER-05"
+   ],
+   "bloqueada_por": [
+    "VIS-03",
+    "MAN-05",
+    "PER-05"
+   ],
+   "dias": 1.5,
+   "entregable": "Agarre y depósito reales medidos, con bags.",
+   "criterio": ">= 7 de 10 cubos agarrados y >= 6 de 10 completamente dentro del depósito correcto, sin reinicios del MCU.",
+   "rama": "feature/REAL-06-agarre-real",
+   "archivos": [
+    "ros2_ws/src/caid_manipulation/config/",
+    "ros2_ws/src/caid_bringup/config/real/",
+    "docs/pruebas/real.md"
+   ],
+   "documentar_en": "memoria 07-manipulacion.md (resultados reales)",
+   "hito": "H4",
+   "etiquetas": [
+    "tarea",
+    "necesita-robot"
+   ]
+  },
+  {
+   "id": "REAL-07",
+   "columna": "REAL Hardware real",
+   "orden": 7,
+   "titulo": "Navegación base, exploración y mapa en la maqueta",
+   "para_que": "Lleva la base de navegación y el mapa al robot real, donde aparecen ecos perdidos, patinaje y latencia que la simulación no muestra, y prueba que los cierres de lazo alrededor de la isla se sostienen.",
+   "microtareas": [
+    "Medir distancia leída contra la real (5-100 cm), ángulo máximo de pared antes de perder el eco y lecturas en esquinas; sumar los CSV a los tests de NAV-02 y llevar las diferencias al modo degraded del emulador.",
+    "Mismo maze_navigator con parámetros en config/real/nav.yaml; 20 giros (izquierda, derecha, U) y 3 vueltas contando contactos.",
+    "EXPLORE con isla y seguir /nav/markers en RViz; RETURN_START hasta quedar completamente dentro de la zona de inicio; repetir con la configuración B sin tocar parámetros.",
+    "Registrar en corridas.csv distancia, tiempo, nodos y errores de fusión; video cenital y bags."
+   ],
+   "depende_de": [
+    "REAL-06",
+    "SIM-06",
+    "INF-07"
+   ],
+   "bloqueada_por": [
+    "SIM-06",
+    "INF-07"
+   ],
+   "dias": 2,
+   "entregable": "Parámetros reales de navegación, exploración documentada en 2 configuraciones, CSV, video y bags.",
+   "criterio": ">= 18 de 20 giros sin contacto, 3 vueltas sin choques, >= 95 % de intersecciones bien detectadas; 3 de 3 exploraciones completas con retorno al inicio y sin choques en la configuración A (y una en la B).",
+   "rama": "feature/REAL-07-navegacion-exploracion-maqueta",
+   "archivos": [
+    "ros2_ws/src/caid_bringup/config/real/",
+    "ros2_ws/src/caid_navigation/test/data/",
+    "docs/pruebas/corridas.csv"
+   ],
+   "documentar_en": "memoria 06-navegacion-y-mapeo.md (resultados reales)",
+   "hito": "H5",
+   "etiquetas": [
+    "tarea",
+    "necesita-robot"
+   ]
+  },
+  {
+   "id": "REAL-08",
+   "columna": "REAL Hardware real",
+   "orden": 8,
+   "titulo": "Misión completa en la maqueta con configuraciones cambiadas",
+   "para_que": "Es la demostración que se evalúa: el robot resuelve solo un laberinto que no conoce, con flechas, 3 cubos y regreso, y la configuración cambia entre fases.",
+   "microtareas": [
+    "competition.launch.xml con sim:=false y network:=cam_ap, con 3 cubos, 3 depósitos y flechas; primero un ciclo cubo -> depósito y luego la misión de 3 cubos con retorno.",
+    "5 corridas cambiando paredes, cubos y flechas (reubicadas e inclinadas +-30°) con 2 niveles de luz; recalibrar color en < 10 min sin tocar código.",
+    "Medir lectura de flechas en decisions.csv; ajustar solo config/real y config/competition; registrar cada corrida en runs.csv."
+   ],
+   "depende_de": [
+    "REAL-07",
+    "MIS-03"
+   ],
+   "bloqueada_por": [
+    "MIS-03"
+   ],
+   "dias": 1.5,
+   "entregable": "Registro de corridas reales y parámetros de competencia.",
+   "criterio": ">= 1 misión completa (3 cubos bien depositados y retorno) y 3 de 5 corridas con avance documentado, sin choques, o el máximo avance con sus causas; >= 80 % de las flechas de la maqueta bien leídas (dirección, color, largo), con tabla en la memoria.",
+   "rama": "feature/REAL-08-mision-maqueta",
+   "archivos": [
+    "ros2_ws/src/caid_bringup/config/competition/",
+    "docs/pruebas/runs.csv"
+   ],
+   "documentar_en": "memoria 10-pruebas-y-resultados.md (resultados reales y adaptación a configuraciones)",
+   "hito": "H5",
+   "etiquetas": [
+    "tarea",
+    "necesita-robot"
+   ]
+  },
+  {
+   "id": "CIE-01",
+   "columna": "CIE Cierre",
+   "orden": 1,
+   "titulo": "Memoria técnica v1 (simulación y banco)",
+   "para_que": "Tener entregable una versión temprana por si el plazo oficial es anterior y detectar qué secciones no tienen datos. Contiene solo resultados de simulación y banco; los de misión y robot real entran en CIE-05.",
+   "microtareas": [
+    "Revisar que cada tarea cerrada haya escrito en su sección y listar faltantes en un issue.",
+    "Completar figuras: arquitectura, árbol TF, pipeline de flechas, grafo topológico y estados de misión.",
+    "Sección de innovación: mapa topológico en línea con Trémaux por aristas y política oportunista, con los benchmarks de NAV-05 y NAV-06.",
+    "Revisión cruzada de 2 personas (claridad, ortografía, cada número con fuente), PDF y tag memoria-v1."
+   ],
+   "depende_de": [
+    "INF-06",
+    "SIM-03"
+   ],
+   "bloqueada_por": [
+    "INF-06",
+    "SIM-03"
+   ],
+   "dias": 1,
+   "entregable": "docs/memoria/build/memoria-v1.pdf y tag memoria-v1.",
+   "criterio": "PDF con las 10 secciones en <= 20 páginas; cada afirmación técnica remite a una medición, una prueba o un ADR; secciones 08 y 10 marcadas 'pendiente de resultados'.",
+   "rama": "feature/CIE-01-memoria-v1",
+   "archivos": [
+    "docs/memoria/"
+   ],
+   "documentar_en": "docs/memoria/secciones/ (todas)",
+   "hito": "H3",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "CIE-02",
+   "columna": "CIE Cierre",
+   "orden": 2,
+   "titulo": "Presentación oral de 10 minutos (borrador con videos)",
+   "para_que": "La presentación vale 15 puntos y el tiempo es estricto: hay que ensayarla con cronómetro y tener videos de respaldo por si la demo en vivo falla.",
+   "microtareas": [
+    "Guion de 10 min: problema, arquitectura, percepción, navegación (Trémaux, mapa y flechas), manipulación, resultados e innovación.",
+    "Diapositivas (<= 12) con las mismas figuras de la memoria.",
+    "Videos de 20-30 s por subsistema guardados fuera del repo, con índice en docs/media/index.md.",
+    "Primer ensayo cronometrado con preguntas del resto del equipo."
+   ],
+   "depende_de": [
+    "CIE-01"
+   ],
+   "bloqueada_por": [],
+   "dias": 1,
+   "entregable": "Diapositivas, guion y videos indexados.",
+   "criterio": "Dura <= 10 min y se ensayó 1 vez con preguntas; videos indexados.",
+   "rama": "feature/CIE-02-presentacion",
+   "archivos": [
+    "docs/presentacion/",
+    "docs/media/index.md"
+   ],
+   "documentar_en": "docs/presentacion/",
+   "hito": "H4",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "CIE-03",
+   "columna": "CIE Cierre",
+   "orden": 3,
+   "titulo": "Kit de inspección y runbook del día de competencia",
+   "para_que": "La inspección revisa hardware, comunicaciones, sensores y versión de firmware; entre fases cambia la configuración. Con un procedimiento escrito no se improvisa bajo presión.",
+   "microtareas": [
+    "tools/inspection/check.sh y expected_versions.yaml: versiones de las dos placas, tópicos vivos, enlace, fps y batería; falla si fw_version o /status de la CAM no coinciden.",
+    "docs/runbooks/competencia.md: arranque sin internet, cambio de fase (color y red), carga de baterías (pares apareados) y qué hacer ante un reinicio.",
+    "docs/runbooks/inspeccion.md y lista de valija (celdas apareadas, repuestos, ESP32 y CAM ya flasheadas, PC de respaldo)."
+   ],
+   "depende_de": [
+    "CIE-02",
+    "MIS-03",
+    "FW-04",
+    "CAM-02"
+   ],
+   "bloqueada_por": [
+    "MIS-03",
+    "FW-04",
+    "CAM-02"
+   ],
+   "dias": 0.5,
+   "entregable": "check.sh, runbooks y lista de valija.",
+   "criterio": "El chequeo tarda < 60 s, detecta un sensor desconectado y da FALLA con un firmware viejo cargado a propósito; alguien que no escribió los runbooks arrancó la misión desde cero en < 10 min.",
+   "rama": "feature/CIE-03-kit-inspeccion",
+   "archivos": [
+    "tools/inspection/",
+    "docs/runbooks/"
+   ],
+   "documentar_en": "docs/runbooks/competencia.md e inspeccion.md y memoria 04 (inspección)",
+   "hito": "H5",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "CIE-04",
+   "columna": "CIE Cierre",
+   "orden": 4,
+   "titulo": "Congelamiento: parámetros, firmware 1.0.0 y release candidate",
+   "para_que": "Con los resultados reales hay que congelar una versión para no romper lo que funciona.",
+   "microtareas": [
+    "Congelar parámetros en caid_bringup/config/competition/ y versiones fw-esp32-v1.0.0 y fw-cam-v1.0.0.",
+    "Checklist de seguridad del firmware en el robot: watchdog, ESTOP, reinicio de la ESP32 en marcha (arranca en DISARM) y corte del AP durante 30 s.",
+    "Regresión de Gazebo (MIS-05) en verde, merge de dev a main y tag v0.9.0-rc1; desde acá solo ramas fix/."
+   ],
+   "depende_de": [
+    "CIE-03",
+    "MIS-05",
+    "REAL-06"
+   ],
+   "bloqueada_por": [
+    "MIS-05",
+    "REAL-06"
+   ],
+   "dias": 0.5,
+   "entregable": "Configuración congelada, firmware 1.0.0 y tag v0.9.0-rc1.",
+   "criterio": "Checklist de seguridad 10/10; tags publicados; las versiones coinciden con expected_versions.yaml e inspeccion.md.",
+   "rama": "feature/CIE-04-congelamiento",
+   "archivos": [
+    "ros2_ws/src/caid_bringup/config/competition/",
+    "docs/runbooks/inspeccion.md"
+   ],
+   "documentar_en": "docs/runbooks/inspeccion.md y memoria 04 (versión de firmware)",
+   "hito": "H5",
+   "etiquetas": [
+    "tarea",
+    "necesita-robot"
+   ]
+  },
+  {
+   "id": "CIE-05",
+   "columna": "CIE Cierre",
+   "orden": 5,
+   "titulo": "Memoria final y entrega",
+   "para_que": "Cerrar la memoria con los resultados reales y no con estimaciones, entregarla a tiempo y guardar el acuse.",
+   "microtareas": [
+    "Actualizar 10-pruebas-y-resultados con REAL-08 y MIS-05; completar secciones 06, 07 y 08 con los parámetros congelados.",
+    "Revisión final: <= 20 páginas, figuras legibles en blanco y negro, referencias a ADR.",
+    "Entregar por el medio oficial y guardar el acuse en docs/organizacion/acuses/."
+   ],
+   "depende_de": [
+    "CIE-04",
+    "REAL-08"
+   ],
+   "bloqueada_por": [
+    "REAL-08"
+   ],
+   "dias": 0.5,
+   "entregable": "Memoria final en PDF entregada.",
+   "criterio": "PDF final <= 20 páginas entregado con acuse y adjunto a la release v1.0.0.",
+   "rama": "feature/CIE-05-memoria-final",
+   "archivos": [
+    "docs/memoria/",
+    "docs/organizacion/acuses/"
+   ],
+   "documentar_en": "docs/memoria/secciones/ (todas)",
+   "hito": "H5",
+   "etiquetas": [
+    "tarea"
+   ]
+  },
+  {
+   "id": "CIE-06",
+   "columna": "CIE Cierre",
+   "orden": 6,
+   "titulo": "Ensayo general y versión 1.0.0",
+   "para_que": "Ensayar la jornada completa (inspección, rondas, cambio de configuración y presentación) para encontrar los problemas antes de la competencia.",
+   "microtareas": [
+    "Simulacro con reloj: inspección con el kit, arranque desde la PC sin internet, ronda cronometrada, cambio de configuración y segunda ronda con recarga de baterías.",
+    "Checklist de reglas: competition.launch sin teleop, mapa vacío, solo la red de la ESP32-CAM, ningún sensor extra.",
+    "Segundo ensayo cronometrado de la presentación; corregir solo bloqueantes en ramas fix/; PR dev -> main, tag v1.0.0 y release con memoria y videos."
+   ],
+   "depende_de": [
+    "CIE-05"
+   ],
+   "bloqueada_por": [],
+   "dias": 0.5,
+   "entregable": "Ensayo registrado en docs/pruebas/ensayo.md y release v1.0.0.",
+   "criterio": "Ensayo completo sin intervención humana fuera del arranque; la PC de respaldo arranca la misión desde cero en < 10 min; tag v1.0.0 publicado.",
+   "rama": "feature/CIE-06-ensayo-general",
+   "archivos": [
+    "docs/pruebas/ensayo.md"
+   ],
+   "documentar_en": "docs/pruebas/ensayo.md y memoria 10 (lecciones aprendidas)",
+   "hito": "H5",
+   "etiquetas": [
+    "tarea",
+    "necesita-robot"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,79 @@
+# Cotas del robot. Unidades: milímetros, salvo que diga otra cosa.
+# Cada valor lleva una etiqueta al final:
+#   medida      -> medido sobre el robot o sobre un STL
+#   derivada    -> calculada a partir de valores "medida" (la cuenta está en el comentario)
+#   provisorio  -> estimado; hay que medirlo y reemplazarlo
+#
+# Marco de referencia "chasis" (el origen de base_link):
+#   origen = centro de la placa de arriba, sobre su cara SUPERIOR
+#   x+ = hacia adelante, y+ = hacia la izquierda, z+ = hacia arriba
+#   (convención REP-103, la que usa ROS)
+
+placa_acrilico:             # Chasis_Armadillo.stl, se usa dos veces (piso 1 y piso 2)
+  largo_x: 256.0            # medida (bbox del STL: 255.99)
+  ancho_y: 150.0            # medida (bbox del STL: 149.99)
+  espesor: 4.0              # medida
+  separacion_entre_placas: 55.0   # medida (luz libre entre cara superior del piso 1 y cara inferior del piso 2)
+
+rueda:
+  diametro: 67.0            # medida
+  radio: 33.5               # derivada: 67 / 2
+  ancho: 25.0               # medida
+  cantidad: 4               # medida
+
+tren_de_traccion:
+  trocha_exterior: 150.0    # medida: de afuera a afuera de las ruedas de un mismo eje
+  trocha_centro_a_centro: 125.0   # derivada: 150 - 25 (centro de cada rueda a 62.5 del eje longitudinal)
+  ancho_maximo_con_paragolpes: 162.0   # medida
+  # La rueda de adelante es un poco más ancha por el paragolpes.
+  rueda_trasera_desde_borde_trasero: 66.0    # medida (al centro de la rueda)
+  rueda_delantera_desde_borde_frontal: 66.0  # medida (al centro de la rueda)
+  posicion_x_ruedas: [62.0, -62.0]   # derivada: 128 - 66 = 62 (delanteras), -128 + 66 = -62 (traseras)
+  batalla_centro_a_centro: 124.0     # derivada: 62 - (-62). Antes se había estimado ~120; manda la medición de 66 mm
+
+alturas_desde_el_piso:
+  eje_de_rueda: 33.5        # derivada: = radio. La cara inferior del piso 1 está a esta altura
+  cara_superior_piso_1: 37.5    # derivada: 33.5 + 4
+  cara_inferior_piso_2: 92.5    # derivada: 37.5 + 55
+  cara_superior_piso_2: 96.5    # derivada: 92.5 + 4  <- acá está el origen de base_link
+
+# Posiciones en el marco "chasis" (origen: centro de placa, cara superior del piso 2)
+brazo:
+  base_x: -23.0             # medida: 105 mm desde el borde trasero -> -128 + 105
+  base_y: 0.0               # medida: centrado en el ancho (75 de 150)
+  base_z: 0.0               # medida: nace sobre la cara superior del piso 2
+  chequeo: "150 mm desde el frente daría x = -22; difiere 1 mm, dentro de la tolerancia de la medición"
+
+camara:
+  x: 93.0                   # medida: 35 mm desde el frente -> 128 - 35
+  y: 0.0                    # medida: centrada
+  z: 41.0                   # medida: centro de la lente, 41 mm sobre la cara superior del piso 2
+  alturas_desde_el_piso: 137.5   # derivada: 96.5 + 41
+  servo_pan: MG90S
+
+sensores_ultrasonido:       # HC-SR04: un frame por sensor, en el punto medio entre sus dos "ojos"
+  frontal:
+    x: 128.0                # medida: al ras del frente
+    y: 0.0                  # medida: centrado en el ancho
+    z: -27.5                # derivada: centro a 69 mm del piso (33.5 + 4 + 31.5), menos 96.5
+    orientacion: horizontal (ojos lado a lado), mirando a +x
+  lateral_izquierdo:
+    x: 96.0                 # derivada: 128 - 32 (centro de los ojos a 32 mm del frente)
+    y: 75.0                 # medida: en el extremo izquierdo del ancho de 150
+    z: -33.75               # derivada: ojos a 49 y 76.5 del piso -> punto medio 62.75; 62.75 - 96.5
+    orientacion: vertical (un ojo sobre el otro), mirando a +y
+  lateral_derecho:
+    x: 96.0                 # derivada: igual que el izquierdo
+    y: -75.0                # medida: en el extremo derecho
+    z: -33.75               # derivada: igual que el izquierdo
+    orientacion: vertical, mirando a -y
+  separacion_entre_ojos_laterales: 27.5   # derivada: 76.5 - 49
+  ojo_inferior_desde_el_piso: 49.0        # medida
+  ojo_superior_desde_el_piso: 76.5        # medida
+
+servos:
+  modelo: MG90S             # medida. La lista de partes dice SG90: corregirla
+
+cubo:
+  lado: 20.0                # medida (STL Cubo.STL)
+  masa_g: 9.9               # provisorio: PLA macizo; el real depende del relleno
