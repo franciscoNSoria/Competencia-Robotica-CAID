@@ -1,0 +1,136 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="caid_bot">
+
+  <xacro:arg name="dims_file" default="$(find caid_description)/config/dimensions.yaml"/>
+  <xacro:include filename="$(find caid_description)/urdf/inertia.xacro"/>
+
+  <xacro:property name="dim" value="${xacro.load_yaml('$(arg dims_file)')}"/>
+  <xacro:property name="mm" value="0.001"/>
+
+  <xacro:property name="largo" value="${dim['placa_acrilico']['largo_x'] * mm}"/>
+  <xacro:property name="ancho" value="${dim['placa_acrilico']['ancho_y'] * mm}"/>
+  <xacro:property name="h_base" value="${dim['alturas_desde_el_piso']['cara_superior_piso_2'] * mm}"/>
+  <xacro:property name="m_base" value="1.2"/>
+  <xacro:property name="r_rueda" value="${dim['rueda']['radio'] * mm}"/>
+  <xacro:property name="w_rueda" value="${dim['rueda']['ancho'] * mm}"/>
+  <xacro:property name="x_del" value="${dim['tren_de_traccion']['posicion_x_ruedas'][0] * mm}"/>
+  <xacro:property name="x_tras" value="${dim['tren_de_traccion']['posicion_x_ruedas'][1] * mm}"/>
+  <xacro:property name="y_rueda" value="${dim['tren_de_traccion']['trocha_centro_a_centro'] * mm / 2}"/>
+  <xacro:property name="z_eje" value="${r_rueda - h_base}"/>
+  <xacro:property name="m_rueda" value="0.04"/>
+  <xacro:property name="esp" value="${dim['placa_acrilico']['espesor'] * mm}"/>
+  <xacro:property name="sep" value="${dim['placa_acrilico']['separacion_entre_placas'] * mm}"/>
+
+  <!-- Altura de la cara INFERIOR de cada placa, en el marco base_link (el origen está en la
+       cara superior del piso 2). La malla del STL tiene su cara inferior en z=0. -->
+  <xacro:property name="z_piso2" value="${-esp}"/>
+  <xacro:property name="z_piso1" value="${-(esp + sep + esp)}"/>
+  <xacro:property name="z_sobre_p1" value="${-(esp + sep)}"/>   <!-- cara superior del piso 1 -->
+  <xacro:property name="alto_pared" value="0.056"/>
+
+  <!-- Caja envolvente (mm) de las mallas de las paredes: salen de leer los vértices de cada STL.
+       Cada STL tiene su origen en una esquina, por eso hay que desplazarlas a mano. -->
+  <xacro:property name="pf_xmin" value="2.21"/>   <xacro:property name="pf_xmax" value="165.21"/>
+  <xacro:property name="pf_ymin" value="4.60"/>   <xacro:property name="pf_ymax" value="51.47"/>
+  <xacro:property name="pf_zmin" value="0.97"/>
+  <xacro:property name="pt_xmin" value="8.44"/>   <xacro:property name="pt_xmax" value="171.44"/>
+  <xacro:property name="pt_ymin" value="8.46"/>   <xacro:property name="pt_ymax" value="53.44"/>
+  <xacro:property name="pt_zmin" value="0.0"/>
+
+  <material name="acrilico"><color rgba="0.75 0.85 1.0 0.6"/></material>
+  <material name="pla_hueso"><color rgba="0.93 0.91 0.82 1.0"/></material>
+  <material name="goma"><color rgba="0.05 0.05 0.05 1.0"/></material>
+
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${h_base}" rpy="0 0 0"/>
+  </joint>
+
+    <link name="base_link">
+    <!-- Piso 2 (arriba) -->
+    <visual>
+      <origin xyz="0 0 ${z_piso2}" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://caid_description/meshes/chasis_armadillo.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="acrilico"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${z_piso2 + esp/2}" rpy="0 0 0"/>
+      <geometry><box size="${largo} ${ancho} ${esp}"/></geometry>
+    </collision>
+
+    <!-- Piso 1 (abajo) -->
+    <visual>
+      <origin xyz="0 0 ${z_piso1}" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://caid_description/meshes/chasis_armadillo.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="acrilico"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${z_piso1 + esp/2}" rpy="0 0 0"/>
+      <geometry><box size="${largo} ${ancho} ${esp}"/></geometry>
+    </collision>
+
+        <!-- Pared frontal (0-2-10): giro +90° sobre z, cara curva hacia adelante, al ras del borde -->
+    <visual>
+      <origin xyz="${largo/2 + pf_ymin*mm} ${-(pf_xmin + pf_xmax)/2*mm} ${z_sobre_p1 - pf_zmin*mm}" rpy="0 0 ${pi/2}"/>
+      <geometry>
+        <mesh filename="package://caid_description/meshes/pared_frente.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="pla_hueso"/>
+    </visual>
+    <collision>
+      <origin xyz="${largo/2 - (pf_ymax - pf_ymin)*mm/2} 0 ${z_sobre_p1 + alto_pared/2}" rpy="0 0 0"/>
+      <geometry><box size="${(pf_ymax - pf_ymin)*mm} ${(pf_xmax - pf_xmin)*mm} ${alto_pared}"/></geometry>
+    </collision>
+
+    <!-- Pared trasera (0-2-20): giro -90° sobre z, cara curva hacia atrás -->
+    <visual>
+      <origin xyz="${-largo/2 - pt_ymin*mm} ${(pt_xmin + pt_xmax)/2*mm} ${z_sobre_p1 - pt_zmin*mm}" rpy="0 0 ${-pi/2}"/>
+      <geometry>
+        <mesh filename="package://caid_description/meshes/pared_posterior.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="pla_hueso"/>
+    </visual>
+    <collision>
+      <origin xyz="${-largo/2 + (pt_ymax - pt_ymin)*mm/2} 0 ${z_sobre_p1 + alto_pared/2}" rpy="0 0 0"/>
+      <geometry><box size="${(pt_ymax - pt_ymin)*mm} ${(pt_xmax - pt_xmin)*mm} ${alto_pared}"/></geometry>
+    </collision>
+
+    <xacro:box_inertia m="${m_base}" x="${largo}" y="${ancho}" z="${h_base}" o_xyz="0 0 ${-h_base/2}"/>
+  </link>
+
+    <!-- Rueda: el eje de giro es y. El cilindro de URDF tiene su eje en z, por eso se gira 90° sobre x. -->
+  <xacro:macro name="rueda" params="name x y">
+    <link name="${name}_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${r_rueda}" length="${w_rueda}"/></geometry>
+        <material name="goma"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${r_rueda}" length="${w_rueda}"/></geometry>
+      </collision>
+      <xacro:cylinder_inertia m="${m_rueda}" r="${r_rueda}" h="${w_rueda}" o_rpy="${pi/2} 0 0"/>
+    </link>
+
+    <joint name="${name}_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${name}_link"/>
+      <origin xyz="${x} ${y} ${z_eje}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:rueda name="wheel_fl" x="${x_del}"  y="${y_rueda}"/>
+  <xacro:rueda name="wheel_fr" x="${x_del}"  y="${-y_rueda}"/>
+  <xacro:rueda name="wheel_rl" x="${x_tras}" y="${y_rueda}"/>
+  <xacro:rueda name="wheel_rr" x="${x_tras}" y="${-y_rueda}"/>
+
+</robot>

@@ -4,9 +4,13 @@ project(caid_description)
 find_package(ament_cmake REQUIRED)
 
 # Copia estas carpetas a install/caid_description/share/caid_description/.
-# Se van sumando a medida que existen (meshes, launch, rviz).
-install(DIRECTORY urdf
+install(DIRECTORY urdf meshes
   DESTINATION share/${PROJECT_NAME})
+
+# Las cotas viven en hardware/cad/ (una sola fuente de verdad) y se copian al paquete al instalar.
+# La ruta sube 3 niveles: caid_description -> src -> ros2_ws -> raíz del repo.
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../../../hardware/cad/dimensions.yaml
+  DESTINATION share/${PROJECT_NAME}/config)
 
 # Agrega share/ a GZ_SIM_RESOURCE_PATH para que Gazebo resuelva package://caid_description/...
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/hooks/${PROJECT_NAME}.dsv.in")
