@@ -26,7 +26,9 @@
   <xacro:property name="z_piso2" value="${-esp}"/>
   <xacro:property name="z_piso1" value="${-(esp + sep + esp)}"/>
   <xacro:property name="z_sobre_p1" value="${-(esp + sep)}"/>   <!-- cara superior del piso 1 -->
-  <xacro:property name="alto_pared" value="0.056"/>
+  <xacro:property name="alto_pared" value="${dim['paredes']['alto'] * mm}"/>
+  <xacro:property name="d_pf" value="${dim['paredes']['frontal_sobresale'] * mm}"/>
+  <xacro:property name="d_pt" value="${dim['paredes']['trasera_sobresale'] * mm}"/>
 
   <!-- Caja envolvente (mm) de las mallas de las paredes: salen de leer los vértices de cada STL.
        Cada STL tiene su origen en una esquina, por eso hay que desplazarlas a mano. -->
@@ -78,27 +80,27 @@
 
         <!-- Pared frontal (0-2-10): giro +90° sobre z, cara curva hacia adelante, al ras del borde -->
     <visual>
-      <origin xyz="${largo/2 + pf_ymin*mm} ${-(pf_xmin + pf_xmax)/2*mm} ${z_sobre_p1 - pf_zmin*mm}" rpy="0 0 ${pi/2}"/>
+      <origin xyz="${largo/2 + d_pf + pf_ymin*mm} ${-(pf_xmin + pf_xmax)/2*mm} ${z_sobre_p1 - pf_zmin*mm}" rpy="0 0 ${pi/2}"/>
       <geometry>
         <mesh filename="package://caid_description/meshes/pared_frente.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="pla_hueso"/>
     </visual>
     <collision>
-      <origin xyz="${largo/2 - (pf_ymax - pf_ymin)*mm/2} 0 ${z_sobre_p1 + alto_pared/2}" rpy="0 0 0"/>
+      <origin xyz="${largo/2 + d_pf - (pf_ymax - pf_ymin)*mm/2} 0 ${z_sobre_p1 + alto_pared/2}" rpy="0 0 0"/>
       <geometry><box size="${(pf_ymax - pf_ymin)*mm} ${(pf_xmax - pf_xmin)*mm} ${alto_pared}"/></geometry>
     </collision>
 
     <!-- Pared trasera (0-2-20): giro -90° sobre z, cara curva hacia atrás -->
     <visual>
-      <origin xyz="${-largo/2 - pt_ymin*mm} ${(pt_xmin + pt_xmax)/2*mm} ${z_sobre_p1 - pt_zmin*mm}" rpy="0 0 ${-pi/2}"/>
+      <origin xyz="${-largo/2 - d_pt - pt_ymin*mm} ${(pt_xmin + pt_xmax)/2*mm} ${z_sobre_p1 - pt_zmin*mm}" rpy="0 0 ${-pi/2}"/>
       <geometry>
         <mesh filename="package://caid_description/meshes/pared_posterior.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="pla_hueso"/>
     </visual>
     <collision>
-      <origin xyz="${-largo/2 + (pt_ymax - pt_ymin)*mm/2} 0 ${z_sobre_p1 + alto_pared/2}" rpy="0 0 0"/>
+      <origin xyz="${-largo/2 - d_pt + (pt_ymax - pt_ymin)*mm/2} 0 ${z_sobre_p1 + alto_pared/2}" rpy="0 0 0"/>
       <geometry><box size="${(pt_ymax - pt_ymin)*mm} ${(pt_xmax - pt_xmin)*mm} ${alto_pared}"/></geometry>
     </collision>
 
