@@ -42,9 +42,22 @@ paredes:                     # piezas 0-2-10 (frente) y 0-2-20 (fondo)
   alto: 56.0                 # ensamblado
 
 brazo:
-  base_x: -21.3              # ensamblado: centro de la base del brazo
+  base_x: -21.3              # ensamblado: centro de la base del brazo en el marco base_link
   base_y: 0.0
   base_z: 0.0                # apoya sobre la cara superior del piso 2
+
+  # Marco del brazo: origen en el centro de su base, sobre la cara superior del piso 2.
+  # Mantiene la orientación del ensamblado: en la pose del ensamblado el brazo apunta
+  # hacia +x de este marco (que es hacia atrás en el robot). z hacia arriba.
+  # Las posiciones salen de los agujeros de los pasadores de las piezas (detección automática).
+  eje_giro_z: 32.0           # altura del plato giratorio sobre la placa de arriba
+
+  hombro:  {x: 0.0,   z: 66.7}     # eje del hombro (rotación alrededor de y)
+  codo:    {x: 5.9,   z: 146.5}    # eje del codo
+  muneca:  {x: 77.8,  z: 111.5}    # eje de la muñeca (donde se une la pinza)
+  punta:   {x: 174.7, y: -4.0, z: 96.3}    # punta de la pinza: punto medio entre las dos garras
+  garra_a: {x: 143.2, y: -4.3, z: 83.1}    # PROVISORIO: eje vertical de la garra, centro de su engranaje
+  garra_b: {x: 129.8, y: 2.9,  z: 72.4}    # PROVISORIO: idem
 
 camara:
   x: 94.0                    # ensamblado: eje del servo de giro (pieza 0-3-30)

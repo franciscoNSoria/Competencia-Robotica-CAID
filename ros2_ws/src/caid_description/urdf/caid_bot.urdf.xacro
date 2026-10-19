@@ -194,8 +194,8 @@
   </joint>
 
   <!-- ===== Brazo: arm:=fixed (por defecto) o arm:=none; arm_yaw gira su base (rad) ===== -->
-  <xacro:arg name="arm" default="fixed"/>
-  <xacro:arg name="arm_yaw" default="3.14159265"/>
+  <xacro:arg name="arm" default="actuated"/>
+  <xacro:arg name="arm_yaw" default="0"/>
   <xacro:include filename="$(find caid_description)/urdf/arm.xacro"/>
   <xacro:brazo modo="$(arg arm)" yaw="$(arg arm_yaw)"
                x="${dim['brazo']['base_x']*mm}" y="${dim['brazo']['base_y']*mm}" z="${dim['brazo']['base_z']*mm}"/>
