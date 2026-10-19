@@ -42,6 +42,7 @@
   <material name="acrilico"><color rgba="0.75 0.85 1.0 0.6"/></material>
   <material name="pla_hueso"><color rgba="0.93 0.91 0.82 1.0"/></material>
   <material name="goma"><color rgba="0.05 0.05 0.05 1.0"/></material>
+  <material name="pla_negro"><color rgba="0.12 0.12 0.12 1.0"/></material>
 
   <link name="base_footprint"/>
 
@@ -54,7 +55,7 @@
     <link name="base_link">
     <!-- Piso 2 (arriba) -->
     <visual>
-      <origin xyz="0 0 ${z_piso2}" rpy="0 0 0"/>
+      <origin xyz="0 0 ${z_piso2}" rpy="0 0 ${pi}"/>
       <geometry>
         <mesh filename="package://caid_description/meshes/chasis_armadillo.stl" scale="0.001 0.001 0.001"/>
       </geometry>
@@ -67,9 +68,9 @@
 
     <!-- Piso 1 (abajo) -->
     <visual>
-      <origin xyz="0 0 ${z_piso1}" rpy="0 0 0"/>
+      <origin xyz="0 0 ${z_piso1}" rpy="0 0 ${pi}"/>
       <geometry>
-        <mesh filename="package://caid_description/meshes/chasis_armadillo.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://caid_description/meshes/chasis_armadillo_inferior.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="acrilico"/>
     </visual>
@@ -93,7 +94,7 @@
 
     <!-- Pared trasera (0-2-20): giro -90° sobre z, cara curva hacia atrás -->
     <visual>
-      <origin xyz="${-largo/2 - d_pt - pt_ymin*mm} ${(pt_xmin + pt_xmax)/2*mm} ${z_sobre_p1 - pt_zmin*mm}" rpy="0 0 ${-pi/2}"/>
+      <origin xyz="0 0 ${z_piso1}" rpy="0 0 ${pi}"/>
       <geometry>
         <mesh filename="package://caid_description/meshes/pared_posterior.stl" scale="0.001 0.001 0.001"/>
       </geometry>
@@ -134,5 +135,62 @@
   <xacro:rueda name="wheel_fr" x="${x_del}"  y="${-y_rueda}"/>
   <xacro:rueda name="wheel_rl" x="${x_tras}" y="${y_rueda}"/>
   <xacro:rueda name="wheel_rr" x="${x_tras}" y="${-y_rueda}"/>
+
+  <!-- ===== Ultrasonidos: un marco por sensor, en el punto medio entre sus dos ojos ===== -->
+  <xacro:property name="us_f" value="${dim['sensores_ultrasonido']['frontal']}"/>
+  <xacro:property name="us_l" value="${dim['sensores_ultrasonido']['lateral_izquierdo']}"/>
+  <xacro:property name="us_r" value="${dim['sensores_ultrasonido']['lateral_derecho']}"/>
+
+  <!-- El eje x del marco apunta hacia donde mira el sensor; yaw gira ese eje sobre z. -->
+  <xacro:macro name="ultrasonido" params="name x y z yaw">
+    <link name="${name}"/>
+    <joint name="${name}_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="${name}"/>
+      <origin xyz="${x} ${y} ${z}" rpy="0 0 ${yaw}"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:ultrasonido name="us_front" x="${us_f['x']*mm}" y="${us_f['y']*mm}" z="${us_f['z']*mm}" yaw="0"/>
+  <xacro:ultrasonido name="us_left"  x="${us_l['x']*mm}" y="${us_l['y']*mm}" z="${us_l['z']*mm}" yaw="${pi/2}"/>
+  <xacro:ultrasonido name="us_right" x="${us_r['x']*mm}" y="${us_r['y']*mm}" z="${us_r['z']*mm}" yaw="${-pi/2}"/>
+
+  <!-- ===== Cámara: giro (revolute) -> cuerpo -> marco óptico (REP-103) ===== -->
+  <xacro:property name="cam" value="${dim['camara']}"/>
+  <xacro:property name="cam_x" value="0.0141"/>   <!-- espesor de la caja, del ensamblado -->
+  <xacro:property name="cam_y" value="0.0352"/>
+  <xacro:property name="cam_z" value="0.0447"/>
+
+  <link name="camera_pan_link">
+    <xacro:box_inertia m="0.01" x="0.03" y="0.03" z="0.02"/>
+  </link>
+  <joint name="camera_pan_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="camera_pan_link"/>
+    <origin xyz="${cam['x']*mm} ${cam['y']*mm} 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-pi/2}" upper="${pi/2}" effort="0.2" velocity="3.0"/>
+  </joint>
+
+  <link name="camera_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${cam_x} ${cam_y} ${cam_z}"/></geometry>
+      <material name="pla_negro"/>
+    </visual>
+    <xacro:box_inertia m="0.02" x="${cam_x}" y="${cam_y}" z="${cam_z}"/>
+  </link>
+  <joint name="camera_joint" type="fixed">
+    <parent link="camera_pan_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0 0 ${cam['z']*mm}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="camera_optical_frame"/>
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_optical_frame"/>
+    <origin xyz="${cam_x/2} 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+  </joint>
 
 </robot>
