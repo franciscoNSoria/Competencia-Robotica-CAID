@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!-- Brazo robótico. Modo "fixed": una sola malla, rígida, en la pose del ensamblado de Fusion.
+     Modo "none": sin brazo. Modo "actuated" (articulaciones): pendiente. -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- modo: none | fixed.  yaw: giro de la base del brazo (rad).  x, y, z: posición de su base en base_link (m). -->
+  <xacro:macro name="brazo" params="modo yaw x y z">
+    <xacro:if value="${modo != 'none'}">
+      <link name="arm_base_link">
+        <visual>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="package://caid_description/meshes/brazo_ensamblado.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+          <material name="pla_negro"/>
+        </visual>
+        <!-- Masa y tamaño provisorios: 142 g impresos + servos -->
+        <xacro:box_inertia m="0.18" x="0.1" y="0.1" z="0.17" o_xyz="0 0 0.08"/>
+      </link>
+      <joint name="arm_base_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="arm_base_link"/>
+        <origin xyz="${x} ${y} ${z}" rpy="0 0 ${yaw}"/>
+      </joint>
+    </xacro:if>
+  </xacro:macro>
+
+</robot>
