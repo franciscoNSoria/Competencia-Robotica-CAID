@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!-- Macros de inercia. Reutilizadas del repo previo (my_robot_description/common_properties.xacro).
+     Unidades SI: m en kg, medidas en metros. La inercia se calcula en el eje propio del sólido. -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Caja maciza. x, y, z = largo en cada eje. -->
+  <xacro:macro name="box_inertia" params="m x y z o_xyz:='0 0 0' o_rpy:='0 0 0'">
+    <inertial>
+      <mass value="${m}"/>
+      <origin xyz="${o_xyz}" rpy="${o_rpy}"/>
+      <inertia ixx="${(m/12) * (y*y + z*z)}" ixy="0" ixz="0"
+               iyy="${(m/12) * (x*x + z*z)}" iyz="0"
+               izz="${(m/12) * (x*x + y*y)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- Cilindro macizo con su eje a lo largo de z. r = radio, h = largo del eje. -->
+  <xacro:macro name="cylinder_inertia" params="m r h o_xyz:='0 0 0' o_rpy:='0 0 0'">
+    <inertial>
+      <mass value="${m}"/>
+      <origin xyz="${o_xyz}" rpy="${o_rpy}"/>
+      <inertia ixx="${(m/12) * (3*r*r + h*h)}" ixy="0" ixz="0"
+               iyy="${(m/12) * (3*r*r + h*h)}" iyz="0"
+               izz="${(m/2) * (r*r)}"/>
+    </inertial>
+  </xacro:macro>
+
+</robot>

@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<!-- Brazo robótico (tipo EEZYbotARM), cadena abierta equivalente al mecanismo de paralelogramos.
+     Modos: none (sin brazo), fixed (todas las uniones fijas, en la pose del ensamblado) y
+     actuated (articulaciones que se pueden mover). Valores de límites, masas y garras: provisorios. -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Eslabón: un link con su malla. (ox, oy, oz) es dónde está el origen del link en el marco del brazo (m).
+       Las mallas vienen en ese marco, por eso se las corre en sentido contrario. -->
+  <xacro:macro name="eslabon" params="nombre malla ox oy oz masa dx dy dz">
+    <link name="${nombre}">
+      <visual>
+        <origin xyz="${-ox} ${-oy} ${-oz}" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://caid_description/meshes/arm/${malla}" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="pla_negro"/>
+      </visual>
+      <xacro:box_inertia m="${masa}" x="${dx}" y="${dy}" z="${dz}"/>
+    </link>
+  </xacro:macro>
+
+
+  <!-- Articulación entre dos eslabones. x, y, z: posición del hijo respecto del padre (m).
+       En modo fixed no lleva límites ni mimic. mimic_de: nombre de otra articulación a imitar, o none. -->
+  <xacro:macro name="articulacion" params="nombre tipo padre hijo x y z ax ay az lower upper mimic_de">
+    <joint name="${nombre}" type="${tipo}">
+      <parent link="${padre}"/>
+      <child link="${hijo}"/>
+      <origin xyz="${x} ${y} ${z}" rpy="0 0 0"/>
+      <axis xyz="${ax} ${ay} ${az}"/>
+      <xacro:if value="${tipo == 'revolute'}">
+        <limit lower="${lower}" upper="${upper}" effort="0.2" velocity="3.0"/>
+      </xacro:if>
+      <xacro:if value="${tipo == 'revolute' and mimic_de != 'none'}">
+        <mimic joint="${mimic_de}" multiplier="-1" offset="0"/>
+      </xacro:if>
+    </joint>
+  </xacro:macro>
+
+
+  <!-- modo: none | fixed | actuated.  yaw: giro extra de la base (rad).  x, y, z: posición de la base en base_link (m). -->
+  <xacro:macro name="brazo" params="modo yaw x y z">
+    <xacro:if value="${modo != 'none'}">
+      <xacro:property name="b" value="${dim['brazo']}"/>
+      <xacro:property name="tipo" value="${'revolute' if modo == 'actuated' else 'fixed'}"/>
+
+      <!-- Posiciones de los ejes en el marco del brazo (m) -->
+      <xacro:property name="ez" value="${b['eje_giro_z'] * mm}"/>
+      <xacro:property name="hom_x" value="${b['hombro']['x'] * mm}"/>
+      <xacro:property name="hom_z" value="${b['hombro']['z'] * mm}"/>
+      <xacro:property name="cod_x" value="${b['codo']['x'] * mm}"/>
+      <xacro:property name="cod_z" value="${b['codo']['z'] * mm}"/>
+      <xacro:property name="mun_x" value="${b['muneca']['x'] * mm}"/>
+      <xacro:property name="mun_z" value="${b['muneca']['z'] * mm}"/>
+      <xacro:property name="pun_x" value="${b['punta']['x'] * mm}"/>
+      <xacro:property name="pun_y" value="${b['punta']['y'] * mm}"/>
+      <xacro:property name="pun_z" value="${b['punta']['z'] * mm}"/>
+      <xacro:property name="ga_x" value="${b['garra_a']['x'] * mm}"/>
+      <xacro:property name="ga_y" value="${b['garra_a']['y'] * mm}"/>
+      <xacro:property name="ga_z" value="${b['garra_a']['z'] * mm}"/>
+      <xacro:property name="gb_x" value="${b['garra_b']['x'] * mm}"/>
+      <xacro:property name="gb_y" value="${b['garra_b']['y'] * mm}"/>
+      <xacro:property name="gb_z" value="${b['garra_b']['z'] * mm}"/>
+
+  
+      <!-- Base: no se mueve. El marco del brazo tiene la orientación del ensamblado de Fusion,
+           que es un giro de 180 grados respecto de base_link. -->
+      <xacro:eslabon nombre="arm_base_link" malla="arm_base.stl" ox="0" oy="0" oz="0"
+                     masa="0.065" dx="0.10" dy="0.10" dz="0.032"/>
+      <joint name="arm_mount_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="arm_base_link"/>
+        <origin xyz="${x} ${y} ${z}" rpy="0 0 ${pi + yaw}"/>
+      </joint>
+
+      <!-- Giro de la base (servo de la base): eje vertical -->
+      <xacro:eslabon nombre="arm_turret_link" malla="arm_turret.stl" ox="0" oy="0" oz="${ez}"
+                     masa="0.066" dx="0.07" dy="0.07" dz="0.14"/>
+      <xacro:articulacion nombre="arm_yaw_joint" tipo="${tipo}" padre="arm_base_link" hijo="arm_turret_link"
+                          x="0" y="0" z="${ez}" ax="0" ay="0" az="1"
+                          lower="${-pi/2}" upper="${pi/2}" mimic_de="none"/>
+
+      <!-- Hombro: brazo principal, eje horizontal (y) -->
+      <xacro:eslabon nombre="arm_upper_link" malla="arm_upper.stl" ox="${hom_x}" oy="0" oz="${hom_z}"
+                     masa="0.010" dx="0.03" dy="0.03" dz="0.09"/>
+      <xacro:articulacion nombre="arm_shoulder_joint" tipo="${tipo}" padre="arm_turret_link" hijo="arm_upper_link"
+                          x="${hom_x}" y="0" z="${hom_z - ez}" ax="0" ay="1" az="0"
+                          lower="-0.5" upper="2.4" mimic_de="none"/>
+
+      <!-- Codo: antebrazo. El ángulo es relativo al brazo principal -->
+      <xacro:eslabon nombre="arm_forearm_link" malla="arm_forearm.stl" ox="${cod_x}" oy="0" oz="${cod_z}"
+                     masa="0.012" dx="0.09" dy="0.02" dz="0.05"/>
+      <xacro:articulacion nombre="arm_elbow_joint" tipo="${tipo}" padre="arm_upper_link" hijo="arm_forearm_link"
+                          x="${cod_x - hom_x}" y="0" z="${cod_z - hom_z}" ax="0" ay="1" az="0"
+                          lower="-2.0" upper="1.2" mimic_de="none"/>
+
+  
+      <!-- Muñeca virtual: reemplaza al paralelogramo. Para que la pinza quede horizontal,
+           su ángulo debe ser: muñeca = -(hombro + codo). Lo calcula el controlador, no el modelo. -->
+      <xacro:eslabon nombre="arm_wrist_link" malla="arm_wrist.stl" ox="${mun_x}" oy="0" oz="${mun_z}"
+                     masa="0.023" dx="0.08" dy="0.03" dz="0.07"/>
+      <xacro:articulacion nombre="arm_wrist_joint" tipo="${tipo}" padre="arm_forearm_link" hijo="arm_wrist_link"
+                          x="${mun_x - cod_x}" y="0" z="${mun_z - cod_z}" ax="0" ay="1" az="0"
+                          lower="-2.8" upper="2.8" mimic_de="none"/>
+
+      <!-- Pinza: dos garras que giran en sentido contrario (eje vertical). PROVISORIO -->
+      <xacro:eslabon nombre="arm_claw_a_link" malla="arm_claw_a.stl" ox="${ga_x}" oy="${ga_y}" oz="${ga_z}"
+                     masa="0.004" dx="0.06" dy="0.016" dz="0.046"/>
+      <xacro:articulacion nombre="arm_claw_a_joint" tipo="${tipo}" padre="arm_wrist_link" hijo="arm_claw_a_link"
+                          x="${ga_x - mun_x}" y="${ga_y}" z="${ga_z - mun_z}" ax="0" ay="0" az="1"
+                          lower="-0.6" upper="0.0" mimic_de="none"/>
+      <xacro:eslabon nombre="arm_claw_b_link" malla="arm_claw_b.stl" ox="${gb_x}" oy="${gb_y}" oz="${gb_z}"
+                     masa="0.004" dx="0.06" dy="0.016" dz="0.046"/>
+      <xacro:articulacion nombre="arm_claw_b_joint" tipo="${tipo}" padre="arm_wrist_link" hijo="arm_claw_b_link"
+                          x="${gb_x - mun_x}" y="${gb_y}" z="${gb_z - mun_z}" ax="0" ay="0" az="1"
+                          lower="0.0" upper="0.6" mimic_de="arm_claw_a_joint"/>
+
+      <!-- Punto de agarre: entre las puntas de las garras -->
+      <link name="gripper_tcp"/>
+      <joint name="gripper_tcp_joint" type="fixed">
+        <parent link="arm_wrist_link"/>
+        <child link="gripper_tcp"/>
+        <origin xyz="${pun_x - mun_x} ${pun_y} ${pun_z - mun_z}" rpy="0 0 0"/>
+      </joint>
+    </xacro:if>
+  </xacro:macro>
+
+</robot>
