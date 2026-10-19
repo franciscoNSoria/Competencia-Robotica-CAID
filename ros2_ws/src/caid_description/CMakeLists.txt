@@ -4,7 +4,7 @@ project(caid_description)
 find_package(ament_cmake REQUIRED)
 
 # Copia estas carpetas a install/caid_description/share/caid_description/.
-install(DIRECTORY urdf meshes
+install(DIRECTORY urdf meshes launch rviz
   DESTINATION share/${PROJECT_NAME})
 
 # Las cotas viven en hardware/cad/ (una sola fuente de verdad) y se copian al paquete al instalar.
