@@ -73,6 +73,7 @@ def generate_launch_description():
         DeclareLaunchArgument('y', default_value='2.7'),
         DeclareLaunchArgument('yaw', default_value='1.5708'),
         DeclareLaunchArgument('gui', default_value='true'),
+        DeclareLaunchArgument('rviz', default_value='true'),
         gz_server,
         bridge,
         rsp,

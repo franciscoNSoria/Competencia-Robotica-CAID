@@ -8,7 +8,9 @@
       <left_joint>wheel_rl_joint</left_joint>
       <right_joint>wheel_fr_joint</right_joint>
       <right_joint>wheel_rr_joint</right_joint>
-      <wheel_separation>${2 * y_rueda}</wheel_separation>
+      <!-- Separación EFECTIVA (calibrada): un 4WD gira patinando, así que se comporta como
+           si las ruedas estuvieran más separadas que los 0,131 m geométricos. Provisorio. -->
+      <wheel_separation>0.204</wheel_separation>
       <wheel_radius>${r_rueda}</wheel_radius>
       <topic>/sim/cmd_vel</topic>
       <odom_topic>/sim/odom</odom_topic>
@@ -19,6 +21,10 @@
       <max_linear_velocity>0.5</max_linear_velocity>
       <min_angular_velocity>-3.0</min_angular_velocity>
       <max_angular_velocity>3.0</max_angular_velocity>
+      <min_linear_acceleration>-1.0</min_linear_acceleration>
+      <max_linear_acceleration>1.0</max_linear_acceleration>
+      <min_angular_acceleration>-5.0</min_angular_acceleration>
+      <max_angular_acceleration>5.0</max_angular_acceleration>
     </plugin>
   </gazebo>
 
