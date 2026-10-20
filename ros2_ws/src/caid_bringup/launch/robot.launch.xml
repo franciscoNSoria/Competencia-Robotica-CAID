@@ -1,0 +1,20 @@
+<launch>
+  <!-- Argumentos: se pueden cambiar al lanzar -->
+  <arg name="fuente" default="0"
+       description="'0' = webcam  |  'http://IP:81/stream' = ESP32-CAM"/>
+  <arg name="esp32_falsa" default="true"
+       description="false cuando este la ESP32 real con micro-ROS"/>
+
+  <!-- Camara: publica /camera/image_raw y /camera/camera_info -->
+  <node pkg="caid_vision" exec="camara_node" name="camara_node" output="screen">
+    <param name="fuente" value="$(var fuente)"/>
+  </node>
+
+  <!-- Vision: publica /vision/cubo/* y /vision/debug -->
+  <node pkg="caid_vision" exec="vision_node" name="vision_node" output="screen"/>
+
+  <!-- ESP32 falsa: solo si esp32_falsa:=true -->
+  <node pkg="caid_pruebas" exec="esp32_falsa" name="esp32_falsa" output="screen"
+        if="$(var esp32_falsa)"/>
+</launch>
+
