@@ -3,12 +3,22 @@
 <package format="3">
   <name>caid_bringup</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Launch files del robot: simulación (Gazebo) y robot real</description>
   <maintainer email="martinbravo23205@gmail.com">martin</maintainer>
-  <license>TODO: License declaration</license>
+  <maintainer email="francisco99soria@gmail.com">Francisco Soria</maintainer>
+  <license>Apache-2.0</license>
 
   <depend>launch</depend>
   <depend>launch_ros</depend>
+
+  <exec_depend>caid_description</exec_depend>
+  <exec_depend>caid_gazebo</exec_depend>
+  <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

@@ -1,5 +1,6 @@
-from setuptools import find_packages, setup
 from glob import glob
+
+from setuptools import find_packages, setup
 
 package_name = 'caid_bringup'
 
@@ -12,6 +13,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', glob('launch/*.launch.*')),
+        ('share/' + package_name + '/config/sim', glob('config/sim/*.yaml')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -26,6 +28,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'scan_to_range = caid_bringup.scan_to_range:main',
         ],
     },
 )

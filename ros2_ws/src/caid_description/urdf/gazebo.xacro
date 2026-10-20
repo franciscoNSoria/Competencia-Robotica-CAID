@@ -1,0 +1,115 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Tracción: las ruedas izquierdas (y>0) van a la misma velocidad, las derechas también. -->
+  <gazebo>
+    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+      <left_joint>wheel_fl_joint</left_joint>
+      <left_joint>wheel_rl_joint</left_joint>
+      <right_joint>wheel_fr_joint</right_joint>
+      <right_joint>wheel_rr_joint</right_joint>
+      <!-- Separación EFECTIVA (calibrada): un 4WD gira patinando, así que se comporta como
+           si las ruedas estuvieran más separadas que los 0,131 m geométricos. Provisorio. -->
+      <wheel_separation>0.204</wheel_separation>
+      <wheel_radius>${r_rueda}</wheel_radius>
+      <topic>/sim/cmd_vel</topic>
+      <odom_topic>/sim/odom</odom_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_footprint</child_frame_id>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <min_linear_velocity>-0.5</min_linear_velocity>
+      <max_linear_velocity>0.5</max_linear_velocity>
+      <min_angular_velocity>-3.0</min_angular_velocity>
+      <max_angular_velocity>3.0</max_angular_velocity>
+      <min_linear_acceleration>-1.0</min_linear_acceleration>
+      <max_linear_acceleration>1.0</max_linear_acceleration>
+      <min_angular_acceleration>-5.0</min_angular_acceleration>
+      <max_angular_acceleration>5.0</max_angular_acceleration>
+    </plugin>
+  </gazebo>
+
+
+  <!-- ===== Ultrasonidos simulados con un láser de cono angosto ===== -->
+  <!-- Valores provisorios: el HC-SR04 declara 2-400 cm y ~15°; el ruido hay que medirlo en el robot. -->
+  <xacro:property name="us_fov" value="${15 * pi / 180}"/>
+  <xacro:property name="us_min" value="0.02"/>
+  <xacro:property name="us_max" value="4.0"/>
+
+  <xacro:macro name="ultrasonico" params="name topic">
+    <gazebo reference="${name}">
+      <sensor name="${name}" type="gpu_lidar">
+        <always_on>true</always_on>
+        <update_rate>20</update_rate>
+        <topic>${topic}</topic>
+        <gz_frame_id>${name}</gz_frame_id>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>5</samples>
+              <resolution>1</resolution>
+              <min_angle>${-us_fov / 2}</min_angle>
+              <max_angle>${us_fov / 2}</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>${us_min}</min>
+            <max>${us_max}</max>
+            <resolution>0.003</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.005</stddev>
+          </noise>
+        </lidar>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:ultrasonico name="us_front" topic="/sim/ultrasonic/front/scan"/>
+  <xacro:ultrasonico name="us_left" topic="/sim/ultrasonic/left/scan"/>
+  <xacro:ultrasonico name="us_right" topic="/sim/ultrasonic/right/scan"/>
+  
+    <!-- ===== Cámara simulada: 640x480 a 15 Hz. El FOV es provisorio: medir con la cámara real. ===== -->
+  <gazebo reference="camera_link">
+    <sensor name="camera" type="camera">
+      <always_on>true</always_on>
+      <update_rate>15</update_rate>
+      <topic>/sim/camera/image_raw</topic>
+      <gz_frame_id>camera_optical_frame</gz_frame_id>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+    </sensor>
+  </gazebo>
+
+    <!-- ===== Servo de la cámara: control de posición (rad) sobre camera_pan_joint ===== -->
+  <gazebo>
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>camera_pan_joint</joint_name>
+      <topic>/sim/camera_pan/cmd</topic>
+      <use_velocity_commands>true</use_velocity_commands>
+      <cmd_max>3.0</cmd_max>
+      <cmd_min>-3.0</cmd_min>
+    </plugin>
+  </gazebo>
+
+    <!-- ===== Estado de las articulaciones (ruedas, servo de cámara) ===== -->
+  <gazebo>
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+      <topic>/sim/joint_states</topic>
+    </plugin>
+  </gazebo>
+
+</robot>
