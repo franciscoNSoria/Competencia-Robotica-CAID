@@ -64,4 +64,46 @@
   <xacro:ultrasonico name="us_left" topic="/sim/ultrasonic/left/scan"/>
   <xacro:ultrasonico name="us_right" topic="/sim/ultrasonic/right/scan"/>
   
+    <!-- ===== Cámara simulada: 640x480 a 15 Hz. El FOV es provisorio: medir con la cámara real. ===== -->
+  <gazebo reference="camera_link">
+    <sensor name="camera" type="camera">
+      <always_on>true</always_on>
+      <update_rate>15</update_rate>
+      <topic>/sim/camera/image_raw</topic>
+      <gz_frame_id>camera_optical_frame</gz_frame_id>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+    </sensor>
+  </gazebo>
+
+    <!-- ===== Servo de la cámara: control de posición (rad) sobre camera_pan_joint ===== -->
+  <gazebo>
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>camera_pan_joint</joint_name>
+      <topic>/sim/camera_pan/cmd</topic>
+      <use_velocity_commands>true</use_velocity_commands>
+      <cmd_max>3.0</cmd_max>
+      <cmd_min>-3.0</cmd_min>
+    </plugin>
+  </gazebo>
+
+    <!-- ===== Estado de las articulaciones (ruedas, servo de cámara) ===== -->
+  <gazebo>
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+      <topic>/sim/joint_states</topic>
+    </plugin>
+  </gazebo>
+
 </robot>

@@ -31,7 +31,9 @@ def generate_launch_description():
 
     rsp = Node(
         package='robot_state_publisher', executable='robot_state_publisher',
-        parameters=[{'robot_description': robot_description}])
+        parameters=[{'robot_description': robot_description,
+                     'use_sim_time': True}],
+        remappings=[('joint_states', '/sim/joint_states')])
 
     bridge = Node(
         package='ros_gz_bridge', executable='parameter_bridge', output='screen',
@@ -52,8 +54,16 @@ def generate_launch_description():
         Node(package='caid_bringup', executable='scan_to_range',
              name='scan_to_range_' + lado,
              parameters=[{'scan_topic': '/sim/ultrasonic/' + lado + '/scan',
-                          'range_topic': '/sim/ultrasonic/' + lado}])
+                          'range_topic': '/sim/ultrasonic/' + lado,
+                          'use_sim_time': True}])
         for lado in ('front', 'left', 'right')]
+
+    rviz = Node(
+        package='rviz2', executable='rviz2', output='screen',
+        arguments=['-d', PathJoinSubstitution(
+            [FindPackageShare('caid_description'), 'rviz', 'caid.rviz'])],
+        parameters=[{'use_sim_time': True}],
+        condition=IfCondition(LaunchConfiguration('rviz')))
 
     return LaunchDescription([
         DeclareLaunchArgument('world', default_value=PathJoinSubstitution(
@@ -66,6 +76,7 @@ def generate_launch_description():
         gz_server,
         bridge,
         rsp,
+        rviz,
         *ranges,
         # Esperamos a que el servidor esté listo antes de crear el robot.
         TimerAction(period=5.0, actions=[spawn]),
