@@ -14,3 +14,22 @@
   ros_type_name: "nav_msgs/msg/Odometry"
   gz_type_name: "gz.msgs.Odometry"
   direction: GZ_TO_ROS
+
+# Ultrasonidos simulados (láser de cono angosto): de Gazebo hacia ROS
+- ros_topic_name: "/sim/ultrasonic/front/scan"
+  gz_topic_name: "/sim/ultrasonic/front/scan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_type_name: "gz.msgs.LaserScan"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/sim/ultrasonic/left/scan"
+  gz_topic_name: "/sim/ultrasonic/left/scan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_type_name: "gz.msgs.LaserScan"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/sim/ultrasonic/right/scan"
+  gz_topic_name: "/sim/ultrasonic/right/scan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_type_name: "gz.msgs.LaserScan"
+  direction: GZ_TO_ROS

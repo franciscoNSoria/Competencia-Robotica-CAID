@@ -61,5 +61,7 @@
   </xacro:macro>
 
   <xacro:ultrasonico name="us_front" topic="/sim/ultrasonic/front/scan"/>
+  <xacro:ultrasonico name="us_left" topic="/sim/ultrasonic/left/scan"/>
+  <xacro:ultrasonico name="us_right" topic="/sim/ultrasonic/right/scan"/>
   
 </robot>

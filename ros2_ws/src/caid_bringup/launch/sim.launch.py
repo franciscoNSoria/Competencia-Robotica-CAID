@@ -1,10 +1,9 @@
 from launch import LaunchDescription
 from launch.actions import (
-    DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription,
-    RegisterEventHandler, Shutdown, TimerAction)
+    DeclareLaunchArgument, ExecuteProcess, RegisterEventHandler, Shutdown,
+    TimerAction)
 from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -25,10 +24,10 @@ def generate_launch_description():
         Command(['xacro ', xacro_file, ' arm:=', arm, ' sim:=true']),
         value_type=str)
 
-    gz_sim = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(PathJoinSubstitution(
-            [FindPackageShare('ros_gz_sim'), 'launch', 'gz_sim.launch.py'])),
-        launch_arguments={'gz_args': ['-s -r ', world]}.items())
+    # Servidor de Gazebo sin GUI. Se lanza sin shell para que Ctrl+C llegue al
+    # proceso y no quede un servidor huérfano.
+    gz_server = ExecuteProcess(
+        cmd=['gz', 'sim', '-s', '-r', world], output='screen')
 
     rsp = Node(
         package='robot_state_publisher', executable='robot_state_publisher',
@@ -49,6 +48,13 @@ def generate_launch_description():
         cmd=['gz', 'sim', '-g'], output='screen',
         condition=IfCondition(gui), on_exit=Shutdown())
 
+    ranges = [
+        Node(package='caid_bringup', executable='scan_to_range',
+             name='scan_to_range_' + lado,
+             parameters=[{'scan_topic': '/sim/ultrasonic/' + lado + '/scan',
+                          'range_topic': '/sim/ultrasonic/' + lado}])
+        for lado in ('front', 'left', 'right')]
+
     return LaunchDescription([
         DeclareLaunchArgument('world', default_value=PathJoinSubstitution(
             [FindPackageShare('caid_gazebo'), 'worlds', 'maze_2.world'])),
@@ -57,10 +63,11 @@ def generate_launch_description():
         DeclareLaunchArgument('y', default_value='2.7'),
         DeclareLaunchArgument('yaw', default_value='1.5708'),
         DeclareLaunchArgument('gui', default_value='true'),
-        gz_sim,
+        gz_server,
         bridge,
         rsp,
-        # Esperamos a que el servidor este listo antes de crear el robot
+        *ranges,
+        # Esperamos a que el servidor esté listo antes de crear el robot.
         TimerAction(period=5.0, actions=[spawn]),
         # La GUI arranca después de crear el robot: así lo dibuja completo.
         RegisterEventHandler(OnProcessExit(target_action=spawn, on_exit=[gz_gui])),
