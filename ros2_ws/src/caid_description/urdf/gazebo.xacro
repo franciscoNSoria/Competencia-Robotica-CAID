@@ -22,4 +22,44 @@
     </plugin>
   </gazebo>
 
+
+  <!-- ===== Ultrasonidos simulados con un láser de cono angosto ===== -->
+  <!-- Valores provisorios: el HC-SR04 declara 2-400 cm y ~15°; el ruido hay que medirlo en el robot. -->
+  <xacro:property name="us_fov" value="${15 * pi / 180}"/>
+  <xacro:property name="us_min" value="0.02"/>
+  <xacro:property name="us_max" value="4.0"/>
+
+  <xacro:macro name="ultrasonico" params="name topic">
+    <gazebo reference="${name}">
+      <sensor name="${name}" type="gpu_lidar">
+        <always_on>true</always_on>
+        <update_rate>20</update_rate>
+        <topic>${topic}</topic>
+        <gz_frame_id>${name}</gz_frame_id>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>5</samples>
+              <resolution>1</resolution>
+              <min_angle>${-us_fov / 2}</min_angle>
+              <max_angle>${us_fov / 2}</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>${us_min}</min>
+            <max>${us_max}</max>
+            <resolution>0.003</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.005</stddev>
+          </noise>
+        </lidar>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:ultrasonico name="us_front" topic="/sim/ultrasonic/front/scan"/>
+  
 </robot>
