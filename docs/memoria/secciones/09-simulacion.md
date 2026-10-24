@@ -47,3 +47,4 @@ real (tarea de banco de pruebas).
   Ctrl+C lo termine.
 - La GUI debe abrirse después de crear el robot; antes puede dibujarlo roto.
 - Los nodos de ROS usan `use_sim_time` para que el TF de las articulaciones móviles se vea en RViz.
+- Un 4WD gira patinando: se calibra una separación efectiva (0,204 m) y no la geométrica. La fricción anisotrópica no mejoró el giro y duplicaba el desplazamiento.
