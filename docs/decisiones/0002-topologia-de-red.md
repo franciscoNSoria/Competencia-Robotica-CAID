@@ -63,3 +63,28 @@ micro-ROS ya permite cambiar de transporte (Wi-Fi o serie) en la compilación.
   bien: el reglamento lo pide así, y la PC tiene que poder arrancar todo sin internet.
 - SSID, clave e IP del agente se guardan en la memoria de la ESP32 (o en `secrets.h`, que no se
   versiona) y no quedan escritos en el código.
+
+## Actualización 2026-10-24: la red de competencia es un módem de la organización
+
+**Qué se supo.** La red de la competencia será la de un módem que la organización destina en exclusiva
+para la competencia, sin acceso a internet. Fuente: Guillermo.
+
+**Qué cambia en la decisión.**
+
+- Se resuelve la duda de "Contexto": la red no la crea la ESP32-CAM, la crea el módem de la organización.
+- La configuración 2 (competencia) deja de ser "la ESP32-CAM crea la red (AP)". Pasa a ser: la PC, la
+  ESP32 de control y la ESP32-CAM se conectan como **estaciones** al módem de la organización.
+- Se mantiene un solo firmware con SSID, clave e IP del agente como parámetros, sin recompilar. Solo
+  cambian los valores del segundo perfil.
+- La PC de competencia no tendrá internet: el agente micro-ROS y todas las dependencias tienen que estar
+  descargados e instalados antes.
+
+**Consecuencias.**
+
+- La ESP32-CAM ya no necesita el modo AP en competencia. Se ven afectadas CAM-03 (#20, prueba de la red
+  por AP) y CAM-05 (#22, plan B por UART).
+- Hay que acordar cómo se asignan las IP (DHCP o IP fija para la PC) para que el firmware sepa dónde está
+  el agente.
+
+**Pendiente.** Confirmación por escrito de la organización (INF-01, #3). Hasta tenerla, el estado del ADR
+sigue siendo "Propuesta".
