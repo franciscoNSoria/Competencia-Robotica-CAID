@@ -1,0 +1,111 @@
+nombre: 'E4 Isla: un anillo con dos caminos'
+descripcion: 'Un anillo de pasillo alrededor de una isla, con tres ramas cortas (un cubo en cada una). El camino geometricamente mas corto al
+  cubo rojo es el del sur, pero un bloque de 20 cm lo cierra: hay que detectar el bloqueo y rodear la isla por el norte. Las bifurcaciones pasantes
+  del anillo no admiten flecha (la flecha va a lo largo de la pared): se resuelven explorando.'
+celda_m: 0.32
+alto_pared_m: 0.17
+inicio_dir: E
+canastos_pared: O
+altura_flechas_mm: 115
+altura_apoyo_cubo_mm: 108.5
+altura_borde_canasto_mm: 108.5
+significado_colores:
+  rojo: [R]
+  verde: [G]
+  azul: [B]
+  gris: []
+mapa: |
+  #####################
+  ########Z#B##########
+  ######.........######
+  ######.#######.######
+  #1.###.#######.######
+  #2S....#######.######
+  #3.###.#######....R##
+  ######.#######.######
+  ######.........######
+  ##########G##########
+  #####################
+objetos:
+- tipo: bloque_20cm
+  celda: [8, 12]
+- tipo: distractor_amarillo
+  celda: [2, 12]
+  lado: auto
+- tipo: distractor_naranja
+  celda: [6, 16]
+  lado: auto
+- tipo: bloque_8cm
+  celda: [4, 6]
+  lado: E
+flechas:
+- celda: [2, 6]
+  pared: N
+  dir: E
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda: [2, 6]
+  pared: N
+  dir: E
+  largo: 3
+  color: rojo
+  desplaza_mm: 80
+- celda: [2, 10]
+  pared: S
+  dir: E
+  largo: 3
+  color: rojo
+  inclinacion: -9
+- celda: [2, 14]
+  pared: E
+  dir: S
+  largo: 3
+  color: rojo
+  inclinacion: 18
+- celda: [5, 3]
+  pared: N
+  dir: E
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda: [5, 3]
+  pared: N
+  dir: E
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda: [5, 3]
+  pared: N
+  dir: E
+  largo: 3
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda: [5, 6]
+  pared: E
+  dir: N
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda: [5, 6]
+  pared: E
+  dir: N
+  largo: 3
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda: [5, 6]
+  pared: E
+  dir: S
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda: [8, 6]
+  pared: S
+  dir: E
+  largo: 3
+  color: verde
+  inclinacion: 12
