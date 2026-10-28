@@ -1,0 +1,14 @@
+# Valores base que usa idf.py al generar sdkconfig por primera vez.
+# Si cambiás algo acá, borrá sdkconfig y volvé a compilar para que se aplique.
+
+# Placa AI-Thinker: flash de 4 MB y app grande (WiFi + cámara + HTTP no entran en 1 MB)
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+
+# PSRAM externa (necesaria para VGA con 2 buffers)
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_IGNORE_NOTFOUND=y
+
+# Rendimiento
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_FREERTOS_HZ=1000
