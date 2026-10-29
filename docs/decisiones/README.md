@@ -23,3 +23,5 @@ Ejemplos: topología de red, formato de los mensajes entre el robot y la PC, có
 |---|---|---|
 | [0001](0001-topicos-simples-sin-ros2-control.md) | Robot expuesto por tópicos simples de micro-ROS, sin ros2_control | Propuesta |
 | [0002](0002-topologia-de-red.md) | Topología de red: router en desarrollo, punto de acceso de la ESP32-CAM en competencia | Propuesta (falta confirmar con la organización) |
+| [0003](0003-firmware-esp-idf.md) | Firmware de la ESP32 de movimiento con ESP-IDF y micro_ros_espidf_component | Propuesta |
+| [0004](0004-navegacion-por-celdas-sin-nav2.md) | Navegación por celdas con planificador propio, sin Nav2 ni SLAM | Propuesta |
