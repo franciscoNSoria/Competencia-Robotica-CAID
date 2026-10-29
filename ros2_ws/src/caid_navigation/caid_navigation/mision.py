@@ -38,10 +38,10 @@ from caid_navigation.sonar import Barrido, RegistroLateral, leer_frente
 COLORES = ('rojo', 'verde', 'azul')
 
 PARAMETROS = {
-    'v_avance': 0.20,           # m/s
-    'v_retro': 0.12,            # m/s
+    'v_avance': 0.25,           # m/s (el PI de las ruedas llega a ~0,39 m/s)
+    'v_retro': 0.15,            # m/s
     'v_acercar': 0.08,          # m/s, acercamiento final a un cubo o canasto
-    'w_giro': 1.2,              # rad/s
+    'w_giro': 1.5,              # rad/s
     'margen_giro': 0.006,       # m, holgura mínima con las paredes al planificar un giro
     'angulo_barrido': 0.42,     # rad (24°)
     'barrer_celdas_nuevas': True,
@@ -228,21 +228,33 @@ class TMover(Tarea):
 
 
 class TGiro(Tarea):
+    """
+    Giro en el lugar. Si se pide `sobrepaso`, se pasa ese ángulo y vuelve: como el ultrasonido de
+    frente llega barriendo desde un lado y el sobrepaso cubre el otro, la celda nueva queda barrida
+    entera sin pararse (reemplaza al barrido de ±24°).
+    """
     nombre = 'girar'
 
-    def __init__(self, yaw, nav, celda=None, h_nuevo=None, sentido=0):
-        self.ctrl = Giro(yaw, w_max=nav.p['w_giro'])
-        # Al terminar un giro de 90° el ultrasonido de frente ya barrió un lado de la celda nueva.
+    def __init__(self, yaw, nav, celda=None, h_nuevo=None, sentido=0, sobrepaso=0.0):
+        self.yaw = yaw
+        self.objetivos = ([yaw + math.copysign(sobrepaso, sentido)] if sobrepaso and sentido
+                          else []) + [yaw]
+        self.ctrl = Giro(self.objetivos.pop(0), w_max=nav.p['w_giro'])
         self.barrido = Barrido(celda, h_nuevo) if celda is not None and sentido else None
         self.sentido = sentido
+        self.completo = bool(sobrepaso and sentido)
 
     def paso(self, nav, pose, rangos, dt):
-        if self.barrido is not None and abs(ang_dif(pose[2], self.ctrl.yaw)) < 0.6:
+        if self.barrido is not None and abs(ang_dif(pose[2], self.yaw)) < 0.6:
             self.barrido.agregar(pose, rangos.get('frente', math.inf))
         v, w, listo = self.ctrl.comando(pose)
+        if listo and self.objetivos:
+            self.ctrl = Giro(self.objetivos.pop(0), w_max=nav.p['w_giro'])
+            return v, w, False
         if listo and self.barrido is not None:
             # Girando a la izquierda el sensor llega desde la derecha: cubrió el lado negativo.
-            nav.barrido_previo = (self.barrido.celda, self.barrido.h, self.barrido, -self.sentido)
+            cubierto = 2 if self.completo else -self.sentido
+            nav.barrido_previo = (self.barrido.celda, self.barrido.h, self.barrido, cubierto)
         return v, w, listo
 
 
@@ -386,6 +398,7 @@ class Navegador:
         self.lentas = set()
         self.cajas_objeto = []
         self.franjas = {}
+        self.reacomodos = {}
 
     # ---------- registro ----------
 
@@ -671,9 +684,12 @@ class Navegador:
             return {'tipo': 'inicio'}
         if self.sosteniendo:
             obs = self.canastos.get(self.sosteniendo)
-            if obs and obs.n >= self.p['confirmar_objeto'] and \
-                    not self._descartado(('canasto', self.sosteniendo)):
-                return {'tipo': 'canasto', 'color': self.sosteniendo, 'obs': obs}
+            if obs and obs.n >= self.p['confirmar_objeto']:
+                obj = {'tipo': 'canasto', 'color': self.sosteniendo, 'obs': obs}
+                if not self._descartado(('canasto', self.sosteniendo)) and self._metas_acople(obj):
+                    return obj
+                # Se conoce el canasto pero no su entorno: explorar cerca de él.
+                return {'tipo': 'explorar', 'cerca': (obs.x, obs.y)}
             return {'tipo': 'explorar'}
         faltan = [c for c in COLORES if c not in self.entregados]
         if not faltan:
@@ -700,7 +716,12 @@ class Navegador:
             def es(c, h):
                 return self._explorable(c)
 
+            cerca = obj.get('cerca')
+
             def bonus(c, h):
+                if cerca:
+                    cx, cy = centro(c)
+                    return -8.0 * math.hypot(cx - cerca[0], cy - cerca[1]) / CELDA
                 b = 0.0
                 if not con.junto_a_pared(c):
                     b -= self.p['penal_abierto']
@@ -878,6 +899,13 @@ class Navegador:
             # Con este lateral no entra: alejarse por el lado libre y volver a llegar corrido.
             self.registro(f'reacomodo para girar en {c} (lateral {l0 * 100:.1f} cm, '
                           f'pide {l * 100:.0f} cm)')
+            clave = (c, h, nuevo)
+            self.reacomodos[clave] = self.reacomodos.get(clave, 0) + 1
+            if self.reacomodos[clave] > 2:
+                self.registro(f'giro en {c} imposible en la práctica: busco otro camino')
+                self.con.giros_imposibles.add(clave)
+                self.con.version += 1
+                return TEspera(0.05)
             atras = (h + 2) % 4
             sentido = -1 if self.con.transitable(c, atras) else (1 if self.con.transitable(c, h)
                                                                    else 0)
@@ -898,9 +926,20 @@ class Navegador:
             tareas.append(TRecta(self, h, signo, c, corr[0], lat_fin=(cx * n[0] + cy * n[1]) + l0,
                                  v_max=0.06, nombre='acomodar'))
         sentido = 1 if giro > 0 else -1
-        tareas.append(TGiro(yaw_de(nuevo), self, c, nuevo, sentido if abs(giro) < 2 else 0))
+        tareas.append(TGiro(yaw_de(nuevo), self, c, nuevo, sentido if abs(giro) < 2 else 0,
+                            self._sobrepaso(c, h, nuevo, giro, corr[0], l0)))
         self.cola = tareas[1:] + self.cola
         return tareas[0]
+
+    def _sobrepaso(self, c, h, nuevo, giro, s, l):
+        """Ángulo extra (hasta 15°) que entra en la celda al terminar el giro, o 0."""
+        n = vecina(c, nuevo)
+        if abs(giro) > 2 or self.con.visitada(n) or not self.p['barrer_celdas_nuevas']:
+            return 0.0
+        # Corrimiento del robot en el marco del rumbo nuevo.
+        s2, l2 = (l, -s) if (nuevo - h) % 4 == 1 else (-l, s)
+        ang = self.con.barrido_posible(c, nuevo, s2, l2, 0.26, self.p['margen_giro_ejecucion'])
+        return ang if ang >= 0.17 else 0.0
 
     def _desplazamiento(self, c, h, s0, l0, s_obj, l_obj, angulo=0.35):
         """
@@ -965,6 +1004,9 @@ class Navegador:
             previo = self.barrido_previo if self.barrido_previo and \
                 self.barrido_previo[:2] == (c, h) else None
             self.barrido_previo = None
+            if previo and previo[3] == 2:
+                self.fin_barrido(previo[2])
+                return TEspera(0.05)        # replanificar con lo que vio el giro
             if ang < 0.17:
                 self.registro(f'sin lugar para barrer en {c}: entro despacio a {n}')
                 self.lentas.add(n)
