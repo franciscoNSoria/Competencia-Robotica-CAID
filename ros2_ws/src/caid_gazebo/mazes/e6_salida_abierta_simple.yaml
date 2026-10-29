@@ -1,0 +1,223 @@
+# Generado con tools/sim/simplificar_laberintos.py a partir de e6_salida_abierta.yaml. No editar a mano.
+nombre: 'E6 Salida abierta: laberinto grande, sala abierta y entrada entre paredes (simple: sin flechas laterales ni zonas)'
+descripcion: 'El mas complejo: 13 x 24 celdas. Afuera hay un area abierta sin paredes con la S y los 3 canastos; el robot
+  sale por una entrada de 2 celdas entre paredes y tiene que volver a encontrarla. Adentro hay una red de pasillos con lazos,
+  una sala abierta de 3 x 7 celdas con dos zonas rojas y un bloque de 20 cm (que se esquiva), distractores y el cubo verde
+  en la sala.'
+celda_m: 0.4
+alto_pared_m: 0.17
+inicio_dir: E
+altura_flechas_mm: 115
+altura_apoyo_cubo_mm: 128.5
+altura_borde_canasto_mm: 108.5
+significado_colores:
+  rojo:
+  - R
+  verde:
+  - G
+  azul:
+  - B
+  gris: []
+mapa: |
+  ~~~~~~~~################
+  ~~~~~~~~##.............#
+  ~~~~~~~~##.#.#.#.#####.#
+  ~~~~~~~~##.......#R#...#
+  ~~~~~~~~##.###.#.#.#.###
+  ~~1~~~~~##...#...#.#.#.#
+  ~~~~~~~~##.#.#####.#.#.#
+  ~~2~S~~~...#.....#...#.#
+  ~~~~~~~~####.#.###.###.#
+  ~~3~~~~~##.....##.##...#
+  ~~~~~~~~##.##..##....#.#
+  ~~~~~~~~##.......G...#B#
+  ~~~~~~~~################
+objetos:
+- tipo: distractor_amarillo
+  celda:
+  - 6
+  - 10
+  lado: auto
+- tipo: distractor_naranja
+  celda:
+  - 9
+  - 11
+  lado: auto
+- tipo: distractor_violeta
+  celda:
+  - 11
+  - 12
+  lado: auto
+- tipo: distractor_amarillo
+  celda:
+  - 9
+  - 21
+  lado: auto
+- tipo: distractor_naranja
+  celda:
+  - 3
+  - 13
+  lado: auto
+- tipo: distractor_violeta
+  celda:
+  - 1
+  - 18
+  lado: auto
+- tipo: bloque_8cm
+  celda:
+  - 2
+  - 14
+  lado: auto
+- tipo: bloque_8cm
+  celda:
+  - 4
+  - 14
+  lado: auto
+- tipo: bloque_8cm
+  celda:
+  - 2
+  - 10
+  lado: auto
+- tipo: bloque_20cm
+  celda:
+  - 10
+  - 18
+- tipo: distractor_naranja
+  celda:
+  - 10
+  - 13
+  lado: auto
+- tipo: bloque_8cm
+  celda:
+  - 11
+  - 14
+  lado: auto
+flechas:
+- celda:
+  - 1
+  - 10
+  pared: N
+  dir: E
+  largo: 3
+  color: rojo
+- celda:
+  - 1
+  - 22
+  pared: E
+  dir: S
+  largo: 2
+  color: rojo
+  inclinacion: -15
+- celda:
+  - 3
+  - 20
+  pared: O
+  dir: S
+  largo: 3
+  color: rojo
+  inclinacion: -21
+- celda:
+  - 3
+  - 22
+  pared: S
+  dir: O
+  largo: 2
+  color: rojo
+  inclinacion: 24
+- celda:
+  - 5
+  - 12
+  pared: E
+  dir: S
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 5
+  - 12
+  pared: E
+  dir: S
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+- celda:
+  - 7
+  - 10
+  pared: E
+  dir: N
+  largo: 2
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 7
+  - 10
+  pared: E
+  dir: N
+  largo: 2
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 7
+  - 10
+  pared: E
+  dir: N
+  largo: 3
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 7
+  - 18
+  pared: O
+  dir: N
+  largo: 3
+  color: rojo
+  inclinacion: 12
+- celda:
+  - 7
+  - 20
+  pared: S
+  dir: O
+  largo: 2
+  color: rojo
+  inclinacion: -9
+- celda:
+  - 9
+  - 12
+  pared: S
+  dir: E
+  largo: 1
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 9
+  - 12
+  pared: S
+  dir: E
+  largo: 1
+  color: verde
+  desplaza_mm: 80
+- celda:
+  - 9
+  - 22
+  pared: E
+  dir: S
+  largo: 2
+  color: azul
+  inclinacion: 6
+pedestal_forma: cilindro
+pedestal_lado_mm: 80.0
+cubos:
+  R:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
+  G:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
+  B:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false

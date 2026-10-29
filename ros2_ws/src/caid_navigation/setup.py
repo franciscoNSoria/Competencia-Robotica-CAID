@@ -30,6 +30,7 @@ setup(
         'console_scripts': [
             'explorador = caid_navigation.explorador:main',
             'cubo_simulado = caid_navigation.cubo_simulado:main',
+            'carga_simulada = caid_navigation.carga_simulada:main',
         ],
     },
 )

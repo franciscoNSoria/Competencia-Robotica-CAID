@@ -95,6 +95,8 @@ class Laberinto:
         self.altura_apoyo = float(datos.get('altura_apoyo_cubo_mm', ALTURA_APOYO_CUBO_M * 1000.0)) / 1000.0
         self.altura_borde_canasto = float(datos.get('altura_borde_canasto_mm', ALTURA_BORDE_CANASTO_M * 1000.0)) / 1000.0
         self.pedestal_lado = float(datos.get('pedestal_lado_mm', PEDESTAL_LADO_M * 1000.0)) / 1000.0
+        # 'cuadrado' (columna, por defecto) o 'cilindro' (pedestal_lado es el diametro)
+        self.pedestal_forma = str(datos.get('pedestal_forma', 'cuadrado'))
         self.cubos_cfg = {str(k): dict(v) for k, v in (datos.get('cubos') or {}).items()}
         significado = dict(SIGNIFICADO_COLOR_DEFECTO)
         significado.update({str(k): list(v or []) for k, v in (datos.get('significado_colores') or {}).items()})
@@ -194,8 +196,11 @@ def objetos_con_posicion(lab):
         cfg = lab.cubos_cfg.get(simb, {})
         if cfg.get('elevado', True):
             x, y, _ = posicion_cubo(lab, simb, pos[0])
+            # bloquea: false (opcional, por cubo) = el validador no lo cuenta como obstaculo (pilar al centro
+            # de la celda en un escenario de prueba donde no hace falta pasar por ahi)
             salida.append({'tipo': 'soporte', 'origen': 'cubo_' + COLORES_CUBO[simb][0], 'celda': pos[0], 'x': x, 'y': y,
-                           'lado': lab.pedestal_lado, 'alto': lab.altura_apoyo, 'bloquea': True, 'dinamico': False,
+                           'lado': lab.pedestal_lado, 'alto': lab.altura_apoyo,
+                           'bloquea': bool(lab.cubos_cfg.get(simb, {}).get('bloquea', True)), 'dinamico': False,
                            'color': COLOR_SOPORTE, 'z_base': 0.0, 'soporte': True})
     for i, o in enumerate(lab.objetos):
         lado, alto, bloquea, dinamico, color = TIPOS_OBJETO[o['tipo']]
@@ -726,6 +731,18 @@ def caja_visual(nombre, pos, size, rgb, rpy=(0, 0, 0), indent=8):
                f(size[0]), f(size[1]), f(size[2]), material(rgb, indent + 2), s + '</visual>\n'))
 
 
+def cilindro_visual(nombre, radio, alto, rgb, indent=8):
+    s = ' ' * indent
+    return ('%s<visual name="%s">\n%s  <geometry><cylinder><radius>%s</radius><length>%s</length></cylinder></geometry>\n%s%s</visual>\n'
+            % (s, nombre, s, f(radio), f(alto), material(rgb, indent + 2), s))
+
+
+def cilindro_colision(nombre, radio, alto, indent=8):
+    s = ' ' * indent
+    return ('%s<collision name="%s">\n%s  <geometry><cylinder><radius>%s</radius><length>%s</length></cylinder></geometry>\n%s</collision>\n'
+            % (s, nombre, s, f(radio), f(alto), s))
+
+
 def caja_colision(nombre, pos, size, indent=8, friccion=None):
     s = ' ' * indent
     surf = ''
@@ -962,9 +979,13 @@ def generar_sdf(lab, infoval):
         if ob['soporte']:
             w('    <model name="soporte_%s">\n      <static>true</static>\n      <pose>%s %s %s 0 0 0</pose>\n      <link name="link">\n'
               % (ob['origen'], f(ob['x']), f(ob['y']), f(ob['alto'] / 2.0)))
-            size = (ob['lado'], ob['lado'], ob['alto'])
-            w(caja_colision('colision', (0, 0, 0), size))
-            w(caja_visual('visual', (0, 0, 0), size, ob['color']))
+            if lab.pedestal_forma == 'cilindro':
+                w(cilindro_colision('colision', ob['lado'] / 2.0, ob['alto']))
+                w(cilindro_visual('visual', ob['lado'] / 2.0, ob['alto'], ob['color']))
+            else:
+                size = (ob['lado'], ob['lado'], ob['alto'])
+                w(caja_colision('colision', (0, 0, 0), size))
+                w(caja_visual('visual', (0, 0, 0), size, ob['color']))
             w('      </link>\n    </model>\n\n')
         elif ob['dinamico']:
             w(cubo_sdf('%s_%d' % (ob['tipo'], ob['indice']), ob['x'], ob['y'], ob['color'], ob['z_base']))

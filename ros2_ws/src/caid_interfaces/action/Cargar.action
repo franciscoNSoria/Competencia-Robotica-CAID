@@ -1,0 +1,12 @@
+# Cargar un cubo con el brazo (por ahora simulado en caid_navigation/carga_simulada.py).
+
+# Pedido
+string color          # color del cubo: rojo, verde o azul
+---
+# Resultado
+bool exito
+string mensaje
+---
+# Avance
+string etapa          # qué está haciendo: acercar, bajar brazo, cerrar pinza, levantar
+float32 progreso      # de 0 a 1

@@ -121,3 +121,75 @@ def test_marcadores_se_arman():
     msg = marcadores(mapa, 0.45, [(0.0, 0.0), (0.3, 0.0)], (3, 3), Time())
     assert len(msg.markers) == 6
     assert msg.markers[1].points or msg.markers[2].points
+
+
+def test_limites_cierran_el_area_abierta():
+    # Área abierta sin paredes: sin límites la exploración no terminaría nunca.
+    mapa = Mapa(limites=(0, 2, -1, 1))
+    celda, rumbo = (0, 0), 0
+    for _ in range(500):
+        mapa.registrar(celda, rumbo, True, True, True)
+        d = mapa.decidir(celda, rumbo)
+        if d is None:
+            break
+        if d == rumbo:
+            celda = vecina(celda, d)
+        else:
+            rumbo = d
+    assert d is None
+    assert mapa.visitadas == {(x, y) for x in range(3) for y in range(-1, 2)}
+
+
+def test_paso_recorrido_no_se_cierra():
+    mapa = Mapa()
+    mapa.recorrer((0, 0), 0)
+    # Una mala lectura después de girar no puede cerrar el pasillo por el que vino.
+    mapa.registrar((1, 0), 1, frente=False, izquierda=False, derecha=False)
+    assert mapa.abierto((1, 0), 2) is True
+
+
+def test_flecha_va_antes_que_la_exploracion():
+    # T: llega mirando a +x, pared adelante, pasos a izquierda (+y) y derecha (-y).
+    mapa = Mapa()
+    mapa.recorrer((-1, 0), 0)
+    mapa.registrar((0, 0), 0, frente=False, izquierda=True, derecha=True)
+    assert mapa.decidir((0, 0), 0) == 3                  # sin flecha: derecha primero
+    assert mapa.decidir((0, 0), 0, preferida=1) == 1     # flecha a la izquierda: manda
+    # Si por ese lado ya pasó, la flecha no lo hace volver: sigue la exploración.
+    mapa.recorrer((0, 0), 1)
+    mapa.visitadas.add((0, 1))
+    assert mapa.decidir((0, 0), 0, preferida=1) == 3
+
+
+def test_salida_cerrada_y_pilar_olvidado():
+    mapa = Mapa()
+    mapa.registrar((0, 0), 0, frente=True, izquierda=False, derecha=False)
+    mapa.marcar_lado((0, 0), 2, True)          # atrás hay piso (la zona de partida)
+    mapa.cerrar((0, 0), 2)
+    assert 2 not in mapa.pendientes((0, 0))     # la salida no se explora
+    assert mapa.camino((1, 0), lambda c: c == (-1, 0)) is None
+    mapa.abrir((0, 0), 2)
+    assert mapa.camino((0, 0), lambda c: c == (-1, 0)) == [2]
+    # Un pilar medido como pared adelante: al sacarlo se olvida y se vuelve a medir.
+    mapa.registrar((1, 0), 0, frente=False, izquierda=False, derecha=False)
+    mapa.recorrer((0, 0), 0)
+    mapa.olvidar((1, 0))
+    assert mapa.abierto((1, 0), 0) is None
+    assert mapa.abierto((1, 0), 2) is True      # por donde vino no se olvida
+
+
+def test_lado_que_cambia_no_hace_loop():
+    # Un obstáculo chico: dos veces se ve como pared, una vez no. Gana la pared.
+    mapa = Mapa()
+    for frente in (False, False, True):
+        mapa.registrar((0, 0), 0, frente, False, False)
+    assert mapa.abierto((0, 0), 0) is False
+    # Si el robot frenó antes de pasar, queda pared aunque después se mida libre.
+    mapa.registrar((0, 0), 1, frente=True, izquierda=False, derecha=False)
+    mapa.bloquear((0, 0), 1)
+    for _ in range(3):
+        mapa.registrar((0, 0), 1, frente=True, izquierda=False, derecha=False)
+    assert mapa.abierto((0, 0), 1) is False
+    mapa.olvidar((0, 0))                      # se sacó el obstáculo: se vuelve a medir
+    mapa.registrar((0, 0), 1, frente=True, izquierda=False, derecha=False)
+    assert mapa.abierto((0, 0), 1) is True

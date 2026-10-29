@@ -1,0 +1,217 @@
+# Generado con tools/sim/simplificar_laberintos.py a partir de e5_competencia.yaml. No editar a mano.
+nombre: 'E5 Tamano de campo (12 x 18 celdas = 3,84 x 5,76 m) (simple: sin flechas laterales ni zonas)'
+descripcion: Tres bifurcaciones en T y un anillo libre alrededor de una isla (hay dos caminos al cubo verde, uno mas corto),
+  7 obstaculos y 2 zonas prohibidas, con flechas inclinadas. Ocupa 3,84 x 5,76 m, dentro del campo de 4 x 6 m del reglamento
+  general.
+celda_m: 0.4
+alto_pared_m: 0.17
+inicio_dir: E
+canastos_pared: O
+altura_flechas_mm: 115
+altura_apoyo_cubo_mm: 128.5
+altura_borde_canasto_mm: 108.5
+significado_colores:
+  rojo:
+  - R
+  verde:
+  - G
+  azul:
+  - B
+  gris: []
+mapa: |
+  ##################
+  ########.....#####
+  ########.###.#####
+  #####....###R#####
+  #1.##.##.#########
+  #2S...##.##...G.##
+  #3.###......###.##
+  ######.####.###.##
+  ######.####.###.##
+  ######.####.....##
+  ######B###########
+  ##################
+objetos:
+- tipo: distractor_amarillo
+  celda:
+  - 3
+  - 6
+  lado: auto
+- tipo: distractor_naranja
+  celda:
+  - 4
+  - 8
+  lado: auto
+- tipo: distractor_violeta
+  celda:
+  - 6
+  - 10
+  lado: auto
+- tipo: bloque_8cm
+  celda:
+  - 9
+  - 6
+  lado: E
+- tipo: bloque_8cm
+  celda:
+  - 5
+  - 13
+  lado: S
+- tipo: distractor_amarillo
+  celda:
+  - 1
+  - 10
+  lado: auto
+- tipo: distractor_naranja
+  celda:
+  - 7
+  - 6
+  lado: auto
+flechas:
+- celda:
+  - 1
+  - 8
+  pared: N
+  dir: E
+  largo: 3
+  color: rojo
+- celda:
+  - 1
+  - 12
+  pared: E
+  dir: S
+  largo: 2
+  color: rojo
+  inclinacion: 12
+- celda:
+  - 3
+  - 5
+  pared: N
+  dir: E
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 3
+  - 5
+  pared: N
+  dir: E
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 3
+  - 5
+  pared: N
+  dir: E
+  largo: 3
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 3
+  - 8
+  pared: E
+  dir: N
+  largo: 2
+  color: rojo
+  desplaza_mm: -80
+- celda:
+  - 3
+  - 8
+  pared: E
+  dir: S
+  largo: 3
+  color: azul
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 3
+  - 8
+  pared: E
+  dir: S
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 5
+  - 5
+  pared: E
+  dir: N
+  largo: 2
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 5
+  - 5
+  pared: E
+  dir: N
+  largo: 2
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 5
+  - 5
+  pared: E
+  dir: N
+  largo: 2
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 5
+  - 11
+  pared: N
+  dir: E
+  largo: 3
+  color: verde
+  inclinacion: 6
+- celda:
+  - 6
+  - 6
+  pared: O
+  dir: S
+  largo: 3
+  color: azul
+  inclinacion: -21
+- celda:
+  - 6
+  - 8
+  pared: S
+  dir: E
+  largo: 3
+  color: verde
+  desplaza_mm: -80
+- celda:
+  - 6
+  - 8
+  pared: S
+  dir: O
+  largo: 2
+  color: azul
+  desplaza_mm: 80
+- celda:
+  - 6
+  - 11
+  pared: E
+  dir: N
+  largo: 1
+  color: verde
+pedestal_forma: cilindro
+pedestal_lado_mm: 80.0
+cubos:
+  R:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
+  G:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
+  B:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
