@@ -22,7 +22,8 @@ def ruta_gen_maze():
         candidatos.append(padre / 'ros2_ws' / 'src' / 'caid_gazebo' / 'scripts' / 'gen_maze.py')
     try:
         from ament_index_python.packages import get_package_share_directory
-        candidatos.append(Path(get_package_share_directory('caid_gazebo')) / 'scripts' / 'gen_maze.py')
+        share = Path(get_package_share_directory('caid_gazebo'))
+        candidatos.append(share / 'scripts' / 'gen_maze.py')
     except Exception:
         pass
     for c in candidatos:
@@ -39,7 +40,7 @@ def cargar_gen_maze():
 
 
 def ruta_laberinto(nombre):
-    """Acepta una ruta a un YAML o el nombre de un escenario (e1_serpentina, e3_obstaculos, ...)."""
+    """Acepta una ruta a un YAML o el nombre de un escenario (e1_serpentina, e3, ...)."""
     if os.path.isfile(nombre):
         return nombre
     carpeta = ruta_gen_maze().parent.parent / 'mazes'
@@ -147,7 +148,8 @@ class Mundo:
 
     def celda_rc(self, x, y):
         """(fila, columna) de un punto del mundo."""
-        return (self.lab.nfilas - 1 - int(math.floor(y / self.celda)), int(math.floor(x / self.celda)))
+        return (self.lab.nfilas - 1 - int(math.floor(y / self.celda)),
+                int(math.floor(x / self.celda)))
 
     def cajas_cerca(self, x, y, radio):
         return [b for b in self.cajas if b.activa and b.caja[0] - radio < x < b.caja[2] + radio

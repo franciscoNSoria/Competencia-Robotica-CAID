@@ -3,7 +3,7 @@ import math
 import random
 
 from caid_navigation.geometria import (
-    CONO_SONAR, SONARES, a_mundo, ang_dif, esquinas_huella, poligono_toca_caja, rayo_caja)
+    a_mundo, ang_dif, CONO_SONAR, esquinas_huella, poligono_toca_caja, rayo_caja, SONARES)
 
 
 class RobotSim:

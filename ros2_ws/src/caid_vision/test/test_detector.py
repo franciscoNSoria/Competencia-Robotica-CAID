@@ -9,12 +9,11 @@ import math
 import pytest
 
 sim = pytest.importorskip('caid_navigation.simulacion.render')
-
-from caid_navigation.camara import Camara  # noqa: E402
-from caid_navigation.simulacion import oraculo  # noqa: E402
-from caid_navigation.simulacion.mundo import Mundo  # noqa: E402
-from caid_navigation.simulacion.robot import RobotSim  # noqa: E402
-from caid_vision.detector import detectar  # noqa: E402
+Camara = pytest.importorskip('caid_navigation.camara').Camara
+oraculo = pytest.importorskip('caid_navigation.simulacion.oraculo')
+Mundo = pytest.importorskip('caid_navigation.simulacion.mundo').Mundo
+RobotSim = pytest.importorskip('caid_navigation.simulacion.robot').RobotSim
+detectar = pytest.importorskip('caid_vision.detector').detectar
 
 
 def _escena(nombre, dx=0.0, dy=0.0, pan=0.0, dyaw=0.0):

@@ -26,8 +26,8 @@ def test_no_gira_180_en_un_pasillo():
 
 
 def test_gira_90_en_una_esquina_corrido():
-    s, l = buscar_giro(_cajas(DIAG | {(1, 0), (0, -1)}), math.pi / 2, 0.006)
-    assert s < 0 and l > 0          # frena antes y llega corrido hacia el lado al que gira
+    s, lat = buscar_giro(_cajas(DIAG | {(1, 0), (0, -1)}), math.pi / 2, 0.006)
+    assert s < 0 and lat > 0          # frena antes y llega corrido hacia el lado al que gira
     assert buscar_giro(_cajas(DIAG), math.pi, 0.006) == (0.0, 0.0)   # en un cruce, centrado
 
 

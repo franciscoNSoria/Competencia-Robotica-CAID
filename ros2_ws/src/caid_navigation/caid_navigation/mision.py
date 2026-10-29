@@ -1,14 +1,16 @@
 """
 Navegador de la misión (núcleo puro, sin ROS).
 
-Une todo: pose, mapa, planificador, ultrasonidos, cámara y la política de la misión. Lo usan el nodo
+Une todo: pose, mapa, planificador, ultrasonidos, cámara y la política de la misión. Lo usan el
+nodo
 de ROS (navegador_node.py) y el simulador 2D de las pruebas, con la misma interfaz:
 
     nav = Navegador()
     v, w, pan = nav.actualizar(t, odom=(x, y, yaw), rangos={'frente': ..}, pan_real=..)
     nav.vision(t, detecciones, pose, pan)          # cada imagen procesada
     nav.resultado_manipulacion(ok)                 # respuesta del brazo
-    nav.eventos                                    # pedidos al brazo: ('agarrar' | 'soltar', color, (x, y, z))
+    nav.eventos                                    # pedidos al brazo: ('agarrar' | 'soltar',
+    color, (x, y, z))
 
 Política (docs/roadmap/ROADMAP.md, "Comportamiento de la misión"):
 1. Si sostiene un cubo y conoce su canasto, va a dejarlo. Si no lo conoce, explora.
@@ -17,23 +19,25 @@ Política (docs/roadmap/ROADMAP.md, "Comportamiento de la misión"):
    lados de la celda donde están: empujan la exploración, no la reemplazan.
 4. Con los tres entregados (o si ya no queda nada por explorar) vuelve a la celda de partida.
 
-Antes de entrar a una celda nueva: si no la vio de lejos con el ultrasonido, barre la celda de enfrente
-girando ±24° (detecta bloques chicos pegados a la pared); si la cámara no vio su piso, la mira (zona
+Antes de entrar a una celda nueva: si no la vio de lejos con el ultrasonido, barre la celda de
+enfrente
+girando ±24° (detecta bloques chicos pegados a la pared); si la cámara no vio su piso, la mira
+(zona
 roja).
 """
 import math
 
 from caid_navigation.camara import (
-    CANASTO_ANCHO, CANASTO_BASE_Z, CUBO_BASE_Z, CUBO_LADO, Camara, celda_visible, ubicar_flecha,
+    Camara, CANASTO_ANCHO, CANASTO_BASE_Z, celda_visible, CUBO_BASE_Z, CUBO_LADO, ubicar_flecha,
     ubicar_objeto, zonas_en_suelo)
 from caid_navigation.conocimiento import Conocimiento
 from caid_navigation.control import Giro, Recta
 from caid_navigation.geometria import (
-    CELDA, MEDIA, PASOS, a_mundo, a_robot, ang_dif, celda_de, centro, limitar, rumbo_de, vecina,
+    a_mundo, a_robot, ang_dif, CELDA, celda_de, centro, limitar, MEDIA, PASOS, rumbo_de, vecina,
     yaw_de)
 from caid_navigation.localizacion import Estimador
 from caid_navigation.planificador import Costos, planificar
-from caid_navigation.sonar import Barrido, RegistroLateral, leer_frente
+from caid_navigation.sonar import Barrido, leer_frente, RegistroLateral
 
 COLORES = ('rojo', 'verde', 'azul')
 
@@ -48,7 +52,7 @@ PARAMETROS = {
     'usar_camara': True,
     'mirar_cruces': True,
     'inspeccion_inicial': True,
-    'agarre_dx': -0.02,         # m, x del cubo en base_link al agarrarlo (P: alineado con el brazo)
+    'agarre_dx': -0.02,         # m, x del cubo en base_link al agarrarlo (P: eje del brazo)
     'deposito_dist': 0.19,      # m, del centro del robot al centro del canasto (queda atrás)
     'radio_abierto': 3,         # celdas: lejos de toda pared solo se explora cerca del inicio
     'penal_abierto': 25.0,      # s
@@ -62,6 +66,7 @@ PARAMETROS = {
     'mirar_en_barrido': True,   # quieto en los extremos del barrido para que mire la cámara
     'factor_giro': 1.0,         # giro real / giro de la odometría (calibrar en el banco)
     'penal_partida': 60.0,      # s: explorar alrededor de la partida va al final
+    'penal_sala': 15.0,         # s: celdas con menos de 2 paredes (salas, exterior)
 }
 
 
@@ -95,7 +100,7 @@ class Tarea:
 class TRecta(Tarea):
     """Recta por el eje h hasta el centro de `fin` (+ s), adelante (+1) o atrás (-1)."""
 
-    def __init__(self, nav, h, signo, fin, s=0.0, l=None, extender=False, v_max=None,
+    def __init__(self, nav, h, signo, fin, s=0.0, lat=None, extender=False, v_max=None,
                  a_fin=None, lat_fin=None, nombre=None):
         self.nombre = nombre or ('avanzar' if signo > 0 else 'retroceder')
         self.h, self.signo = h, signo
@@ -106,7 +111,7 @@ class TRecta(Tarea):
         cx, cy = centro(fin)
         self.base_lat = cx * n[0] + cy * n[1]
         self.a_fin = a_fin if a_fin is not None else cx * u[0] + cy * u[1] + s
-        self.l_fin = l
+        self.l_fin = lat
         self.lat_fin = lat_fin
         self.nav = nav
         vel = v_max or (nav.p['v_avance'] if signo > 0 else nav.p['v_retro'])
@@ -166,10 +171,10 @@ class TRecta(Tarea):
             if celda == self.fin:
                 nuevo = nav.extension(celda, self.h)
                 if nuevo is not None:
-                    self.fin, s, l = nuevo
+                    self.fin, s, lat = nuevo
                     cx, cy = centro(self.fin)
                     self.a_fin = cx * u[0] + cy * u[1] + s
-                    self.l_fin = l
+                    self.l_fin = lat
                     self.ctrl.a_fin = self.a_fin
         if nav.con.version != self.version and self.signo > 0:
             self.version = nav.con.version
@@ -259,7 +264,7 @@ class TGiro(Tarea):
 
 
 class TBarrido(Tarea):
-    """Gira ±ang en el lugar leyendo el ultrasonido de frente: mapa fino de la celda de enfrente."""
+    """Gira ±ang en el lugar leyendo el ultrasonido de frente (celda de enfrente)."""
 
     nombre = 'barrer'
 
@@ -573,7 +578,8 @@ class Navegador:
             if self._toca_pared(vieja, celda, d):
                 previas.remove(vieja)
         self.con.agregar_caja(celda, caja)
-        self.registro(f'algo apoyado en la pared {d} de {celda} ({prof * 100:.0f} cm): no giro ahí')
+        self.registro(f'algo apoyado en la pared {d} de {celda} ({prof * 100:.0f} cm): '
+                      'no giro ahí')
 
     @staticmethod
     def _toca_pared(caja, celda, d):
@@ -731,6 +737,11 @@ class Navegador:
                 b = 0.0
                 if not con.junto_a_pared(c):
                     b -= self.p['penal_abierto']
+                elif abs(c[0]) + abs(c[1]) > self.p['radio_abierto'] and sum(
+                        vecina(c, d) in con.bloques for d in range(4)) < 2:
+                    # Menos de dos paredes al lado: sala o afuera del laberinto (recorriendo el
+                    # muro exterior). Primero los pasillos.
+                    b -= self.p['penal_sala']
                 if max(abs(c[0]), abs(c[1])) <= 1 and c != (1, 0):
                     # Alrededor de la partida: ya se miró con la cámara en la inspección inicial y
                     # girar ahí (sin paredes cerca) acumula error de rumbo. Se deja para el final.
@@ -806,12 +817,13 @@ class Navegador:
         return {(c, h) for c, h in metas if c in self.con.libres and c not in self.con.bloques}
 
     def _acople_libre(self, obj, px, py, h):
-        """La pose de agarre o descarga no puede tocar nada salvo el propio objeto (o su soporte)."""
+        """La pose de agarre o descarga no puede tocar nada salvo el objeto (o su soporte)."""
         obs = obj['obs']
         propias = []
         celda_obj = celda_de(obs.x, obs.y)
         for caja in self.con.cajas.get(celda_obj, []):
-            if caja[0] - 0.03 <= obs.x <= caja[2] + 0.03 and caja[1] - 0.03 <= obs.y <= caja[3] + 0.03:
+            if (caja[0] - 0.03 <= obs.x <= caja[2] + 0.03
+                    and caja[1] - 0.03 <= obs.y <= caja[3] + 0.03):
                 propias.append(caja)
         for caja in propias:
             self.con.cajas[celda_obj].remove(caja)
@@ -868,19 +880,19 @@ class Navegador:
             previa = self._previa(c, h, n)
             if previa is not None:
                 return previa
-            s, l = 0.0, None
+            s, lat = 0.0, None
             if len(acciones) > 1 and acciones[1][0] == 'girar':
-                s, l = acciones[1][2]
-            return TRecta(self, h, 1, n, s, l, extender=True)
+                s, lat = acciones[1][2]
+            return TRecta(self, h, 1, n, s, lat, extender=True)
         if tipo == 'retroceder':
             k = 0
             while k < len(acciones) and acciones[k][0] == 'retroceder':
                 k += 1
             fin = acciones[k - 1][1]
-            s, l = 0.0, None
+            s, lat = 0.0, None
             if k < len(acciones) and acciones[k][0] == 'girar':
-                s, l = acciones[k][2]
-            return TRecta(self, h, -1, fin, s, l)
+                s, lat = acciones[k][2]
+            return TRecta(self, h, -1, fin, s, lat)
         # Girar: con el lateral que tiene ahora el robot, buscar dónde frenar.
         nuevo = acciones[0][1]
         giro = {1: math.pi / 2, 3: -math.pi / 2, 2: math.pi}[(nuevo - h) % 4]
@@ -892,10 +904,10 @@ class Navegador:
         corr = self.con.giro(c, h, giro, l_fijo=l0, s_actual=s0,
                              margen=self.p['margen_giro_ejecucion'])
         if corr is None:
-            s, l = acciones[0][2]
-            maniobra = self._desplazamiento(c, h, s0, l0, s, l)
+            s, lat = acciones[0][2]
+            maniobra = self._desplazamiento(c, h, s0, l0, s, lat)
             if maniobra is not None:
-                self.registro(f'corrimiento lateral en {c}: {l0 * 100:.1f} -> {l * 100:.1f} cm '
+                self.registro(f'corrimiento lateral en {c}: {l0 * 100:.1f} -> {lat * 100:.1f} cm '
                               f'para girar')
                 sentido = 1 if giro > 0 else -1
                 tareas = maniobra + [TGiro(yaw_de(nuevo), self, c, nuevo,
@@ -904,7 +916,7 @@ class Navegador:
                 return tareas[0]
             # Con este lateral no entra: alejarse por el lado libre y volver a llegar corrido.
             self.registro(f'reacomodo para girar en {c} (lateral {l0 * 100:.1f} cm, '
-                          f'pide {l * 100:.0f} cm)')
+                          f'pide {lat * 100:.0f} cm)')
             clave = (c, h, nuevo)
             self.reacomodos[clave] = self.reacomodos.get(clave, 0) + 1
             if self.reacomodos[clave] > 2:
@@ -913,8 +925,10 @@ class Navegador:
                 self.con.version += 1
                 return TEspera(0.05)
             atras = (h + 2) % 4
-            sentido = -1 if self.con.transitable(c, atras) else (1 if self.con.transitable(c, h)
-                                                                   else 0)
+            if self.con.transitable(c, atras):
+                sentido = -1
+            else:
+                sentido = 1 if self.con.transitable(c, h) else 0
             if sentido == 0:
                 self.registro(f'no hay lugar para reacomodarse en {c}: busco otro camino')
                 self.con.giros_imposibles.add((c, h, nuevo))
@@ -923,7 +937,7 @@ class Navegador:
             a_lejos = cx * u[0] + cy * u[1] + s + 0.30 * sentido
             volver = TRecta(self, h, -sentido, c, s, nombre='acomodar', v_max=0.10)
             volver.ctrl.k_lat = 10.0
-            volver.lat_fin = (cx * n[0] + cy * n[1]) + l + math.copysign(0.004, l)
+            volver.lat_fin = (cx * n[0] + cy * n[1]) + lat + math.copysign(0.004, lat)
             self.cola = [volver]
             return TRecta(self, h, sentido, c, a_fin=a_lejos, nombre='acomodar')
         tareas = []
@@ -937,13 +951,13 @@ class Navegador:
         self.cola = tareas[1:] + self.cola
         return tareas[0]
 
-    def _sobrepaso(self, c, h, nuevo, giro, s, l):
+    def _sobrepaso(self, c, h, nuevo, giro, s, lat):
         """Ángulo extra (hasta 15°) que entra en la celda al terminar el giro, o 0."""
         n = vecina(c, nuevo)
         if abs(giro) > 2 or self.con.visitada(n) or not self.p['barrer_celdas_nuevas']:
             return 0.0
         # Corrimiento del robot en el marco del rumbo nuevo.
-        s2, l2 = (l, -s) if (nuevo - h) % 4 == 1 else (-l, s)
+        s2, l2 = (lat, -s) if (nuevo - h) % 4 == 1 else (-lat, s)
         ang = self.con.barrido_posible(c, nuevo, s2, l2, 0.26, self.p['margen_giro_ejecucion'])
         return ang if ang >= 0.17 else 0.0
 
@@ -1025,7 +1039,8 @@ class Navegador:
             # hasta que están a 2 celdas. Al entrar a un pasillo nuevo se mira a los dos lados.
             self.miradas.add(('costados', c, h))
             return TMirar([0.75, -0.75, 0.0], cuadros=2)
-        if self.p['usar_camara'] and self.inspecciones.get(n, 0) < 2 and ('piso', n) not in self.miradas:
+        if self.p['usar_camara'] and self.inspecciones.get(n, 0) < 2 and \
+                ('piso', n) not in self.miradas:
             self.miradas.add(('piso', n))
             pose = self.est.pose
             cx, cy = centro(n)
@@ -1046,7 +1061,7 @@ class Navegador:
                    for c in faltan)
 
     def extension(self, c, h):
-        """Al entrar a la celda c en una recta: (celda_final, s, l) para seguir o frenar."""
+        """Al entrar a la celda c en una recta: (celda_final, s, lat) para seguir o frenar."""
         obj = self.objetivo()
         es, bonus = self._metas(obj)
         plan = planificar(self.con, (c, h), es, self.costos, self.costo_extra, bonus)
@@ -1145,7 +1160,8 @@ class Navegador:
             if not grupo:
                 continue
             interior = min(p[1] * lado for p in grupo)
-            # Entre el obstáculo y la pared no pasa el robot (163 mm): se lo toma pegado a la pared.
+            # Entre el obstáculo y la pared no pasa el robot (163 mm): se lo toma pegado a la
+            # pared.
             exterior = MEDIA
             ancho = max(0.03, exterior - interior)
             x0 = min(p[0] for p in grupo) - 0.005
@@ -1194,7 +1210,10 @@ class TManipularDiferido(Tarea):
     def paso(self, nav, pose, rangos, dt):
         if self.interna is None:
             rx, ry = a_robot(pose, self.obs.x, self.obs.y)
-            z = (CUBO_BASE_Z + CUBO_LADO / 2) if self.accion == 'agarrar' else (CANASTO_BASE_Z + 0.02)
+            if self.accion == 'agarrar':
+                z = CUBO_BASE_Z + CUBO_LADO / 2
+            else:
+                z = CANASTO_BASE_Z + 0.02
             self.interna = TManipular(nav, self.accion, self.color, (rx, ry, z))
         return self.interna.paso(nav, pose, rangos, dt)
 
@@ -1214,7 +1233,8 @@ class TInspeccionAtras(Tarea):
             h = rumbo_de(pose[2])
             base = yaw_de(h)
             lados = []
-            for giro, pans in ((math.pi / 2, [1.5, 0.75, 0.0]), (-math.pi / 2, [-1.5, -0.75, 0.0])):
+            for giro, pans in ((math.pi / 2, [1.5, 0.75, 0.0]),
+                               (-math.pi / 2, [-1.5, -0.75, 0.0])):
                 corr = nav.con.giro(c, h, giro, l_fijo=0.0, s_actual=0.0)
                 if corr is None or abs(corr[0]) > 0.04:
                     continue

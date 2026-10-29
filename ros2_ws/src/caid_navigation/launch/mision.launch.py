@@ -5,7 +5,8 @@ Misión completa en Gazebo: simulación + visión + navegador + brazo simulado.
 
 `laberinto` es el nombre de un escenario de caid_gazebo/mazes (e1_serpentina, e2_bifurcaciones,
 e3_obstaculos, e4_isla, e5_competencia, e6_salida_abierta). La pose de partida y el significado
-de los colores de las flechas salen del mismo YAML con gen_maze.py, así no hay que copiarlos a mano.
+de los colores de las flechas salen del mismo YAML con gen_maze.py, así no hay que copiarlos a
+mano.
 El navegador NO lee el mapa: arranca sin saber nada del laberinto.
 """
 import importlib.util

@@ -14,7 +14,7 @@ los ultrasonidos y la cámara:
 """
 import math
 
-from caid_navigation.geometria import CELDA, MEDIA, PASOS, centro, poligono_toca_caja, vecina
+from caid_navigation.geometria import CELDA, centro, MEDIA, PASOS, poligono_toca_caja, vecina
 from caid_navigation.giros import angulo_barrido, buscar_giro, cajas_vecinas
 from caid_navigation.mapa import Mapa
 
@@ -112,7 +112,7 @@ class Conocimiento:
         return celda not in self.libres or celda in self.bloques
 
     def cajas_giro(self, celda, h):
-        """Cajas del entorno de la celda en su marco con rumbo h (bloques, desconocidas, obstáculos)."""
+        """Cajas del entorno de la celda, en su marco con rumbo h (bloques y obstáculos)."""
         rot = ROT[h]
         inv = ROT[(4 - h) % 4]
         cx, cy = centro(celda)
@@ -132,14 +132,14 @@ class Conocimiento:
             return self.ocupada((celda[0] + ax, celda[1] + ay))
         return cajas_vecinas(ocupada, interiores)
 
-    def barrido_posible(self, celda, h, s, l, maximo, margen=None):
-        """Ángulo (rad) que el robot en (s, l) puede barrer a cada lado sin tocar nada."""
-        return angulo_barrido(self.cajas_giro(celda, h), round(s, 3), round(l, 3), maximo,
+    def barrido_posible(self, celda, h, s, lat, maximo, margen=None):
+        """Ángulo (rad) que el robot en (s, lat) puede barrer a cada lado sin tocar nada."""
+        return angulo_barrido(self.cajas_giro(celda, h), round(s, 3), round(lat, 3), maximo,
                               self.margen_giro if margen is None else margen)
 
     def giro(self, celda, h, giro, l_fijo=None, s_actual=0.0, margen=None):
         """
-        Corrimiento (s, l) para girar `giro` rad en la celda con rumbo inicial h, o None.
+        Corrimiento (s, lat) para girar `giro` rad en la celda con rumbo inicial h, o None.
 
         Con l_fijo (robot quieto con ese lateral) solo se busca dónde frenar a lo largo del eje.
         """
@@ -210,7 +210,7 @@ class Conocimiento:
         return math.hypot(x - cx, y - cy)
 
     def dibujo(self, pose=None):
-        """Mapa en texto (para el log y las pruebas): # bloque, . visitada, Z prohibida, ? sin ver."""
+        """Mapa en texto (log y pruebas): # bloque, . visitada, Z prohibida, , vista."""
         celdas = self.libres | self.bloques | self.prohibidas
         if not celdas:
             return ''

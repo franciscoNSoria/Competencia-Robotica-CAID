@@ -3,7 +3,8 @@ Pose del robot en el marco `map` (núcleo puro, sin ROS).
 
 No hay IMU: la pose sale de la odometría de las ruedas y se corrige con las paredes conocidas.
 
-- Odometría: se integran los incrementos (no la pose absoluta), así una corrección del rumbo también
+- Odometría: se integran los incrementos (no la pose absoluta), así una corrección del rumbo
+también
   corrige hacia dónde se acumula el avance que sigue.
 - Lateral: cada ultrasonido de costado que ve una pared conocida da la distancia del robot a esa
   pared. Se descartan las lecturas que difieren más de 3 cm de lo esperado (un soporte o un bloque
@@ -19,7 +20,7 @@ No hay IMU: la pose sale de la odometría de las ruedas y se corrige con las par
 import math
 
 from caid_navigation.geometria import (
-    CELDA as CELDA_M, MEDIA, PASOS, SONARES, a_mundo, ang_dif, celda_de, centro, rumbo_de, yaw_de)
+    a_mundo, ang_dif, CELDA as CELDA_M, celda_de, centro, MEDIA, PASOS, rumbo_de, SONARES, yaw_de)
 
 
 class Estimador:
@@ -163,7 +164,8 @@ class Estimador:
                 continue
             if e_atras == previo[0] or e_adel == pared:
                 continue        # el cambio no coincide con el mapa
-            # El cambio se ve con el rayo extremo del cono: la lectura pasa el umbral (0,20 m) cuando
+            # El cambio se ve con el rayo extremo del cono: la lectura pasa el umbral (0,20 m)
+            # cuando
             # ese rayo pega en la cara del bloque que da a la abertura a más de 0,20 m, o sea
             # 0,20 * tan(7,5°) = 2,6 cm después (pared -> abierto) o antes (abierto -> pared) del
             # borde. Con el sensor real hay que medirlo (parámetro).

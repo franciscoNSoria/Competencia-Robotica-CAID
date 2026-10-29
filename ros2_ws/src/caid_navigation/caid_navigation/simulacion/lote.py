@@ -33,7 +33,8 @@ def main():
     with ProcessPoolExecutor(max_workers=min(len(trabajos), os.cpu_count() or 2)) as ex:
         for (n, s, completa, t, ent, err, ch, zo, emax, atas, ult, chq) in ex.map(_uno, trabajos):
             ok += completa
-            print(f'{n:22s} semilla {s}: {"OK " if completa else "MAL"} {t:5.0f} s  entregados {ent}'
+            estado = 'OK ' if completa else 'MAL'
+            print(f'{n:22s} semilla {s}: {estado} {t:5.0f} s  entregados {ent}'
                   f'  choques {ch}{" (atascado)" if atas else ""}  zonas {zo}  errores {err}'
                   f'  pose máx {emax[0] * 100:.1f} cm/{math.degrees(emax[1]):.1f}°')
             if a.detalle and not completa:

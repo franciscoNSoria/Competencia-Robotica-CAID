@@ -3,7 +3,8 @@ Corre la misión completa en el simulador 2D y mide el resultado.
 
     python3 -m caid_navigation.simulacion.correr e3_obstaculos [--vision render] [--sin-ruido]
 
-`--vision oraculo` (por defecto) usa detecciones perfectas; `--vision render` dibuja la imagen de la
+`--vision oraculo` (por defecto) usa detecciones perfectas; `--vision render` dibuja la imagen de
+la
 cámara y corre el detector de caid_vision (necesita OpenCV); `--vision no` navega sin cámara.
 """
 import argparse
@@ -42,7 +43,8 @@ class Resultado:
 
     def resumen(self):
         return (f'{"COMPLETA" if self.completa else "INCOMPLETA"}: {self.tiempo:.0f} s, '
-                f'entregados {self.entregados}, errores {self.errores}, choques {len(self.choques)}, '
+                f'entregados {self.entregados}, errores {self.errores}, '
+                f'choques {len(self.choques)}, '
                 f'pisadas de zona {self.zonas}, recorrido {self.recorrido:.1f} m, '
                 f'error de pose máx {self.error_max[0] * 100:.1f} cm / '
                 f'{math.degrees(self.error_max[1]):.1f}°')
@@ -130,7 +132,8 @@ def manipular(mundo, robot, accion, color, res):
             return False
         cx, cy = (cubo.caja[0] + cubo.caja[2]) / 2, (cubo.caja[1] + cubo.caja[3]) / 2
         if math.hypot(cx - bx, cy - by) > ALCANCE_BRAZO:
-            res.errores.append(f'cubo {color} fuera de alcance ({math.hypot(cx - bx, cy - by):.2f} m)')
+            dist = math.hypot(cx - bx, cy - by)
+            res.errores.append(f'cubo {color} fuera de alcance ({dist:.2f} m)')
             return False
         cubo.activa = False
         return True
@@ -146,7 +149,8 @@ def manipular(mundo, robot, accion, color, res):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument('laberintos', nargs='+')
     ap.add_argument('--vision', default='oraculo', choices=('oraculo', 'render', 'no'))
     ap.add_argument('--sin-ruido', action='store_true')

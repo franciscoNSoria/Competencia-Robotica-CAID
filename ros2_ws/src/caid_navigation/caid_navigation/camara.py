@@ -9,7 +9,8 @@ el ángulo del servo, cada píxel es un rayo en el marco `map`. Con ese rayo:
   cada cara candidata y se queda la cara en la que la punta mide lo que dice el reglamento (50 mm
   a lo largo del eje). En esa cara se miden en milímetros el largo del cuerpo (30 / 60 / 100 mm) y
   hacia qué lado apunta a lo largo de la pared, sin importar la perspectiva ni la inclinación.
-- **Cubos y canastos**: la distancia sale del borde de abajo del objeto (apoya a una altura conocida,
+- **Cubos y canastos**: la distancia sale del borde de abajo del objeto (apoya a una altura
+conocida,
   más abajo que la cámara) o, si está muy cerca del horizonte, de su ancho.
 - **Zonas rojas**: los píxeles rojos del piso se proyectan al piso; las celdas cuyo centro queda
   dentro del rectángulo rojo son prohibidas.
@@ -17,8 +18,8 @@ el ángulo del servo, cada píxel es un rayo en el marco `map`. Con ese rayo:
 import math
 
 from caid_navigation.geometria import (
-    CAMARA_ADELANTE, CAMARA_ALTO, CAMARA_ALTURA, CAMARA_ANCHO, CAMARA_EJE_X, CAMARA_HFOV, CELDA,
-    MEDIA, PASOS, a_mundo, celda_de, centro)
+    a_mundo, CAMARA_ADELANTE, CAMARA_ALTO, CAMARA_ALTURA, CAMARA_ANCHO, CAMARA_EJE_X, CAMARA_HFOV,
+    celda_de, centro, MEDIA, PASOS)
 
 CUBO_LADO = 0.020
 CUBO_BASE_Z = 0.1085          # O: los cubos apoyan a la altura de la base del brazo
@@ -164,7 +165,8 @@ def ubicar_flecha(con, cam, pose, pan, det, tolerancia=0.25):
             continue        # más de 60° de inclinación: no es una flecha del reglamento
         cuerpo = math.dist(cuello, cola)
         largo = 1 if cuerpo < LARGO_CUERPO[0] else (2 if cuerpo < LARGO_CUERPO[1] else 3)
-        mejor = {'celda': celda, 'pared': dpared, 'dir': (dpared + 1) % 4 if s > 0 else (dpared + 3) % 4,
+        direccion = (dpared + 1) % 4 if s > 0 else (dpared + 3) % 4
+        mejor = {'celda': celda, 'pared': dpared, 'dir': direccion,
                  'largo': largo, 'color': det['color'], 'xyz': cuello, 'error': error,
                  'cuerpo': cuerpo, 'distancia': t}
     return mejor
@@ -203,8 +205,10 @@ def zonas_en_suelo(con, cam, pose, pan, puntos, minimo=4):
     """
     Votos de zona roja por celda en esta imagen: {celda: votos}.
 
-    puntos: [(u, v)] de píxeles rojos del piso. Las líneas de una zona están entre 5 y 25 mm adentro
-    del borde de su celda; con 2 o 3 cm de error de pose no se puede saber de qué lado del borde cae
+    puntos: [(u, v)] de píxeles rojos del piso. Las líneas de una zona están entre 5 y 25 mm
+    adentro
+    del borde de su celda; con 2 o 3 cm de error de pose no se puede saber de qué lado del borde
+    cae
     una línea suelta. Pero la zona es un rectángulo (convexo): la envolvente convexa de cualquier
     parte de su contorno queda adentro del rectángulo. Votan los puntos de esa envolvente que están
     a más de 3 cm de su borde. Una sola línea recta no vota (su envolvente es muy angosta).
@@ -301,7 +305,8 @@ def celda_visible(con, cam, pose, pan, celda, margen=20):
     """
     True si se ve el piso de la mitad lejana de la celda (dentro de la imagen y sin pared delante).
 
-    La cámara no ve el piso a menos de 0,33 m: desde la celda vecina solo alcanza la parte lejana de
+    La cámara no ve el piso a menos de 0,33 m: desde la celda vecina solo alcanza la parte lejana
+    de
     la celda, que es donde se mira (11 cm más allá del centro, en la dirección robot -> celda).
     """
     cx, cy = centro(celda)

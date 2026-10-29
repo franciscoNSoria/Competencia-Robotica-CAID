@@ -5,7 +5,8 @@ Envoltorio de ROS 2 de mision.Navegador (toda la lógica está ahí, sin ROS, pr
 simulador 2D). Este nodo solo traduce tópicos.
 
 Lee:
-  odom_topic        nav_msgs/Odometry       odometría de las ruedas (marco odom, nace en la partida)
+  odom_topic        nav_msgs/Odometry       odometría de las ruedas (marco odom, nace en la
+  partida)
   frente/izquierda/derecha_topic  sensor_msgs/Range   ultrasonidos
   /vision/detecciones  std_msgs/String     JSON de caid_vision (píxeles de flechas, cubos, ...)
   joint_states_topic sensor_msgs/JointState  ángulo real del servo de la cámara
@@ -13,7 +14,8 @@ Lee:
 Publica:
   cmd_vel_topic      geometry_msgs/Twist
   pan_topic          std_msgs/Float64      ángulo pedido al servo de la cámara (rad)
-  /mision/pedido     std_msgs/String       JSON {"accion": "agarrar"|"soltar", "color", "x", "y", "z"}
+  /mision/pedido     std_msgs/String       JSON {"accion": "agarrar"|"soltar", "color", "x", "y",
+  "z"}
                                            (posición del objeto en base_link, m)
   /nav/estado        std_msgs/String       último mensaje del navegador
   /nav/mapa          std_msgs/String       mapa en texto

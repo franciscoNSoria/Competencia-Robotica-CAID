@@ -104,8 +104,10 @@ class Render:
                 return
             q = np.array([(cam.cx + cam.fx * x / zz, cam.cy + cam.fy * y / zz, 1.0 / zz)
                           for x, y, zz in poli])
-            umin, umax = int(max(0, math.floor(q[:, 0].min()))), int(min(W - 1, math.ceil(q[:, 0].max())))
-            vmin, vmax = int(max(0, math.floor(q[:, 1].min()))), int(min(Hh - 1, math.ceil(q[:, 1].max())))
+            umin = int(max(0, math.floor(q[:, 0].min())))
+            umax = int(min(W - 1, math.ceil(q[:, 0].max())))
+            vmin = int(max(0, math.floor(q[:, 1].min())))
+            vmax = int(min(Hh - 1, math.ceil(q[:, 1].max())))
             if umin > umax or vmin > vmax:
                 return
             mascara = np.zeros((vmax - vmin + 1, umax - umin + 1), np.uint8)

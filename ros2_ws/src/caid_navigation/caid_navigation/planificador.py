@@ -44,7 +44,8 @@ def vecinos(con, estado, costos, costo_extra=None):
             continue
         corr = con.giro(celda, h, giro)
         if corr is not None:
-            yield ('girar', nuevo, corr), (celda, nuevo), costo + 3.0 * (abs(corr[0]) + abs(corr[1]))
+            extra = 3.0 * (abs(corr[0]) + abs(corr[1]))
+            yield ('girar', nuevo, corr), (celda, nuevo), costo + extra
 
 
 def dijkstra(con, inicio, costos, costo_extra=None, limite=None):

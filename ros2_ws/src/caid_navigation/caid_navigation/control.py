@@ -13,7 +13,7 @@ o para llegar corrido a un giro).
 """
 import math
 
-from caid_navigation.geometria import PASOS, ang_dif, limitar, yaw_de
+from caid_navigation.geometria import ang_dif, limitar, PASOS, yaw_de
 
 
 class Recta:

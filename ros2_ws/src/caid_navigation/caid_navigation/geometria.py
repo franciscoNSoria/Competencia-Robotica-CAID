@@ -4,7 +4,8 @@ Geometría del robot y del laberinto (núcleo puro, sin ROS).
 Marcos:
 - `map`: nace en el centro de la celda de partida, con x hacia donde mira el robot al arrancar.
   La celda (i, j) tiene su centro en (i * CELDA, j * CELDA).
-- `base_link`: x adelante, y a la izquierda, en el centro de la placa (hardware/cad/dimensions.yaml).
+- `base_link`: x adelante, y a la izquierda, en el centro de la placa
+(hardware/cad/dimensions.yaml).
 
 Direcciones absolutas: 0 = +x, 1 = +y, 2 = -x, 3 = -y (antihorario, como el yaw). Es la misma
 convención que mapa.py.
@@ -97,7 +98,7 @@ def caja_de_celda(celda):
 
 
 def poligono_toca_caja(puntos, caja):
-    """Separación de ejes entre un polígono convexo y una caja alineada (xmin, ymin, xmax, ymax)."""
+    """Separación de ejes: polígono convexo contra caja alineada (xmin, ymin, xmax, ymax)."""
     xs = [p[0] for p in puntos]
     ys = [p[1] for p in puntos]
     if max(xs) <= caja[0] or min(xs) >= caja[2] or max(ys) <= caja[1] or min(ys) >= caja[3]:

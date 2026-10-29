@@ -141,9 +141,23 @@ source install/setup.bash
 ros2 launch caid_navigation mision.launch.py laberinto:=e2_bifurcaciones
 ```
 
-## 6. Resultados en el simulador 2D (S)
+## 6. Resultados en el simulador 2D (S, 29/10/2026)
 
-Ver la sección 7 (se actualiza con cada corrida en lote).
+Misión completa = 3 cubos en su canasto, robot en la partida y ningún error. "Oráculo" son
+detecciones perfectas; "render" dibuja la imagen y corre el detector real. Odometría con 1 % de error
+de avance y 1,5 % de giro, ultrasonidos con ruido de 5 mm.
+
+| Escenario | Oráculo (3 semillas) | Render (2 semillas) | Tiempo de una completa | Falla típica |
+|---|---|---|---|---|
+| E1 serpentina | 2/3 | 1/2 | 800 s | lento (muchos giros); se queda sin tiempo |
+| E2 bifurcaciones | 3/3 | 1/2 | 400-440 s | con render, un cubo no confirmado a tiempo |
+| E3 obstáculos | 2/3 | 1/2 | 510-560 s | roce al salir del callejón del cubo verde (ver 7) |
+| E4 isla | 3/3 | 0/2 | 410-440 s | con render, no encuentra el tercer cubo |
+| E5 competencia | 0/3 | 2/2 | 490 s | roce con un soporte o bloque en pasos de ±1,5 cm |
+| E6 salida abierta | 0/3 | 0/2 | — | área abierta sin paredes: pose de hasta 26 cm de error, lento |
+
+Choques con paredes en giros: casi desaparecieron con los giros de máxima holgura y el
+corrimiento lateral. Los choques que quedan son con soportes y bloques en pasos muy justos.
 
 ## 7. Pendiente y riesgos
 

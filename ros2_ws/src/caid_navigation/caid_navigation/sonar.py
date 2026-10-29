@@ -1,12 +1,14 @@
 """
 Qué dicen los ultrasonidos del laberinto (núcleo puro, sin ROS).
 
-- `RegistroLateral`: mientras el robot pasa por una celda, junta lo que miden los ultrasonidos de los
+- `RegistroLateral`: mientras el robot pasa por una celda, junta lo que miden los ultrasonidos de
+los
   costados cuando el sensor está cerca del centro de la celda, y al salir marca esos dos lados
   (pared si la mediana es menor que 0,20 m). Los sensores están 96 mm por delante del centro del
   robot, así que cada celda se registra antes de que el robot llegue a su centro.
 - `leer_frente`: con el ultrasonido de frente decide hasta dónde sigue abierto el pasillo. El cono
-  de 15° toca las paredes laterales de un pasillo de 0,32 m a 1,2 m, así que solo se usa hasta ~1 m.
+  de 15° toca las paredes laterales de un pasillo de 0,32 m a 1,2 m, así que solo se usa hasta ~1
+  m.
   Si el eco no cae en un borde de celda, hay un obstáculo dentro de una celda.
 - `Barrido`: mapa fino (1 cm) de la celda de enfrente armado girando el robot ±25° con el
   ultrasonido de frente. Dice si se puede pasar y con qué corrimiento lateral (un bloque de 8 cm
@@ -15,8 +17,8 @@ Qué dicen los ultrasonidos del laberinto (núcleo puro, sin ROS).
 import math
 
 from caid_navigation.geometria import (
-    CELDA, CONO_SONAR, HUELLA_Y, MEDIA, PASOS, SONARES, a_mundo, ang_dif, celda_de, centro,
-    rumbo_de, yaw_de)
+    a_mundo, ang_dif, CELDA, celda_de, centro, CONO_SONAR, HUELLA_Y, MEDIA, PASOS, rumbo_de,
+    SONARES, yaw_de)
 
 UMBRAL_PARED = 0.20
 
@@ -102,7 +104,8 @@ def leer_frente(pose, f, tolerancia=0.045):
             celda = (celda[0] + u[0], celda[1] + u[1])
             continue
         if f < borde - tolerancia:
-            # Eco antes del borde: algo dentro de esta celda (si está dentro del alcance confiable).
+            # Eco antes del borde: algo dentro de esta celda (si está dentro del alcance
+            # confiable).
             if f <= alcance:
                 sospecha = (celda, f)
             break
@@ -122,9 +125,12 @@ class Barrido:
     Celda de enfrente vista con el ultrasonido de frente mientras el robot gira en el lugar.
 
     Una lectura es "de pared" si no es más corta que la pared más cercana posible: el pasillo de la
-    celda actual y la de enfrente cerrado por los costados y por el fondo. Esas lecturas solo liberan
-    espacio. Una lectura más corta tiene que venir de un obstáculo dentro del pasillo: deja un arco de
-    "posible obstáculo" a esa distancia, y lo ocupado es lo del arco que ninguna otra lectura liberó.
+    celda actual y la de enfrente cerrado por los costados y por el fondo. Esas lecturas solo
+    liberan
+    espacio. Una lectura más corta tiene que venir de un obstáculo dentro del pasillo: deja un arco
+    de
+    "posible obstáculo" a esa distancia, y lo ocupado es lo del arco que ninguna otra lectura
+    liberó.
     """
 
     RES = 0.01
@@ -159,7 +165,8 @@ class Barrido:
                 t += R / 2
             if math.isfinite(f) and f < 0.8:
                 arco.append((round((ox + c * f) / R), round((oy + s * f) / R)))
-        # El rumbo estimado puede estar corrido unos grados: la pared más cercana posible se calcula
+        # El rumbo estimado puede estar corrido unos grados: la pared más cercana posible se
+        # calcula
         # con ±3° de error y la lectura tiene que ser 3 cm más corta que eso.
         pared = min(self._pared_minima(ox, oy, yaw + e) for e in (-0.05, 0.0, 0.05))
         if arco and math.isfinite(f) and f < pared - 0.03:
@@ -222,11 +229,12 @@ class Barrido:
         if not pts:
             return True, 0.0, pts
         mitad = HUELLA_Y[1] + margen
-        opciones = sorted((i / 200 for i in range(-int(max_desvio * 200), int(max_desvio * 200) + 1)),
+        tope = int(max_desvio * 200)
+        opciones = sorted((i / 200 for i in range(-tope, tope + 1)),
                           key=abs)
-        for l in opciones:
-            if MEDIA - abs(l) - mitad < 0.004:
+        for lat in opciones:
+            if MEDIA - abs(lat) - mitad < 0.004:
                 continue
-            if all(not (l - mitad < y < l + mitad) for _, y in pts):
-                return True, l, pts
+            if all(not (lat - mitad < y < lat + mitad) for _, y in pts):
+                return True, lat, pts
         return False, None, pts
