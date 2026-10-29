@@ -19,79 +19,20 @@ significado_colores:
   - B
   gris: []
 mapa: |
-  ~~~~~~~~################
-  ~~~~~~~~##.............#
-  ~~~~~~~~##.#.#.#.#####.#
-  ~~~~~~~~##.......#R#...#
-  ~~~~~~~~##.###.#.#.#.###
-  ~~1~~~~~##...#...#.#.#.#
-  ~~~~~~~~##.#.#####.#.#.#
-  ~~2~S~~~...#.....#...#.#
-  ~~~~~~~~####.#.###.###.#
-  ~~3~~~~~##.....##.##...#
-  ~~~~~~~~##.##..##....#.#
-  ~~~~~~~~##.......G...#B#
-  ~~~~~~~~################
-objetos:
-- tipo: distractor_amarillo
-  celda:
-  - 6
-  - 10
-  lado: auto
-- tipo: distractor_naranja
-  celda:
-  - 9
-  - 11
-  lado: auto
-- tipo: distractor_violeta
-  celda:
-  - 11
-  - 12
-  lado: auto
-- tipo: distractor_amarillo
-  celda:
-  - 9
-  - 21
-  lado: auto
-- tipo: distractor_naranja
-  celda:
-  - 3
-  - 13
-  lado: auto
-- tipo: distractor_violeta
-  celda:
-  - 1
-  - 18
-  lado: auto
-- tipo: bloque_8cm
-  celda:
-  - 2
-  - 14
-  lado: auto
-- tipo: bloque_8cm
-  celda:
-  - 4
-  - 14
-  lado: auto
-- tipo: bloque_8cm
-  celda:
-  - 2
-  - 10
-  lado: auto
-- tipo: bloque_20cm
-  celda:
-  - 10
-  - 18
-- tipo: distractor_naranja
-  celda:
-  - 10
-  - 13
-  lado: auto
-- tipo: bloque_8cm
-  celda:
-  - 11
-  - 14
-  lado: auto
+  ########################
+  ##########.............#
+  ##########.#.#.#.#####.#
+  ##########.......#R#...#
+  ##########.###.#.#.#.###
+  ##########...#...#.#.#.#
+  ######1.##.#.#####.#.#.#
+  ######2S...#.....#...#.#
+  ######3.####.#.###.###.#
+  ##########.....##.##...#
+  ##########.##..##....#.#
+  ##########.......G...#B#
+  ########################
+objetos: []
 flechas:
 - celda:
   - 1
@@ -184,28 +125,13 @@ flechas:
   inclinacion: -9
 - celda:
   - 9
-  - 12
-  pared: S
-  dir: E
-  largo: 1
-  color: azul
-  desplaza_mm: -80
-- celda:
-  - 9
-  - 12
-  pared: S
-  dir: E
-  largo: 1
-  color: verde
-  desplaza_mm: 80
-- celda:
-  - 9
   - 22
   pared: E
   dir: S
   largo: 2
   color: azul
   inclinacion: 6
+canastos_pared: O
 pedestal_forma: cilindro
 pedestal_lado_mm: 80.0
 cubos:

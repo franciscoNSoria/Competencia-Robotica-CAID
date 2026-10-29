@@ -40,8 +40,7 @@ ESCENARIOS = {
     'e3': {**_E, 'world': 'e3_obstaculos_simple.world', 'x': 1.0, 'y': 2.2, 'yaw': 0.0},
     'e4': {**_E, 'world': 'e4_isla_simple.world', 'x': 1.0, 'y': 2.2, 'yaw': 0.0},
     'e5': {**_E, 'world': 'e5_competencia_simple.world', 'x': 1.0, 'y': 2.6, 'yaw': 0.0},
-    'e6': {**_E, 'world': 'e6_salida_abierta_simple.world', 'x': 1.8, 'y': 2.2, 'yaw': 0.0,
-           'limites': [-4, 19, -5, 7]},
+    'e6': {**_E, 'world': 'e6_salida_abierta_simple.world', 'x': 3.0, 'y': 2.2, 'yaw': 0.0},
 }
 
 CUBO_SDF = """<sdf version="1.9"><model name="cubo_verde"><static>true</static>

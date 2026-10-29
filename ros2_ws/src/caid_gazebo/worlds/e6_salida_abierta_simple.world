@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!-- Generado por gen_maze.py a partir de mazes/e6_salida_abierta_simple.yaml. No editar a mano: editar el YAML y regenerar. -->
 <!-- E6 Salida abierta: laberinto grande, sala abierta y entrada entre paredes (simple: sin flechas laterales ni zonas) -->
-<!-- Inicio del robot: x=1.8 y=2.2 yaw=0 -->
+<!-- Inicio del robot: x=3 y=2.2 yaw=0 -->
 <sdf version="1.9">
   <world name="ros2_world">
 
@@ -55,14 +55,14 @@
     <model name="paredes">
       <static>true</static>
       <link name="bloque_0">
-        <pose>6.4 5 0.085 0 0 0</pose>
+        <pose>4.8 5 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>6.4 0.4 0.17</size></box></geometry>
+          <geometry><box><size>9.6 0.4 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>6.4 0.4 0.17</size></box></geometry>
+          <geometry><box><size>9.6 0.4 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -70,14 +70,14 @@
         </visual>
       </link>
       <link name="bloque_1">
-        <pose>3.6 3.6 0.085 0 0 0</pose>
+        <pose>2 3.8 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.8 2.4 0.17</size></box></geometry>
+          <geometry><box><size>4 2 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.8 2.4 0.17</size></box></geometry>
+          <geometry><box><size>4 2 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -265,6 +265,36 @@
         </visual>
       </link>
       <link name="bloque_14">
+        <pose>1.2 1.4 0.085 0 0 0</pose>
+        <collision name="colision">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry><box><size>2.4 2.8 0.17</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry><box><size>2.4 2.8 0.17</size></box></geometry>
+          <material>
+            <ambient>0.9 0.9 0.86 1</ambient>
+            <diffuse>0.9 0.9 0.86 1</diffuse>
+          </material>
+        </visual>
+      </link>
+      <link name="bloque_15">
+        <pose>3.6 2.6 0.085 0 0 0</pose>
+        <collision name="colision">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry><box><size>0.8 0.4 0.17</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry><box><size>0.8 0.4 0.17</size></box></geometry>
+          <material>
+            <ambient>0.9 0.9 0.86 1</ambient>
+            <diffuse>0.9 0.9 0.86 1</diffuse>
+          </material>
+        </visual>
+      </link>
+      <link name="bloque_16">
         <pose>4.6 2.2 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -279,7 +309,7 @@
           </material>
         </visual>
       </link>
-      <link name="bloque_15">
+      <link name="bloque_17">
         <pose>6.2 2.6 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -294,7 +324,7 @@
           </material>
         </visual>
       </link>
-      <link name="bloque_16">
+      <link name="bloque_18">
         <pose>3.8 1.8 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -309,7 +339,7 @@
           </material>
         </visual>
       </link>
-      <link name="bloque_17">
+      <link name="bloque_19">
         <pose>5.4 1.8 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -324,7 +354,7 @@
           </material>
         </visual>
       </link>
-      <link name="bloque_18">
+      <link name="bloque_20">
         <pose>6.4 1.4 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -339,7 +369,7 @@
           </material>
         </visual>
       </link>
-      <link name="bloque_19">
+      <link name="bloque_21">
         <pose>8 1.8 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -354,22 +384,22 @@
           </material>
         </visual>
       </link>
-      <link name="bloque_20">
-        <pose>3.6 0.8 0.085 0 0 0</pose>
+      <link name="bloque_22">
+        <pose>3.2 0.8 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.8 1.6 0.17</size></box></geometry>
+          <geometry><box><size>1.6 1.6 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.8 1.6 0.17</size></box></geometry>
+          <geometry><box><size>1.6 1.6 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
           </material>
         </visual>
       </link>
-      <link name="bloque_21">
+      <link name="bloque_23">
         <pose>7.6 1.4 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -384,7 +414,7 @@
           </material>
         </visual>
       </link>
-      <link name="bloque_22">
+      <link name="bloque_24">
         <pose>4.8 1 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -399,7 +429,7 @@
           </material>
         </visual>
       </link>
-      <link name="bloque_23">
+      <link name="bloque_25">
         <pose>8.6 0.6 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -414,7 +444,7 @@
           </material>
         </visual>
       </link>
-      <link name="bloque_24">
+      <link name="bloque_26">
         <pose>6.2 0.2 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -429,7 +459,7 @@
           </material>
         </visual>
       </link>
-      <link name="bloque_25">
+      <link name="bloque_27">
         <pose>9 0.2 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -2770,428 +2800,6 @@
         </visual>
       </link>
       <link name="flecha_11">
-        <pose>4.92 1.2015 0.115 0 0 0</pose>
-        <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.03 0.002 0.03</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p1">
-          <pose>-0.009 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p2">
-          <pose>-0.007 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p3">
-          <pose>-0.005 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p4">
-          <pose>-0.003 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p5">
-          <pose>-0.001 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p6">
-          <pose>0.001 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p7">
-          <pose>0.003 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p8">
-          <pose>0.005 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p9">
-          <pose>0.007 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p10">
-          <pose>0.009 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p11">
-          <pose>0.011 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p12">
-          <pose>0.013 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p13">
-          <pose>0.015 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p14">
-          <pose>0.017 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p15">
-          <pose>0.019 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p16">
-          <pose>0.021 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p17">
-          <pose>0.023 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p18">
-          <pose>0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p19">
-          <pose>0.027 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p20">
-          <pose>0.029 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p21">
-          <pose>0.031 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p22">
-          <pose>0.033 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p23">
-          <pose>0.035 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p24">
-          <pose>0.037 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p25">
-          <pose>0.039 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
-          <material>
-            <ambient>0 0.2 1 1</ambient>
-            <diffuse>0 0.2 1 1</diffuse>
-          </material>
-        </visual>
-      </link>
-      <link name="flecha_12">
-        <pose>5.08 1.2015 0.115 0 0 0</pose>
-        <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.03 0.002 0.03</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p1">
-          <pose>-0.009 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p2">
-          <pose>-0.007 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p3">
-          <pose>-0.005 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p4">
-          <pose>-0.003 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p5">
-          <pose>-0.001 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p6">
-          <pose>0.001 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p7">
-          <pose>0.003 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p8">
-          <pose>0.005 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p9">
-          <pose>0.007 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p10">
-          <pose>0.009 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p11">
-          <pose>0.011 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p12">
-          <pose>0.013 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p13">
-          <pose>0.015 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p14">
-          <pose>0.017 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p15">
-          <pose>0.019 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p16">
-          <pose>0.021 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p17">
-          <pose>0.023 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p18">
-          <pose>0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p19">
-          <pose>0.027 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p20">
-          <pose>0.029 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p21">
-          <pose>0.031 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p22">
-          <pose>0.033 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p23">
-          <pose>0.035 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p24">
-          <pose>0.037 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-        <visual name="p25">
-          <pose>0.039 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
-          <material>
-            <ambient>0 0.7 0.1 1</ambient>
-            <diffuse>0 0.7 0.1 1</diffuse>
-          </material>
-        </visual>
-      </link>
-      <link name="flecha_13">
         <pose>9.1985 1.4 0.115 0 -0.10472 -1.5708</pose>
         <visual name="p0">
           <pose>-0.025 0 0 0 0 0</pose>
@@ -3406,7 +3014,7 @@
 
     <model name="soporte_canasto_rojo">
       <static>true</static>
-      <pose>1 3 0.04425 0 0 0</pose>
+      <pose>2.432 2.6 0.04425 0 0 0</pose>
       <link name="link">
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -3425,7 +3033,7 @@
 
     <model name="canasto_rojo">
       <static>true</static>
-      <pose>1 3 0.0885 0 0 0</pose>
+      <pose>2.432 2.6 0.0885 0 0 0</pose>
       <link name="link">
         <collision name="c_fondo">
           <pose>0 0 0.0005 0 0 0</pose>
@@ -3497,7 +3105,7 @@
 
     <model name="soporte_canasto_verde">
       <static>true</static>
-      <pose>1 2.2 0.04425 0 0 0</pose>
+      <pose>2.432 2.2 0.04425 0 0 0</pose>
       <link name="link">
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -3516,7 +3124,7 @@
 
     <model name="canasto_verde">
       <static>true</static>
-      <pose>1 2.2 0.0885 0 0 0</pose>
+      <pose>2.432 2.2 0.0885 0 0 0</pose>
       <link name="link">
         <collision name="c_fondo">
           <pose>0 0 0.0005 0 0 0</pose>
@@ -3588,7 +3196,7 @@
 
     <model name="soporte_canasto_azul">
       <static>true</static>
-      <pose>1 1.4 0.04425 0 0 0</pose>
+      <pose>2.432 1.8 0.04425 0 0 0</pose>
       <link name="link">
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -3607,7 +3215,7 @@
 
     <model name="canasto_azul">
       <static>true</static>
-      <pose>1 1.4 0.0885 0 0 0</pose>
+      <pose>2.432 1.8 0.0885 0 0 0</pose>
       <link name="link">
         <collision name="c_fondo">
           <pose>0 0 0.0005 0 0 0</pose>
@@ -3798,395 +3406,6 @@
           <material>
             <ambient>0.7 0.7 0.66 1</ambient>
             <diffuse>0.7 0.7 0.66 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="soporte_distractor_0">
-      <static>true</static>
-      <pose>4.355 2.6 0.06425 0 0 0</pose>
-      <link name="link">
-        <collision name="colision">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-          <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="distractor_amarillo_0">
-      <pose>4.355 2.6 0.1387 0 0 0</pose>
-      <link name="link">
-        <inertial>
-          <mass>0.0099</mass>
-          <inertia>
-            <ixx>6.6000e-07</ixx><iyy>6.6000e-07</iyy><izz>6.6000e-07</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
-          </inertia>
-        </inertial>
-        <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <surface><friction><ode><mu>1</mu><mu2>1</mu2></ode></friction></surface>
-        </collision>
-        <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <material>
-            <ambient>1 0.85 0 1</ambient>
-            <diffuse>1 0.85 0 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="soporte_distractor_1">
-      <static>true</static>
-      <pose>4.6 1.555 0.06425 0 0 0</pose>
-      <link name="link">
-        <collision name="colision">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-          <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="distractor_naranja_1">
-      <pose>4.6 1.555 0.1387 0 0 0</pose>
-      <link name="link">
-        <inertial>
-          <mass>0.0099</mass>
-          <inertia>
-            <ixx>6.6000e-07</ixx><iyy>6.6000e-07</iyy><izz>6.6000e-07</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
-          </inertia>
-        </inertial>
-        <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <surface><friction><ode><mu>1</mu><mu2>1</mu2></ode></friction></surface>
-        </collision>
-        <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <material>
-            <ambient>1 0.45 0 1</ambient>
-            <diffuse>1 0.45 0 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="soporte_distractor_2">
-      <static>true</static>
-      <pose>5 0.755 0.06425 0 0 0</pose>
-      <link name="link">
-        <collision name="colision">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-          <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="distractor_violeta_2">
-      <pose>5 0.755 0.1387 0 0 0</pose>
-      <link name="link">
-        <inertial>
-          <mass>0.0099</mass>
-          <inertia>
-            <ixx>6.6000e-07</ixx><iyy>6.6000e-07</iyy><izz>6.6000e-07</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
-          </inertia>
-        </inertial>
-        <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <surface><friction><ode><mu>1</mu><mu2>1</mu2></ode></friction></surface>
-        </collision>
-        <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <material>
-            <ambient>0.55 0.15 0.75 1</ambient>
-            <diffuse>0.55 0.15 0.75 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="soporte_distractor_3">
-      <static>true</static>
-      <pose>8.6 1.555 0.06425 0 0 0</pose>
-      <link name="link">
-        <collision name="colision">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-          <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="distractor_amarillo_3">
-      <pose>8.6 1.555 0.1387 0 0 0</pose>
-      <link name="link">
-        <inertial>
-          <mass>0.0099</mass>
-          <inertia>
-            <ixx>6.6000e-07</ixx><iyy>6.6000e-07</iyy><izz>6.6000e-07</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
-          </inertia>
-        </inertial>
-        <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <surface><friction><ode><mu>1</mu><mu2>1</mu2></ode></friction></surface>
-        </collision>
-        <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <material>
-            <ambient>1 0.85 0 1</ambient>
-            <diffuse>1 0.85 0 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="soporte_distractor_4">
-      <static>true</static>
-      <pose>5.4 3.955 0.06425 0 0 0</pose>
-      <link name="link">
-        <collision name="colision">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-          <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="distractor_naranja_4">
-      <pose>5.4 3.955 0.1387 0 0 0</pose>
-      <link name="link">
-        <inertial>
-          <mass>0.0099</mass>
-          <inertia>
-            <ixx>6.6000e-07</ixx><iyy>6.6000e-07</iyy><izz>6.6000e-07</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
-          </inertia>
-        </inertial>
-        <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <surface><friction><ode><mu>1</mu><mu2>1</mu2></ode></friction></surface>
-        </collision>
-        <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <material>
-            <ambient>1 0.45 0 1</ambient>
-            <diffuse>1 0.45 0 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="soporte_distractor_5">
-      <static>true</static>
-      <pose>7.4 4.755 0.06425 0 0 0</pose>
-      <link name="link">
-        <collision name="colision">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-          <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="distractor_violeta_5">
-      <pose>7.4 4.755 0.1387 0 0 0</pose>
-      <link name="link">
-        <inertial>
-          <mass>0.0099</mass>
-          <inertia>
-            <ixx>6.6000e-07</ixx><iyy>6.6000e-07</iyy><izz>6.6000e-07</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
-          </inertia>
-        </inertial>
-        <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <surface><friction><ode><mu>1</mu><mu2>1</mu2></ode></friction></surface>
-        </collision>
-        <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <material>
-            <ambient>0.55 0.15 0.75 1</ambient>
-            <diffuse>0.55 0.15 0.75 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="bloque_8cm_6">
-      <static>true</static>
-      <pose>5.955 4.2 0.04 0 0 0</pose>
-      <link name="link">
-        <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.08 0.08 0.08</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.08 0.08 0.08</size></box></geometry>
-          <material>
-            <ambient>0.45 0.45 0.45 1</ambient>
-            <diffuse>0.45 0.45 0.45 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="bloque_8cm_7">
-      <static>true</static>
-      <pose>5.955 3.4 0.04 0 0 0</pose>
-      <link name="link">
-        <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.08 0.08 0.08</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.08 0.08 0.08</size></box></geometry>
-          <material>
-            <ambient>0.45 0.45 0.45 1</ambient>
-            <diffuse>0.45 0.45 0.45 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="bloque_8cm_8">
-      <static>true</static>
-      <pose>4.355 4.2 0.04 0 0 0</pose>
-      <link name="link">
-        <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.08 0.08 0.08</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.08 0.08 0.08</size></box></geometry>
-          <material>
-            <ambient>0.45 0.45 0.45 1</ambient>
-            <diffuse>0.45 0.45 0.45 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="bloque_20cm_9">
-      <static>true</static>
-      <pose>7.4 1 0.1 0 0 0</pose>
-      <link name="link">
-        <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.2 0.2 0.2</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.2 0.2 0.2</size></box></geometry>
-          <material>
-            <ambient>0.45 0.45 0.45 1</ambient>
-            <diffuse>0.45 0.45 0.45 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="soporte_distractor_10">
-      <static>true</static>
-      <pose>5.245 1 0.06425 0 0 0</pose>
-      <link name="link">
-        <collision name="colision">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><cylinder><radius>0.04</radius><length>0.1285</length></cylinder></geometry>
-          <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="distractor_naranja_10">
-      <pose>5.245 1 0.1387 0 0 0</pose>
-      <link name="link">
-        <inertial>
-          <mass>0.0099</mass>
-          <inertia>
-            <ixx>6.6000e-07</ixx><iyy>6.6000e-07</iyy><izz>6.6000e-07</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
-          </inertia>
-        </inertial>
-        <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <surface><friction><ode><mu>1</mu><mu2>1</mu2></ode></friction></surface>
-        </collision>
-        <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.02 0.02 0.02</size></box></geometry>
-          <material>
-            <ambient>1 0.45 0 1</ambient>
-            <diffuse>1 0.45 0 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="bloque_8cm_11">
-      <static>true</static>
-      <pose>5.8 0.445 0.04 0 0 0</pose>
-      <link name="link">
-        <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.08 0.08 0.08</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.08 0.08 0.08</size></box></geometry>
-          <material>
-            <ambient>0.45 0.45 0.45 1</ambient>
-            <diffuse>0.45 0.45 0.45 1</diffuse>
           </material>
         </visual>
       </link>
