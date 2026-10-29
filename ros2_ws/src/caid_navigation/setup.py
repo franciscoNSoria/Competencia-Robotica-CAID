@@ -30,6 +30,9 @@ setup(
         'console_scripts': [
             'explorador = caid_navigation.explorador:main',
             'cubo_simulado = caid_navigation.cubo_simulado:main',
+            'navegador = caid_navigation.navegador_node:main',
+            'manipulacion_simulada = caid_navigation.manipulacion_simulada:main',
+            'simular = caid_navigation.simulacion.correr:main',
         ],
     },
 )

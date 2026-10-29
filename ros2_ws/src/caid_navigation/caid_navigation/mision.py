@@ -618,8 +618,14 @@ class Navegador:
                                   f'largo {r["largo"]} (cuerpo {r["cuerpo"] * 1000:.0f} mm)')
         for c in det.get('cubos', []):
             xy = ubicar_objeto(self.con, self.cam, pose, pan, c['caja'], CUBO_BASE_Z, CUBO_LADO)
-            if xy is not None and xy[2] < 1.6:
-                self._observar(self.cubos, c['color'], xy, 'cubo')
+            if xy is None or xy[2] > 1.6:
+                continue
+            # Un canasto visto de cerca puede parecer un cubo: cerca de un canasto conocido no
+            # se acepta un cubo (además ahí van a parar los cubos entregados).
+            if any(math.hypot(o.x - xy[0], o.y - xy[1]) < 0.35 for o in self.canastos.values()
+                   if o.n >= self.p['confirmar_objeto']):
+                continue
+            self._observar(self.cubos, c['color'], xy, 'cubo')
         for c in det.get('canastos', []):
             xy = ubicar_objeto(self.con, self.cam, pose, pan, c['caja'], CANASTO_BASE_Z,
                                CANASTO_ANCHO)
