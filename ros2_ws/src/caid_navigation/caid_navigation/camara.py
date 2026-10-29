@@ -201,21 +201,24 @@ def ubicar_objeto(con, cam, pose, pan, caja, base_z, ancho_real):
     return px, py, dist
 
 
-def parece_canasto(cam, caja, corte=0.43):
+def forma_de_cubo(cam, caja, corte=0.43, tolerancia_px=2.0):
     """
-    True si una caja detectada como cubo tiene la forma vertical de un canasto.
+    True si una caja detectada como cubo tiene la forma vertical de un cubo apoyado a 108,5 mm.
 
     Con la cámara sin inclinación, un objeto entre las alturas z0 (abajo) y z1 (arriba), más abajo
     que la cámara, da (v_arriba - cy) / (v_abajo - cy) = (h_cam - z1) / (h_cam - z0) a cualquier
-    distancia. Cubo: 10 / 30 = 0,33 (en la imagen da 0,24-0,33 porque el borde de arriba que se ve
-    es la arista de atrás). Canasto: 30 / 50 = 0,6 (0,52-0,58). Un canasto recortado por el borde
-    de la imagen o visto de costado puede tener forma de cuadrado; esto lo separa.
+    distancia. Cubo: el borde de arriba que se ve es la arista de atrás, 2 cm más lejos, así que da
+    10 / 30 * Z / (Z + 0,02) = 0,31-0,33. Canasto: 30 / 50 = 0,6. Un pedazo de flecha (en la pared,
+    más alto) da menos. Se acepta de 0,32 - 2 px / (v_abajo - cy) (cuantización del borde de
+    arriba, que queda a pocos píxeles del horizonte) hasta 0,43. Medido en el render (S): cubos
+    0,24-0,33, canastos 0,52-0,58, pedazo de flecha 0,21 a 28 px.
     """
     _, y, _, h = caja
     abajo = y + h - cam.cy
     if abajo <= 2:
-        return False
-    return (y - cam.cy) / abajo > corte
+        return True     # sobre el horizonte: no se puede decir nada
+    razon = (y - cam.cy) / abajo
+    return 0.32 - tolerancia_px / abajo <= razon <= corte
 
 
 def zonas_en_suelo(con, cam, pose, pan, puntos, minimo=4):

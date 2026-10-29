@@ -1,7 +1,7 @@
 """Pruebas del núcleo de navegación (sin ROS). Correr: python3 -m pytest test/ -q"""
 import math
 
-from caid_navigation.camara import Camara, parece_canasto, ubicar_flecha
+from caid_navigation.camara import Camara, forma_de_cubo, ubicar_flecha
 from caid_navigation.conocimiento import Conocimiento
 from caid_navigation.control import Recta
 from caid_navigation.geometria import ang_dif, CELDA
@@ -148,7 +148,7 @@ def test_registro_lateral_no_toma_lo_de_la_celda_vecina_como_pared():
         assert con.votos == votos
 
 
-def test_canasto_no_pasa_por_cubo():
+def test_forma_de_cubo():
     cam = Camara()
 
     def caja(z0, z1, dist):
@@ -156,8 +156,15 @@ def test_canasto_no_pasa_por_cubo():
         abajo = cam.cy + cam.fy * (cam.altura - z0) / dist
         return (300, arriba, 20, abajo - arriba)
     for dist in (0.4, 0.8, 1.4):
-        assert not parece_canasto(cam, caja(0.1085, 0.1285, dist))      # cubo de 20 mm
-        assert parece_canasto(cam, caja(0.0885, 0.1085, dist))          # canasto
+        # cubo de 20 mm: se ve la arista de arriba de atrás, 2 cm más lejos
+        arriba = caja(0.1285, 0.1285, dist + 0.02)[1]
+        _, _, w, h = caja(0.1085, 0.1285, dist)
+        abajo = caja(0.1085, 0.1285, dist)[1] + h
+        assert forma_de_cubo(cam, (300, arriba, w, abajo - arriba))
+        assert not forma_de_cubo(cam, caja(0.0885, 0.1085, dist))        # canasto
+    for dist in (0.4, 0.8):
+        # pedazo de flecha (razón 0,21, como en el render); de más lejos ya no se distingue
+        assert not forma_de_cubo(cam, caja(0.090, 0.128, dist))
 
 
 def test_detecta_trabado():

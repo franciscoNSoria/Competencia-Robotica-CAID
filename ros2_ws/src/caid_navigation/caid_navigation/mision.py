@@ -28,7 +28,7 @@ roja).
 import math
 
 from caid_navigation.camara import (
-    Camara, CANASTO_ANCHO, CANASTO_BASE_Z, celda_visible, CUBO_BASE_Z, CUBO_LADO, parece_canasto,
+    Camara, CANASTO_ANCHO, CANASTO_BASE_Z, celda_visible, CUBO_BASE_Z, CUBO_LADO, forma_de_cubo,
     ubicar_flecha, ubicar_objeto, zonas_en_suelo)
 from caid_navigation.conocimiento import Conocimiento
 from caid_navigation.control import Giro, Recta
@@ -729,7 +729,7 @@ class Navegador:
                     self.registro(f'flecha {r["color"]} en {r["celda"]}: {col} hacia {r["dir"]}, '
                                   f'largo {r["largo"]} (cuerpo {r["cuerpo"] * 1000:.0f} mm)')
         for c in det.get('cubos', []):
-            if parece_canasto(self.cam, c['caja']):
+            if not forma_de_cubo(self.cam, c['caja']):
                 continue
             xy = ubicar_objeto(self.con, self.cam, pose, pan, c['caja'], CUBO_BASE_Z, CUBO_LADO)
             if xy is None or xy[2] > 1.6:
