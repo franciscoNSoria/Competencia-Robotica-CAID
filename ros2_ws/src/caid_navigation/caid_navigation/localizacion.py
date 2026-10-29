@@ -61,7 +61,10 @@ class Estimador:
         x, y, th = self.pose
         h = rumbo_de(th)
         err = ang_dif(th, yaw_de(h))
-        if abs(err) > 0.12:
+        if abs(err) > 0.2:
+            # Girando o lejos del eje: no se sabe bien contra qué pared mide cada sensor.
+            # Hasta 7,5° el cono de 15° sigue viendo la perpendicular a la pared; a 11,5° la
+            # lectura se alarga cos(4°): 0,2 mm a 10 cm.
             self.muestras = []
             return
         self.v = v
@@ -110,24 +113,34 @@ class Estimador:
         x, y, th = self.pose
         a = x * u[0] + y * u[1]
         if abs(v) < 0.04 or self.eje_muestras != h or \
-                (self.muestras and abs(a - self.muestras[-1][0]) > 0.15):
-            # Quieto, cambió de eje o pasó un tramo largo sin pared: se empieza de nuevo.
+                (self.muestras and abs(a - self.muestras[-1][0]) > 0.06):
+            # Quieto, cambió de eje o pasó un tramo sin pared: se empieza de nuevo.
             self.muestras = []
             self.eje_muestras = h
         if not medidos or abs(v) < 0.04:
             return
-        self.muestras.append((a, sum(medidos) / len(medidos), ang_dif(th, yaw_de(h))))
+        err = ang_dif(th, yaw_de(h))
+        # Lateral que predice la odometría desde la primera muestra: integral de tan(rumbo
+        # estimado) a lo largo del pasillo (trapecios). Así el robot puede ir corrigiendo el rumbo
+        # dentro de la ventana; lo que queda en la diferencia es solo el error del rumbo.
+        if self.muestras:
+            a0, _, e0, l0 = self.muestras[-1]
+            pred = l0 + (a - a0) * (math.tan(err) + math.tan(e0)) / 2
+        else:
+            pred = 0.0
+        self.muestras.append((a, sum(medidos) / len(medidos), err, pred))
         m = self.muestras
         if abs(m[-1][0] - m[0][0]) < self.tramo_rumbo or len(m) < 8:
             return
         k = len(m)
         am = sum(s[0] for s in m) / k
-        lm = sum(s[1] for s in m) / k
+        lm = sum(s[1] - s[3] for s in m) / k
         var = sum((s[0] - am) ** 2 for s in m)
-        pend = sum((s[0] - am) * (s[1] - lm) for s in m) / var
-        resid = math.sqrt(sum((s[1] - lm - pend * (s[0] - am)) ** 2 for s in m) / k)
+        pend = sum((s[0] - am) * (s[1] - s[3] - lm) for s in m) / var
+        resid = math.sqrt(sum((s[1] - s[3] - lm - pend * (s[0] - am)) ** 2 for s in m) / k)
         if abs(pend) < 0.2 and resid < 0.012:
-            delta = sum(s[2] for s in m) / k - math.atan(pend)
+            # medido - predicho = lateral inicial - (rumbo estimado - rumbo real) * avance
+            delta = -math.atan(pend)
             self.pose[2] = ang_dif(self.pose[2] - self.g_rumbo * delta, 0.0)
             self.correcciones['rumbo'] += 1
             giro = self.giro_acumulado
@@ -145,7 +158,7 @@ class Estimador:
             r = rangos.get(lado, math.inf)
             pared = math.isfinite(r) and r < 0.20
             previo = self.lateral_previo.get(lado)
-            self.lateral_previo[lado] = (pared, h)
+            self.lateral_previo[lado] = (pared, h, r)
             if previo is None or previo[1] != h or previo[0] == pared or abs(v) < 0.03:
                 continue
             sx, sy = a_mundo(self.pose, *SONARES[lado][:2])
@@ -164,6 +177,16 @@ class Estimador:
                 continue
             if e_atras == previo[0] or e_adel == pared:
                 continue        # el cambio no coincide con el mapa
+            # La lectura del lado con pared tiene que ser la de la pared: un soporte o un bloque
+            # chico al costado también hace aparecer y desaparecer el eco, pero más cerca.
+            r_pared = previo[2] if previo[0] else r
+            celda_pared = celda_en(borde - signo * 0.1) if previo[0] else \
+                celda_en(borde + signo * 0.1)
+            cx, cy = centro(celda_pared)
+            s_lado = 1 if d_rel == 1 else -1
+            esperada = s_lado * (cx * n[0] + cy * n[1] - (sx * n[0] + sy * n[1])) + MEDIA
+            if abs(r_pared - esperada) > 0.025:
+                continue
             # El cambio se ve con el rayo extremo del cono: la lectura pasa el umbral (0,20 m)
             # cuando
             # ese rayo pega en la cara del bloque que da a la abertura a más de 0,20 m, o sea

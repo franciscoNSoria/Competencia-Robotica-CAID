@@ -329,7 +329,10 @@ class TestAlturasYEntrada(unittest.TestCase):
                 self.assertAlmostEqual(z_cubo, 0.1085 + 0.010 + 0.0002, places=5)
                 soporte = mods['soporte_cubo_' + color]
                 zs = pose(soporte.find('pose').text)[2]
-                alto = pose(soporte.find('link/collision/geometry/box/size').text)[2]
+                cil = soporte.find('link/collision/geometry/cylinder')        # pilar: cilindro negro
+                alto = float(cil.find('length').text)
+                self.assertAlmostEqual(float(cil.find('radius').text), 0.020, places=5)
+                self.assertLess(max(pose(soporte.find('link/visual/material/diffuse').text)[:3]), 0.1)
                 self.assertAlmostEqual(zs + alto / 2, 0.1085, places=5)          # la cara de arriba del soporte
                 self.assertAlmostEqual(zs - alto / 2, 0.0, places=5)             # y apoya en el piso
 

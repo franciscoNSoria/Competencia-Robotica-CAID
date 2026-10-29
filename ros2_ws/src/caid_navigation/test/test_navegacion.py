@@ -1,16 +1,19 @@
 """Pruebas del núcleo de navegación (sin ROS). Correr: python3 -m pytest test/ -q"""
 import math
 
-from caid_navigation.camara import Camara, ubicar_flecha
+from caid_navigation.camara import Camara, parece_canasto, ubicar_flecha
 from caid_navigation.conocimiento import Conocimiento
-from caid_navigation.geometria import CELDA
+from caid_navigation.control import Recta
+from caid_navigation.geometria import ang_dif, CELDA
 from caid_navigation.giros import buscar_giro, cajas_vecinas
+from caid_navigation.localizacion import Estimador
+from caid_navigation.mision import Navegador
 from caid_navigation.planificador import Costos, planificar
 from caid_navigation.simulacion import oraculo
 from caid_navigation.simulacion.correr import a_mapa, correr, errores_de_mapa
 from caid_navigation.simulacion.mundo import Mundo
 from caid_navigation.simulacion.robot import RobotSim
-from caid_navigation.sonar import Barrido, leer_frente
+from caid_navigation.sonar import Barrido, leer_frente, RegistroLateral
 
 DIAG = {(1, 1), (1, -1), (-1, 1), (-1, -1)}
 
@@ -97,3 +100,72 @@ def test_mision_completa_e2_sin_choques():
     assert r.completa, r.resumen()
     assert not r.choques
     assert errores_de_mapa(r.robot.mundo, r.nav.con) == []
+
+
+def test_rumbo_se_corrige_mientras_el_control_lo_mueve():
+    # Pasillo de E1 (fila de la partida, celdas 1 a 3 con pared a los dos lados). El estimador
+    # arranca con 5° de error y el control lateral (que usa ese rumbo) gira el robot mientras
+    # avanza: la regresión resta lo que giró según la odometría y deja solo el error.
+    m = Mundo('e1_serpentina')
+    r = RobotSim(m, ruido=False)
+    con = Conocimiento()
+    for i in range(1, 4):
+        con.marcar((i, 0), 1, False)
+        con.marcar((i, 0), 3, False)
+        con.marcar((i, 0), 0, i < 3)
+        con.visitar((i, 0))
+    con.marcar((0, 0), 0, True)
+    est = Estimador()
+    est.pose = [0.0, 0.0, math.radians(5)]
+    ctrl = Recta(0, 1, 0.96, 0.0)
+    for _ in range(400):
+        est.odometria(*r.odom)
+        rangos = {k: r.rango(k) for k in ('frente', 'izquierda', 'derecha')}
+        v, w, listo = ctrl.comando(est.pose)
+        est.corregir(con, rangos, v)
+        r.paso(0.05, v, w)
+        if listo:
+            break
+    verdad = a_mapa(m, r.pose)
+    assert est.correcciones['rumbo'] >= 1
+    assert abs(ang_dif(est.pose[2], verdad[2])) < math.radians(2)
+
+
+def test_registro_lateral_no_toma_lo_de_la_celda_vecina_como_pared():
+    # Robot corrido 7 cm a la izquierda: el sensor izquierdo queda a 8,5 mm del borde de la celda.
+    # Un eco a 18 cm (menos que el umbral de 20 cm) está adentro de la celda vecina: el borde está
+    # abierto. Un eco a 1,2 cm es la pared.
+    pose = (-0.096, 0.07, 0.0)
+    for lectura, abierto in ((0.18, True), (0.012, False)):
+        con = Conocimiento()
+        reg = RegistroLateral()
+        for _ in range(6):
+            reg.actualizar(con, pose, {'izquierda': lectura, 'derecha': 0.3})
+        assert con.abierto((0, 0), 1) is abierto
+        votos = dict(con.votos)
+        for _ in range(12):     # quieto: no vuelve a votar
+            reg.actualizar(con, pose, {'izquierda': lectura, 'derecha': 0.3})
+        assert con.votos == votos
+
+
+def test_canasto_no_pasa_por_cubo():
+    cam = Camara()
+
+    def caja(z0, z1, dist):
+        arriba = cam.cy + cam.fy * (cam.altura - z1) / dist
+        abajo = cam.cy + cam.fy * (cam.altura - z0) / dist
+        return (300, arriba, 20, abajo - arriba)
+    for dist in (0.4, 0.8, 1.4):
+        assert not parece_canasto(cam, caja(0.1085, 0.1285, dist))      # cubo de 20 mm
+        assert parece_canasto(cam, caja(0.0885, 0.1085, dist))          # canasto
+
+
+def test_detecta_trabado():
+    nav = Navegador()
+    nav.t, nav.v_cmd = 0.0, 0.1
+    odom = (1.0, 0.0, 0.0)
+    trabado = []
+    for k in range(25):
+        nav.t = k * 0.05
+        trabado.append(nav._vigilar_trabado(odom))
+    assert not any(trabado[:16]) and trabado[-1]     # recién después de 0,8 s

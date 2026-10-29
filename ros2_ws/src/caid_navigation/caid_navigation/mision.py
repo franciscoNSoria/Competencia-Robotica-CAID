@@ -28,13 +28,13 @@ roja).
 import math
 
 from caid_navigation.camara import (
-    Camara, CANASTO_ANCHO, CANASTO_BASE_Z, celda_visible, CUBO_BASE_Z, CUBO_LADO, ubicar_flecha,
-    ubicar_objeto, zonas_en_suelo)
+    Camara, CANASTO_ANCHO, CANASTO_BASE_Z, celda_visible, CUBO_BASE_Z, CUBO_LADO, parece_canasto,
+    ubicar_flecha, ubicar_objeto, zonas_en_suelo)
 from caid_navigation.conocimiento import Conocimiento
 from caid_navigation.control import Giro, Recta
 from caid_navigation.geometria import (
-    a_mundo, a_robot, ang_dif, CELDA, celda_de, centro, limitar, MEDIA, PASOS, rumbo_de, vecina,
-    yaw_de)
+    a_mundo, a_robot, ang_dif, CELDA, celda_de, centro, HUELLA_X, limitar, MEDIA, PASOS, rumbo_de,
+    vecina, yaw_de)
 from caid_navigation.localizacion import Estimador
 from caid_navigation.planificador import Costos, planificar
 from caid_navigation.sonar import Barrido, leer_frente, RegistroLateral
@@ -57,6 +57,7 @@ PARAMETROS = {
     'radio_abierto': 3,         # celdas: lejos de toda pared solo se explora cerca del inicio
     'penal_abierto': 25.0,      # s
     'penal_flecha': 40.0,       # s
+    'penal_trabado': 60.0,      # s, por cada vez que el robot se trabó en ese paso
     'tiempo_max': 900.0,        # s, después vuelve al inicio (ajustar al tiempo de la ronda)
     'tiempo_manipular': 30.0,   # s, espera máxima de la respuesta del brazo
     'confirmar_objeto': 2,      # detecciones para dar por visto un cubo o canasto
@@ -67,6 +68,14 @@ PARAMETROS = {
     'factor_giro': 1.0,         # giro real / giro de la odometría (calibrar en el banco)
     'penal_partida': 60.0,      # s: explorar alrededor de la partida va al final
     'penal_sala': 15.0,         # s: celdas con menos de 2 paredes (salas, exterior)
+    'penal_afuera': 60.0,       # s: fronteras que no están "adentro" (detrás de la entrada)
+    'volver_a_la_entrada': True,  # después de entregar, volver a entrar al laberinto
+    'punto_de_reingreso': 'entrada',  # 'entrada' o 'bifurcacion' (la primera, si se guardó)
+    'reposo_al_final': True,    # con 3 entregados queda quieto junto al canasto (zona de inicio)
+    'v_carga': 0.15,            # m/s con un cubo en el 2.o piso
+    'w_carga': 0.9,             # rad/s con un cubo
+    'a_carga': 0.4,             # m/s², aceleración lineal máxima con un cubo
+    'alfa_carga': 2.0,          # rad/s², aceleración angular máxima con un cubo
 }
 
 
@@ -401,9 +410,18 @@ class Navegador:
         self.ultimo_objetivo = None
         self.barrido_previo = None
         self.lentas = set()
-        self.cajas_objeto = []
+        self.cajas_objeto = {}      # (tipo, color) -> (caja, celdas donde se guardó)
         self.franjas = {}
         self.reacomodos = {}
+        self.segundas_oportunidades = 0
+        self.trabados = {}          # (celda, dirección) -> veces que el robot se trabó ahí
+        self._ref_mov = None        # (t, odometría) del último avance real
+        self._ultimo_trabado = None  # (t, girando)
+        # Puntos guardados (marco map): la partida es (0, 0) con rumbo 0.
+        self.entrada = None         # (celda, rumbo) donde el robot entró al laberinto
+        self.bifurcacion = None     # (celda, rumbo) de la primera bifurcación adentro
+        self.ir_a_entrada = False
+        self._dentro = (None, set())
 
     # ---------- registro ----------
 
@@ -420,6 +438,7 @@ class Navegador:
             self.t0 = t
         self.pan_real = pan_real
         self.est.odometria(*odom)
+        trabado = self._vigilar_trabado(odom)
         pose = self.est.pose
         girando = isinstance(self.tarea, (TGiro, TBarrido))
         if not girando:
@@ -434,6 +453,8 @@ class Navegador:
         if self.estado == 'FIN':
             self.v_cmd = 0.0
             return 0.0, 0.0, 0.0
+        if trabado:
+            self._destrabar(pose)
         if self.tarea is None:
             self.tarea = self.cola.pop(0) if self.cola else self._decidir()
             if self.tarea is None:
@@ -453,9 +474,92 @@ class Navegador:
             self.tarea = None
             self.cola = []
             v = 0.0
+        elif self.sosteniendo:
+            v, w = self._limitar_carga(v, w, dt)
         self.v_cmd = v
         self.w_cmd = w
         return v, w, pan
+
+    def _vigilar_trabado(self, odom):
+        """
+        True si se pide avanzar o retroceder y las ruedas no se mueven hace 0,8 s: el robot tocó
+        algo que no está en el mapa (un pilar que los ultrasonidos no vieron, un roce de esquina).
+        Con los motores frenados contra un obstáculo los encoders casi no cuentan.
+        """
+        moviendo = abs(self.v_cmd) >= 0.02
+        girando = not moviendo and abs(self.w_cmd) >= 0.08
+        if not (moviendo or girando) or self._ref_mov is None:
+            self._ref_mov = (self.t, odom)
+            return False
+        t0, o0 = self._ref_mov
+        if math.hypot(odom[0] - o0[0], odom[1] - o0[1]) > 0.01 or \
+                abs(ang_dif(odom[2], o0[2])) > 0.03:
+            self._ref_mov = (self.t, odom)
+            return False
+        return self.t - t0 > 0.8
+
+    def _destrabar(self, pose):
+        """
+        Sale de un trabado y aprende de él:
+        - girando: vuelve al eje (girar para el otro lado); si eso también se traba, se mueve 3 cm;
+        - avanzando o retrocediendo: vuelve 5 cm, encarece el paso y lo barre de nuevo; a la
+          tercera vez en el mismo paso, lo da por cerrado (no entra, aunque el mapa diga que sí);
+        - si estaba en la maniobra de un giro, a la segunda vez ese giro se marca imposible.
+        """
+        c = celda_de(pose[0], pose[1])
+        h = rumbo_de(pose[2])
+        clave = getattr(self.tarea, 'clave_giro', None)
+        if clave is not None:
+            self.trabados[clave] = self.trabados.get(clave, 0) + 1
+            if self.trabados[clave] >= 2:
+                self.registro(f'me trabé dos veces girando en {clave[0]}: giro imposible')
+                self.con.giros_imposibles.add(clave)
+        previo, self._ultimo_trabado = self._ultimo_trabado, (self.t, abs(self.v_cmd) < 0.02)
+        self.cola = []
+        self._ref_mov = None
+        self.con.version += 1
+        if abs(self.v_cmd) < 0.02:
+            if previo and previo[1] and self.t - previo[0] < 4.0:
+                # Tampoco puede volver girando: está apretado contra algo, se aleja en recta.
+                atras = (h + 2) % 4
+                d = -0.03 if self.con.transitable(c, atras) else 0.03
+                self.registro(f'giro trabado otra vez en {c}: me muevo {d * 100:.0f} cm')
+                self.tarea = TMover(d)
+                return
+            self.registro(f'giro trabado en {c}: vuelvo al eje y busco otro camino')
+            self.tarea = TGiro(yaw_de(h), self)
+            return
+        sentido = 1 if self.v_cmd > 0 else -1
+        d = h if sentido > 0 else (h + 2) % 4
+        # Paso donde tocó: el de la celda adonde llegó el borde de adelante (o de atrás).
+        borde = HUELLA_X[1] if sentido > 0 else -HUELLA_X[0]
+        punta = celda_de(pose[0] + (borde + 0.01) * PASOS[d][0],
+                         pose[1] + (borde + 0.01) * PASOS[d][1])
+        paso = (c, d) if punta != c else None
+        for k in ((c, d), (vecina(c, d), (d + 2) % 4)):
+            self.trabados[k] = self.trabados.get(k, 0) + 1
+        self.registro(f'trabado en {c} yendo hacia {d}: retrocedo y busco otro camino')
+        # Solo hacia una celda donde nunca entró: si ya pasó por ahí, el paso existe y lo que
+        # falló es la pose.
+        if paso and self.trabados[paso] >= 3 and self.con.transitable(*paso) and \
+                not self.con.visitada(vecina(*paso)):
+            self.registro(f'el paso de {c} hacia {d} no da en la práctica: lo cierro')
+            self.con.bloquear(*paso)
+        self.sospechas[vecina(c, d)] = self.sospechas.get(vecina(c, d), 0) + 2
+        self.barridos.discard((c, h))
+        self.tarea = TMover(-0.05 * sentido)
+
+    def _limitar_carga(self, v, w, dt):
+        """Con un cubo apoyado en el 2.o piso: más despacio y sin tirones, para que no se caiga."""
+        v = limitar(v, self.p['v_carga'])
+        w = limitar(w, self.p['w_carga'])
+        # Solo se suaviza el arranque (lo que aumenta la velocidad): las frenadas ya son suaves
+        # en los controladores y achicarlas acá haría que el robot se pase de donde debe parar.
+        if dt > 0 and abs(v) > abs(self.v_cmd):
+            v = self.v_cmd + limitar(v - self.v_cmd, self.p['a_carga'] * dt)
+        if dt > 0 and abs(w) > abs(self.w_cmd):
+            w = self.w_cmd + limitar(w - self.w_cmd, self.p['alfa_carga'] * dt)
+        return v, w
 
     def _pared_esperada(self, pose, f):
         """True si la lectura de frente corta es la pared conocida del borde de la celda."""
@@ -484,6 +588,8 @@ class Navegador:
         if abs(along) < 0.10 and abs(lat) < 0.10:
             if not self.con.visitada(celda):
                 self.con.visitar(celda)
+            if self.entrada is None or self.bifurcacion is None:
+                self._guardar_puntos(celda, h)
         if girando:
             return
         for c, d, abierto in self.lateral.actualizar(self.con, pose, rangos):
@@ -623,6 +729,8 @@ class Navegador:
                     self.registro(f'flecha {r["color"]} en {r["celda"]}: {col} hacia {r["dir"]}, '
                                   f'largo {r["largo"]} (cuerpo {r["cuerpo"] * 1000:.0f} mm)')
         for c in det.get('cubos', []):
+            if parece_canasto(self.cam, c['caja']):
+                continue
             xy = ubicar_objeto(self.con, self.cam, pose, pan, c['caja'], CUBO_BASE_Z, CUBO_LADO)
             if xy is None or xy[2] > 1.6:
                 continue
@@ -666,17 +774,28 @@ class Navegador:
                 self.registro(f'{tipo} {color} en ({obs.x:.2f}, {obs.y:.2f}), celda '
                               f'{celda_de(obs.x, obs.y)}')
                 self.con.version += 1
-                if tipo == 'cubo':
-                    self._caja_objeto(obs, 0.044)     # soporte de 40 mm + 2 mm por lado
-                else:
-                    self._caja_objeto(obs, 0.052)     # canasto de 44 mm + 4 mm por lado
+            if obs.n >= self.p['confirmar_objeto']:
+                # Debajo del cubo está su pilar (cilindro de 40 mm): +2 mm por lado. El canasto
+                # mide 44 mm: +4 mm por lado. La caja sigue al promedio de lo que se ve.
+                self._caja_objeto((tipo, color), obs, 0.044 if tipo == 'cubo' else 0.052)
 
-    def _caja_objeto(self, obs, lado):
-        celda = celda_de(obs.x, obs.y)
-        self.cajas_objeto.append((obs.x - lado / 2, obs.y - lado / 2,
-                                  obs.x + lado / 2, obs.y + lado / 2))
-        self.con.agregar_caja(celda, (obs.x - lado / 2, obs.y - lado / 2,
-                                      obs.x + lado / 2, obs.y + lado / 2))
+    def _caja_objeto(self, clave, obs, lado):
+        previa = self.cajas_objeto.get(clave)
+        if previa:
+            caja, celdas = previa
+            cx, cy = (caja[0] + caja[2]) / 2, (caja[1] + caja[3]) / 2
+            if math.hypot(cx - obs.x, cy - obs.y) < 0.005:
+                return
+            for c in celdas:
+                if caja in self.con.cajas.get(c, []):
+                    self.con.cajas[c].remove(caja)
+        caja = (obs.x - lado / 2, obs.y - lado / 2, obs.x + lado / 2, obs.y + lado / 2)
+        # En todas las celdas que toca: visto de lejos puede caer sobre el borde de la celda.
+        celdas = {celda_de(x, y) for x in (caja[0], caja[2]) for y in (caja[1], caja[3])}
+        celdas = [c for c in celdas if c not in self.con.bloques] or [celda_de(obs.x, obs.y)]
+        for c in celdas:
+            self.con.agregar_caja(c, caja)
+        self.cajas_objeto[clave] = (caja, celdas)
 
     # ---------- decisiones ----------
 
@@ -705,7 +824,7 @@ class Navegador:
             return {'tipo': 'explorar'}
         faltan = [c for c in COLORES if c not in self.entregados]
         if not faltan:
-            return {'tipo': 'inicio'}
+            return {'tipo': 'reposo'} if self.p['reposo_al_final'] else {'tipo': 'inicio'}
         x, y = self.est.pose[0], self.est.pose[1]
         candidatos = sorted(
             (math.hypot(o.x - x, o.y - y), col) for col, o in self.cubos.items()
@@ -714,7 +833,53 @@ class Navegador:
         if candidatos:
             col = candidatos[0][1]
             return {'tipo': 'cubo', 'color': col, 'obs': self.cubos[col]}
+        if self.ir_a_entrada and self.entrada and not self._descartado(('entrada', None)):
+            return {'tipo': 'entrada'}
         return {'tipo': 'explorar'}
+
+    def _reingreso(self):
+        """(celda, rumbo) adonde vuelve después de entregar: entrada o primera bifurcación."""
+        if self.p['punto_de_reingreso'] == 'bifurcacion' and self.bifurcacion:
+            return self.bifurcacion
+        return self.entrada
+
+    def dentro(self):
+        """
+        Celdas "adentro" del laberinto: las que se alcanzan desde la entrada sin volver a salir
+        por donde se entró. Vacío mientras no se conoce la entrada.
+        """
+        if self.entrada is None:
+            return set()
+        if self._dentro[0] == self.con.version:
+            return self._dentro[1]
+        celda, h = self.entrada
+        salida = (celda, (h + 2) % 4)
+        vistos = {celda}
+        pila = [celda]
+        while pila:
+            c = pila.pop()
+            for d in range(4):
+                if (c, d) == salida or not self.con.transitable(c, d):
+                    continue
+                n = vecina(c, d)
+                if n not in vistos:
+                    vistos.add(n)
+                    pila.append(n)
+        self._dentro = (self.con.version, vistos)
+        return vistos
+
+    def _guardar_puntos(self, celda, h):
+        """Entrada: primera celda con pared a los dos costados. Bifurcación: la primera adentro."""
+        lados = [self.con.abierto(celda, d) for d in range(4)]
+        if None in lados or celda == (0, 0):
+            return
+        if self.entrada is None:
+            if lados[(h + 1) % 4] is False and lados[(h + 3) % 4] is False:
+                self.entrada = (celda, h)
+                self.registro(f'entrada al laberinto guardada: celda {celda}, rumbo {h}')
+        elif self.bifurcacion is None and sum(lados) >= 3 and celda in self.dentro():
+            self.bifurcacion = (celda, h)
+            self.registro(f'primera bifurcación guardada: celda {celda}, rumbo {h}')
 
     def _descartado(self, clave):
         return self.descartados.get(clave) == self.con.version
@@ -724,17 +889,29 @@ class Navegador:
         con = self.con
         if obj['tipo'] == 'inicio':
             return (lambda c, h: c == (0, 0)), None
+        if obj['tipo'] == 'entrada':
+            celda = self._reingreso()[0]
+            return (lambda c, h: c == celda), None
         if obj['tipo'] == 'explorar':
             def es(c, h):
                 return self._explorable(c)
 
             cerca = obj.get('cerca')
 
+            dentro = self.dentro()
+
             def bonus(c, h):
                 if cerca:
                     cx, cy = centro(c)
                     return -8.0 * math.hypot(cx - cerca[0], cy - cerca[1]) / CELDA
                 b = 0.0
+                if dentro and not any(vecina(c, d) in dentro for d in range(4)) \
+                        and c not in dentro:
+                    b -= self.p['penal_afuera']     # afuera del laberinto: al final
+                if self.entrada is None and (c[1] != 0 or c[0] < 1):
+                    # Supuesto (P): el robot arranca mirando hacia el laberinto. Hasta encontrar
+                    # la entrada sigue derecho; el resto del área de partida, al final.
+                    b -= self.p['penal_afuera']
                 if not con.junto_a_pared(c):
                     b -= self.p['penal_abierto']
                 elif abs(c[0]) + abs(c[1]) > self.p['radio_abierto'] and sum(
@@ -762,9 +939,15 @@ class Navegador:
             return False
         if con.junto_a_pared(c):
             return True
+        if self.entrada is None and c[1] == 0 and c[0] >= 1:
+            return True     # supuesto (P): arranca mirando al laberinto; la entrada está adelante
         return abs(c[0]) + abs(c[1]) <= self.p['radio_abierto']
 
     def costo_extra(self, celda, d):
+        trabas = self.p['penal_trabado'] * self.trabados.get((celda, d), 0)
+        return trabas + self._costo_flecha(celda, d)
+
+    def _costo_flecha(self, celda, d):
         pistas = self.pistas.get(celda)
         if not pistas:
             return 0.0
@@ -820,17 +1003,24 @@ class Navegador:
         """La pose de agarre o descarga no puede tocar nada salvo el objeto (o su soporte)."""
         obs = obj['obs']
         propias = []
-        celda_obj = celda_de(obs.x, obs.y)
-        for caja in self.con.cajas.get(celda_obj, []):
-            if (caja[0] - 0.03 <= obs.x <= caja[2] + 0.03
-                    and caja[1] - 0.03 <= obs.y <= caja[3] + 0.03):
-                propias.append(caja)
-        for caja in propias:
+        c0 = celda_de(obs.x, obs.y)
+        cercanas = [((c0[0] + i, c0[1] + j), caja) for i in (-1, 0, 1) for j in (-1, 0, 1)
+                    for caja in self.con.cajas.get((c0[0] + i, c0[1] + j), [])]
+        for celda_obj, caja in cercanas:
+            # El soporte está debajo del objeto. Medido desde lejos con unos grados de error de
+            # rumbo puede aparecer corrido unos centímetros (y dos veces): todo lo que queda a
+            # menos de 6 cm del objeto se toma como su soporte.
+            dx = max(caja[0] - obs.x, 0.0, obs.x - caja[2])
+            dy = max(caja[1] - obs.y, 0.0, obs.y - caja[3])
+            if math.hypot(dx, dy) < 0.06:
+                propias.append((celda_obj, caja))
+        for celda_obj, caja in propias:
             self.con.cajas[celda_obj].remove(caja)
         try:
             return self.con.huella_libre(px, py, yaw_de(h), 0.008)
         finally:
-            self.con.cajas.setdefault(celda_obj, []).extend(propias)
+            for celda_obj, caja in propias:
+                self.con.cajas[celda_obj].append(caja)
 
     def _decidir(self):
         pose = self.est.pose
@@ -850,6 +1040,10 @@ class Navegador:
             if pans:
                 return TMirar(pans + [0.0], cuadros=3)
         obj = self.objetivo()
+        if obj['tipo'] == 'reposo':
+            self.registro('misión terminada: 3 cubos entregados, quedo en reposo junto al canasto')
+            self.estado = 'FIN'
+            return None
         es, bonus = self._metas(obj)
         plan = planificar(self.con, (c, h), es, self.costos, self.costo_extra, bonus)
         clave = (obj['tipo'], obj.get('color'))
@@ -857,9 +1051,14 @@ class Navegador:
             self.ultimo_objetivo = clave
             self.registro(f'objetivo: {obj["tipo"]} {obj.get("color", "")}'.strip())
         if plan is None:
+            if obj['tipo'] == 'entrada':
+                self.descartados[('entrada', None)] = self.con.version
+                return TEspera(0.05)
             if obj['tipo'] in ('cubo', 'canasto'):
                 self.descartados[(obj['tipo'], obj['color'])] = self.con.version
                 self.registro(f'no hay camino conocido a {obj["tipo"]} {obj["color"]}')
+                return TEspera(0.05)
+            if self._segunda_oportunidad():
                 return TEspera(0.05)
             if obj['tipo'] == 'explorar':
                 self.registro('no queda nada por explorar: vuelvo al inicio')
@@ -872,6 +1071,21 @@ class Navegador:
         if not acciones:
             return self._llegada(obj, c, h)
         return self._tareas(acciones, c, h)
+
+    def _segunda_oportunidad(self):
+        """
+        Sin camino: los giros marcados imposibles fallaron por cómo llegó el robot esa vez (pose,
+        lateral), no por el mapa. Antes de rendirse se olvidan y se reintenta (hasta 2 veces).
+        """
+        if not self.con.giros_imposibles or self.segundas_oportunidades >= 2:
+            return False
+        self.segundas_oportunidades += 1
+        self.registro(f'sin camino: olvido {len(self.con.giros_imposibles)} giros imposibles y '
+                      f'vuelvo a probar')
+        self.con.giros_imposibles.clear()
+        self.reacomodos.clear()
+        self.con.version += 1
+        return True
 
     def _tareas(self, acciones, c, h):
         tipo = acciones[0][0]
@@ -912,6 +1126,8 @@ class Navegador:
                 sentido = 1 if giro > 0 else -1
                 tareas = maniobra + [TGiro(yaw_de(nuevo), self, c, nuevo,
                                            sentido if abs(giro) < 2 else 0)]
+                for t in tareas:
+                    t.clave_giro = (c, h, nuevo)
                 self.cola = tareas[1:] + self.cola
                 return tareas[0]
             # Con este lateral no entra: alejarse por el lado libre y volver a llegar corrido.
@@ -938,8 +1154,10 @@ class Navegador:
             volver = TRecta(self, h, -sentido, c, s, nombre='acomodar', v_max=0.10)
             volver.ctrl.k_lat = 10.0
             volver.lat_fin = (cx * n[0] + cy * n[1]) + lat + math.copysign(0.004, lat)
+            ida = TRecta(self, h, sentido, c, a_fin=a_lejos, nombre='acomodar')
+            ida.clave_giro = volver.clave_giro = clave
             self.cola = [volver]
-            return TRecta(self, h, sentido, c, a_fin=a_lejos, nombre='acomodar')
+            return ida
         tareas = []
         if abs(corr[0] - s0) > 0.006:
             signo = 1 if corr[0] > s0 else -1
@@ -948,6 +1166,8 @@ class Navegador:
         sentido = 1 if giro > 0 else -1
         tareas.append(TGiro(yaw_de(nuevo), self, c, nuevo, sentido if abs(giro) < 2 else 0,
                             self._sobrepaso(c, h, nuevo, giro, corr[0], l0)))
+        for t in tareas:
+            t.clave_giro = (c, h, nuevo)
         self.cola = tareas[1:] + self.cola
         return tareas[0]
 
@@ -1092,6 +1312,10 @@ class Navegador:
             ('piso', n) not in self.miradas
 
     def _llegada(self, obj, c, h):
+        if obj['tipo'] == 'entrada':
+            self.ir_a_entrada = False
+            self.registro(f'de vuelta en el punto de reingreso {c}: sigo explorando')
+            return TEspera(0.05)
         if obj['tipo'] == 'inicio':
             self.registro('misión terminada: en la celda de partida')
             self.estado = 'FIN'
@@ -1183,6 +1407,7 @@ class Navegador:
                 self.entregados.append(color)
                 self.sosteniendo = None
                 self.registro(f'cubo {color} entregado ({len(self.entregados)}/3)')
+                self.ir_a_entrada = self.p['volver_a_la_entrada'] and len(self.entregados) < 3
             else:
                 self.descartados[('canasto', color)] = self.con.version
                 self.registro(f'no pude soltar el cubo {color}')

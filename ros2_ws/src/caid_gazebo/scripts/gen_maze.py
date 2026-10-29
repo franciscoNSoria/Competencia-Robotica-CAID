@@ -66,7 +66,8 @@ COLOR_FLECHA = {'gris': (0.22, 0.22, 0.22), 'rojo': (1.0, 0.0, 0.0), 'verde': (0
 SIGNIFICADO_COLOR_DEFECTO = {'rojo': ['R'], 'verde': ['G'], 'azul': ['B'], 'gris': []}
 COLOR_PARED = (0.90, 0.90, 0.86)
 COLOR_PISO = (0.55, 0.55, 0.55)
-COLOR_SOPORTE = (0.70, 0.70, 0.66)
+COLOR_SOPORTE = (0.70, 0.70, 0.66)    # columna del canasto
+COLOR_PILAR = (0.05, 0.05, 0.05)      # pilar de los cubos: cilindro negro (equipo, 29/10)
 COLOR_ZONA_ROJA = (0.85, 0.0, 0.0)
 ZONA_LINEA_M = 0.020
 ZONA_INSET_M = 0.005
@@ -196,7 +197,7 @@ def objetos_con_posicion(lab):
             x, y, _ = posicion_cubo(lab, simb, pos[0])
             salida.append({'tipo': 'soporte', 'origen': 'cubo_' + COLORES_CUBO[simb][0], 'celda': pos[0], 'x': x, 'y': y,
                            'lado': lab.pedestal_lado, 'alto': lab.altura_apoyo, 'bloquea': True, 'dinamico': False,
-                           'color': COLOR_SOPORTE, 'z_base': 0.0, 'soporte': True})
+                           'color': COLOR_PILAR, 'z_base': 0.0, 'soporte': True})
     for i, o in enumerate(lab.objetos):
         lado, alto, bloquea, dinamico, color = TIPOS_OBJETO[o['tipo']]
         r, c = o['celda']
@@ -215,7 +216,7 @@ def objetos_con_posicion(lab):
         if elevado:
             salida.append({'tipo': 'soporte', 'origen': 'distractor_%d' % i, 'celda': (r, c), 'x': x, 'y': y,
                            'lado': lab.pedestal_lado, 'alto': lab.altura_apoyo, 'bloquea': True, 'dinamico': False,
-                           'color': COLOR_SOPORTE, 'z_base': 0.0, 'soporte': True})
+                           'color': COLOR_PILAR, 'z_base': 0.0, 'soporte': True})
         salida.append({'tipo': o['tipo'], 'celda': (r, c), 'x': x, 'y': y, 'lado': lado, 'alto': alto,
                        'bloquea': bloquea, 'dinamico': dinamico, 'color': color,
                        'z_base': lab.altura_apoyo if elevado else 0.0, 'soporte': False, 'indice': i})
@@ -736,6 +737,18 @@ def caja_colision(nombre, pos, size, indent=8, friccion=None):
             % (s, nombre, s, f(pos[0]), f(pos[1]), f(pos[2]), s, f(size[0]), f(size[1]), f(size[2]), surf, s))
 
 
+def cilindro_visual(nombre, pos, radio, alto, rgb, indent=8):
+    s = ' ' * indent
+    return ('%s<visual name="%s">\n%s  <pose>%s %s %s 0 0 0</pose>\n%s  <geometry><cylinder><radius>%s</radius><length>%s</length></cylinder></geometry>\n%s%s'
+            % (s, nombre, s, f(pos[0]), f(pos[1]), f(pos[2]), s, f(radio), f(alto), material(rgb, indent + 2), s + '</visual>\n'))
+
+
+def cilindro_colision(nombre, pos, radio, alto, indent=8):
+    s = ' ' * indent
+    return ('%s<collision name="%s">\n%s  <pose>%s %s %s 0 0 0</pose>\n%s  <geometry><cylinder><radius>%s</radius><length>%s</length></cylinder></geometry>\n%s</collision>\n'
+            % (s, nombre, s, f(pos[0]), f(pos[1]), f(pos[2]), s, f(radio), f(alto), s))
+
+
 def rectangulos_de_pared(lab):
     """Une bloques contiguos en rectangulos (menos entidades en Gazebo). Devuelve (r, c, alto_celdas, ancho_celdas)."""
     usado = [[False] * lab.ncols for _ in range(lab.nfilas)]
@@ -962,9 +975,9 @@ def generar_sdf(lab, infoval):
         if ob['soporte']:
             w('    <model name="soporte_%s">\n      <static>true</static>\n      <pose>%s %s %s 0 0 0</pose>\n      <link name="link">\n'
               % (ob['origen'], f(ob['x']), f(ob['y']), f(ob['alto'] / 2.0)))
-            size = (ob['lado'], ob['lado'], ob['alto'])
-            w(caja_colision('colision', (0, 0, 0), size))
-            w(caja_visual('visual', (0, 0, 0), size, ob['color']))
+            # pilar cilindrico: `lado` es el diametro
+            w(cilindro_colision('colision', (0, 0, 0), ob['lado'] / 2.0, ob['alto']))
+            w(cilindro_visual('visual', (0, 0, 0), ob['lado'] / 2.0, ob['alto'], ob['color']))
             w('      </link>\n    </model>\n\n')
         elif ob['dinamico']:
             w(cubo_sdf('%s_%d' % (ob['tipo'], ob['indice']), ob['x'], ob['y'], ob['color'], ob['z_base']))
@@ -1056,8 +1069,11 @@ def generar_svg(lab, infoval, con_rutas=False):
         ox, oy = a_pixel(ob['x'], ob['y'])
         lado = max(ob['lado'] / lab.celda * px, 5)
         rgb = '#%02x%02x%02x' % tuple(int(255 * v) for v in ob['color'])
-        w('<rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" fill="%s" stroke="#000" stroke-width="1"/>\n'
-          % (ox - lado / 2, oy - lado / 2, lado, lado, rgb))
+        if ob['soporte']:
+            w('<circle cx="%.1f" cy="%.1f" r="%.1f" fill="%s" stroke="#000" stroke-width="1"/>\n' % (ox, oy, lado / 2, rgb))
+        else:
+            w('<rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" fill="%s" stroke="#000" stroke-width="1"/>\n'
+              % (ox - lado / 2, oy - lado / 2, lado, lado, rgb))
     # cubos objetivo
     for simb, (r, c) in infoval['cubos'].items():
         x_m, y_m, _ = posicion_cubo(lab, simb, (r, c))

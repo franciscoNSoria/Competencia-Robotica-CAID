@@ -3013,14 +3013,14 @@
       <link name="link">
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
           <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.05 0.05 0.05 1</diffuse>
           </material>
         </visual>
       </link>
@@ -3032,14 +3032,14 @@
       <link name="link">
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
           <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.05 0.05 0.05 1</diffuse>
           </material>
         </visual>
       </link>
@@ -3051,14 +3051,14 @@
       <link name="link">
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
           <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.05 0.05 0.05 1</diffuse>
           </material>
         </visual>
       </link>
@@ -3089,14 +3089,14 @@
       <link name="link">
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
           <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.05 0.05 0.05 1</diffuse>
           </material>
         </visual>
       </link>
@@ -3133,14 +3133,14 @@
       <link name="link">
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
           <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.05 0.05 0.05 1</diffuse>
           </material>
         </visual>
       </link>

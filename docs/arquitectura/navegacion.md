@@ -1,18 +1,26 @@
 # Navegación y misión (NAV, PER, MIS)
 
 > Paquetes `caid_navigation` y `caid_vision`. Decisión de fondo: ADR 0004 (sin Nav2 ni SLAM).
+> **Algoritmos, fórmulas y referencias: [navegacion-teoria.md](navegacion-teoria.md).**
 > Estados: **M** medido, **C** calculado, **P** supuesto a confirmar, **S** simulado.
 
 ## 1. Qué hace
 
 El robot arranca sin saber nada del laberinto (el reglamento no admite un mapa programado) y:
 
-1. Mira alrededor de la partida con la cámara (gira 90° a cada lado) para encontrar los canastos.
-2. Explora celda por celda. Va a la frontera más barata; las flechas de los colores que faltan
-   encarecen los otros caminos de esa bifurcación (aceleran la exploración, no la reemplazan).
-3. Si ve un cubo con la pinza libre, va a buscarlo y pide al brazo que lo agarre.
-4. Con un cubo en la pinza, si conoce su canasto va por el camino más corto y pide soltarlo.
-5. Con los tres entregados vuelve a la celda de partida.
+1. Al encender guarda la **partida**: es el origen del mapa, (0, 0) con rumbo 0.
+2. Mira alrededor de la partida con la cámara (gira 90° a cada lado) para encontrar los canastos.
+3. Explora celda por celda (exploración por fronteras + Dijkstra). Al pasar guarda la **entrada**
+   del laberinto (la primera celda con pared a los dos costados) y la **primera bifurcación**
+   (la primera celda adentro con 3 salidas), con su rumbo ("actitud"). Las flechas de los colores
+   que faltan encarecen los otros caminos de esa bifurcación (aceleran, no obligan).
+4. Si ve un cubo con la pinza libre, va a buscarlo y pide al brazo que lo agarre.
+5. Con el cubo arriba va **más suave** (0,15 m/s, 0,9 rad/s, arranques limitados) por el camino
+   más corto del mapa conocido hasta su canasto y pide soltarlo.
+6. Después de entregar vuelve a la **entrada** (o a la bifurcación, parámetro
+   `punto_de_reingreso`) y sigue desde ahí; el exterior queda para el final (salida abierta).
+7. Con los tres entregados **queda quieto** junto al canasto (reposo). Si se acaba el tiempo
+   (`tiempo_max`) vuelve a la partida.
 
 Respeta las zonas rojas (no entra), esquiva bloques chicos pegados a una pared (pasa corrido) y
 marca como cerrado un pasillo tapado (bloque de 20 cm).
@@ -68,7 +76,9 @@ se midió varias veces.
   ultrasonido lateral pasa de pared a abierto, el sensor está en el borde de la celda. En el
   simulador el cambio se ve 2,6 cm después del borde (0,20 m × tan 7,5°, C); con el sensor real
   hay que medirlo (`offset_borde`).
-- **Rumbo:** pendiente de la posición lateral medida con las paredes mientras avanza.
+- **Rumbo:** pendiente de la posición lateral medida con las paredes mientras avanza, restando lo
+  que giró según la odometría (regresión lineal; así sirve aunque el control esté corrigiendo el
+  rumbo en ese tramo).
 - **Factor de giro:** un 4WD patina al girar; el factor se calibra (parámetro `factor_giro`) y se
   ajusta en marcha con cada corrección de rumbo.
 
@@ -77,9 +87,15 @@ se midió varias veces.
 - Un eco de frente que no cae en un borde de celda es una **sospecha**. Antes de entrar a una celda
   nueva que no se vio de lejos, el robot la **barre**: al girar hacia ella se pasa 15° y vuelve, así
   el ultrasonido de frente la recorre entera sin pararse.
-- Supuesto (P): los obstáculos son prismas de base cuadrada (bloques de 8 y 20 cm, soportes de
+- Supuesto (P): los obstáculos son de base cuadrada o circular (bloques de 8 y 20 cm, pilares de
   40 mm, canastos), así que la profundidad es igual al ancho medido; y un obstáculo cerca de una
   pared se toma pegado a ella (entre los dos no pasa el robot).
+- Los pilares de los cubos son **cilindros negros** (equipo, 29/10; 40 mm de diámetro, P). La cámara
+  no los ve, pero ve el cubo de arriba: cuando un cubo se confirma, su pilar entra al mapa debajo de
+  él y se mueve con el promedio de las vistas.
+- Si el robot pide moverse y las ruedas no se mueven en 0,8 s, está **trabado** contra algo que no
+  vio: vuelve 5 cm y replanifica; a la tercera vez en un paso nuevo, lo cierra; si se traba dos
+  veces en la maniobra de un giro, ese giro se marca imposible (ver teoría, 4.4).
 - Al pasar, los ultrasonidos laterales miden la cara del obstáculo y corrigen su ancho.
 - El control lateral busca, en las celdas que ocupa el robot y en las dos siguientes, el tramo libre
   más cercano al eje, con 2,5 cm de margen si entra y hasta 0,5 cm (yendo a 0,06 m/s) si no.
@@ -92,7 +108,9 @@ se midió varias veces.
   hacia qué lado apunta a lo largo de la pared: sirve con perspectiva y con inclinación de ±30°.
   Se usa una flecha vista igual en 2 imágenes.
 - **Cubos y canastos:** la distancia sale del borde de abajo (apoyan a 108,5 mm y 88,5 mm, la cámara
-  está a 138,5 mm, O/P). Un cubo cerca de un canasto conocido se ignora.
+  está a 138,5 mm, O/P). Un cubo cerca de un canasto conocido se ignora, y una detección con la
+  forma vertical de un canasto (razón entre los bordes de arriba y de abajo respecto del horizonte:
+  0,33 un cubo, 0,6 un canasto) no se toma como cubo.
 - **Zonas rojas:** el contorno rojo del piso es un rectángulo: la envolvente convexa de lo que se ve
   queda adentro, y votan las celdas de su interior (una línea suelta no alcanza).
 - Antes de entrar a un pasillo nuevo, mientras falten cubos, mira 43° a cada lado (los cubos están
@@ -119,10 +137,13 @@ soltar, de espaldas al canasto con su centro 0,19 m detrás del robot (`deposito
 
 ## 5. Cómo probar
 
-Sin ROS (cualquier PC con Python 3, `numpy`, `opencv-python`, `pyyaml`):
+Sin ROS (cualquier PC con Python 3, `numpy`, `opencv-python`, `pyyaml`). `PYTHONHASHSEED=0` hace
+que dos corridas con la misma semilla den exactamente lo mismo (el orden de los conjuntos de Python
+cambia entre procesos):
 
 ```bash
 cd ros2_ws/src
+export PYTHONHASHSEED=0
 PYTHONPATH=caid_navigation:caid_vision python3 -m caid_navigation.simulacion.correr e2_bifurcaciones --detalle --mapa
 PYTHONPATH=caid_navigation:caid_vision python3 -m caid_navigation.simulacion.lote e1 e2 e3 e4 e5 e6 --semillas 1 2 3
 PYTHONPATH=caid_navigation:caid_vision python3 -m caid_navigation.simulacion.lote e2 --vision render

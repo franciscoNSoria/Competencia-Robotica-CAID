@@ -11,7 +11,7 @@
 | Bloque de pared | 320 x 320 x 170 mm (macizo) | O, M | Dato del equipo y `Bloque de pared reglamentario.stl` (320 x 320 x 170) |
 | Cubos | 20 mm de lado, rojo / verde / azul | R | `desafio-laberinto.md` |
 | **Altura del cubo** | Apoya a **108,5 mm** del piso: la altura de la base del brazo (cara superior del 2.º piso del robot) | O, C | Dato del equipo (26/10); 108,5 = 104,5 + 4 en `dimensions.yaml` |
-| Soporte del cubo | Columna cuadrada de 40 mm de lado, de 108,5 mm de alto | P | Desconocido (equipo, 26/10): "probablemente sobre algún cuerpo de esa altura" |
+| Soporte del cubo | **Cilindro negro** de 108,5 mm de alto; 40 mm de diámetro | O, P | Equipo (29/10): "los pilares donde se situarán los cubos serán cilindros negros". El diámetro es supuesto (`pedestal_lado_mm`) |
 | Punta de la flecha | 70 mm de ancho, 50 mm de alto | R | Anexo del desafío |
 | Cuerpo de la flecha | 30 mm de ancho; largo L = 30 / 60 / 100 mm | R | Anexo del desafío |
 | Largo total de la flecha | 80 / 110 / 150 mm | C | L + 50; coincide con los STL `Flecha corta / media / Larga` |
@@ -44,7 +44,7 @@ alto_pared_m: 0.17          # alto del bloque (opcional, 0.17 por defecto)
 altura_flechas_mm: 115      # centro de las flechas sobre el piso (opcional, 115 por defecto)
 altura_apoyo_cubo_mm: 108.5 # donde apoyan los cubos: la base del brazo (opcional)
 altura_borde_canasto_mm: 108.5  # borde de la pared trasera del canasto (opcional)
-pedestal_lado_mm: 40        # lado de la columna que sostiene cada cubo (opcional)
+pedestal_lado_mm: 40        # diámetro del pilar (cilindro negro) que sostiene cada cubo (opcional)
 inicio_dir: E               # hacia dónde mira el robot en la S
 canastos_pared: O           # opcional: pared contra la que se apoyan los canastos; sin esto, al centro de su celda
 mapa: |
@@ -74,7 +74,7 @@ El nombre del archivo (sin `.yaml`) es el nombre del mundo: `mazes/e6_salida_abi
 | `.` | Piso libre (pasillo o sala) |
 | `~` | Piso libre del **área abierta exterior**, sin paredes. Puede estar en el borde de la grilla |
 | `S` | Punto de partida del robot (centro de la celda), mirando hacia `inicio_dir` |
-| `R` `G` `B` | Cubo rojo, verde, azul. Cada uno apoya sobre una columna de 108,5 mm, pegada a una pared de su celda (o al centro si la celda no tiene paredes). Uno de cada |
+| `R` `G` `B` | Cubo rojo, verde, azul. Cada uno apoya sobre un pilar (cilindro negro) de 108,5 mm, pegada a una pared de su celda (o al centro si la celda no tiene paredes). Uno de cada |
 | `1` `2` `3` | Celda del canasto del cubo rojo (1), verde (2) y azul (3), con el borde a 108,5 mm. Uno de cada |
 | `Z` | Zona prohibida: piso libre con un rectángulo rojo pintado. El robot no debe entrar |
 
@@ -192,3 +192,4 @@ Necesita `python3-yaml` (ROS 2 lo instala; se comprueba con `python3 -c 'import 
 - 26/10/2026: primera versión.
 - 26/10/2026: cubos y canastos a la altura de la base del brazo (108,5 mm) sobre columnas; área abierta exterior con entrada entre paredes (E6); altura de flechas configurable; el largo 3 es "3 o más".
 - 26/10/2026: el significado de cada color de flecha pasa a ser un parámetro (`significado_colores`); las grises no significan nada y se ignoran; una flecha por cubo en cada punto de decisión.
+- 29/10/2026: los pilares de los cubos y distractores son cilindros negros (el del canasto sigue siendo una columna gris, propia).

@@ -27,7 +27,8 @@ class RegistroLateral:
 
     def __init__(self, ventana=0.11):
         self.ventana = ventana
-        self.datos = {}     # (celda, d) -> lecturas
+        self.datos = {}     # (celda, d) -> [(lectura, distancia esperada a ese borde)]
+        self.cierres = {}   # (celda, d) -> posición del sensor al registrarlo por última vez
 
     def actualizar(self, con, pose, rangos):
         """Devuelve la lista de (celda, d, abierto) que se cerraron en este paso."""
@@ -44,9 +45,16 @@ class RegistroLateral:
             cx, cy = centro(celda)
             if abs((sx - cx) * u[0] + (sy - cy) * u[1]) <= self.ventana:
                 clave = (celda, (h + d_rel) % 4)
+                previo = self.cierres.get(clave)
+                if clave not in self.datos and previo and \
+                        math.hypot(sx - previo[0], sy - previo[1]) < 0.03:
+                    continue    # quieto: es la misma medida, no vuelve a votar
                 activos.add(clave)
                 r = rangos.get(lado, math.inf)
-                self.datos.setdefault(clave, []).append(r if math.isfinite(r) else 9.9)
+                n = PASOS[(h + d_rel) % 4]
+                esperada = (cx - sx) * n[0] + (cy - sy) * n[1] + MEDIA
+                self.datos.setdefault(clave, []).append(
+                    (r if math.isfinite(r) else 9.9, esperada, sx, sy))
         for clave in list(self.datos):
             if clave not in activos or len(self.datos[clave]) >= 6:
                 listos.append(self._cerrar(con, clave))
@@ -58,10 +66,16 @@ class RegistroLateral:
         return listos
 
     def _cerrar(self, con, clave):
-        lecturas = sorted(self.datos.pop(clave))
-        mediana = lecturas[len(lecturas) // 2]
-        abierto = mediana > UMBRAL_PARED
-        con.marcar(clave[0], clave[1], abierto, cerca=len(lecturas) >= 2)
+        datos = self.datos.pop(clave)
+        self.cierres[clave] = datos[-1][2:]
+        # Lectura menos distancia esperada a la pared de ese borde: cerca de 0 es la pared; mucho
+        # más es que el borde está abierto (aunque haya algo adentro de la celda vecina, a menos
+        # de 0,20 m). Más corta es algo apoyado en la pared (lo mira _revisar_lateral_corta).
+        exceso = sorted(r - e for r, e, _, _ in datos)
+        mediana = exceso[len(exceso) // 2]
+        r_med = sorted(r for r, _, _, _ in datos)[len(datos) // 2]
+        abierto = r_med > UMBRAL_PARED or mediana > 0.06
+        con.marcar(clave[0], clave[1], abierto, cerca=len(datos) >= 2)
         return clave[0], clave[1], abierto
 
 

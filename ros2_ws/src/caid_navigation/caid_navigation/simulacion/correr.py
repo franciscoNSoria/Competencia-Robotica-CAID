@@ -112,7 +112,10 @@ def correr(nombre, t_max=900.0, dt=0.05, vision='oraculo', ruido=True, semilla=1
     res.tiempo = t
     res.choques = robot.choques
     res.recorrido = robot.recorrido
-    res.en_inicio = mundo.celda_rc(robot.pose[0], robot.pose[1]) == mundo.inicio_celda
+    rc = mundo.celda_rc(robot.pose[0], robot.pose[1])
+    # Zona de inicio: hasta 2 celdas de la partida (ahí están los canastos en E1 a E6).
+    ri, ci = mundo.inicio_celda
+    res.en_inicio = max(abs(rc[0] - ri), abs(rc[1] - ci)) <= 2
     res.mensajes = nav.mensajes
     res.mapa = nav.con.dibujo(nav.pose)
     res.nav = nav

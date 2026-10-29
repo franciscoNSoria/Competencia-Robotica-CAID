@@ -201,6 +201,23 @@ def ubicar_objeto(con, cam, pose, pan, caja, base_z, ancho_real):
     return px, py, dist
 
 
+def parece_canasto(cam, caja, corte=0.43):
+    """
+    True si una caja detectada como cubo tiene la forma vertical de un canasto.
+
+    Con la cámara sin inclinación, un objeto entre las alturas z0 (abajo) y z1 (arriba), más abajo
+    que la cámara, da (v_arriba - cy) / (v_abajo - cy) = (h_cam - z1) / (h_cam - z0) a cualquier
+    distancia. Cubo: 10 / 30 = 0,33 (en la imagen da 0,24-0,33 porque el borde de arriba que se ve
+    es la arista de atrás). Canasto: 30 / 50 = 0,6 (0,52-0,58). Un canasto recortado por el borde
+    de la imagen o visto de costado puede tener forma de cuadrado; esto lo separa.
+    """
+    _, y, _, h = caja
+    abajo = y + h - cam.cy
+    if abajo <= 2:
+        return False
+    return (y - cam.cy) / abajo > corte
+
+
 def zonas_en_suelo(con, cam, pose, pan, puntos, minimo=4):
     """
     Votos de zona roja por celda en esta imagen: {celda: votos}.
