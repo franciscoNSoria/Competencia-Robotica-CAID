@@ -42,3 +42,22 @@ Los servos de este tipo no informan su posición, así que no hay un valor para 
 - Ancho de pulso contra ángulo de la base: medir 5 puntos (−120°, −60°, 0°, 60°, 120°) y ajustar una recta. Eso da el desfase y la pendiente.
 - Para los otros servos del brazo (hombro, codo, muñeca y pinza): ángulo de cada articulación en la pose de reposo, en la pose elevada de las fotos laterales y en el agarre, y sus topes.
 - Alcance lateral de la pinza con el brazo girado 90° y extendido (las fotos frontales dan una idea, no una medida).
+
+## 6. Pruebas de servos (M, 2026-10-27 a 2026-10-29)
+
+Firmwares en `firmware/banco/brazo/`. Los servos son MG90S (la ficha del vendedor dice "360°", analógico, 4,8 V, 2 kg·cm; los datos de
+los vendedores para el MG90S son 1,8 kg·cm a 4,8 V y 2,2 kg·cm a 6 V, **sin ficha del fabricante**, P).
+
+| Servo | Resultado |
+|---|---|
+| **Pinza** (libre) | Responde: `D` abre y `A` cierra, 50 µs por paso, y con 10 pasos de `A` se cierra por completo. Los engranajes tienen juego. No se estimaron grados por paso |
+| **Base** (libre, sin brazo) | Se mueve sin problema, pero despacio. Rango de tope a tope, medido con transportador: **230° y 245°** (dos mediciones). Cada paso de 50 µs da entre 3 y 6° de forma irregular (zona muerta y juego). `A` va al lateral izquierdo y `D` al derecho. Con el brazo armado zumbaba sin mover; tras reensamblar se movió bien (causa sin identificar) |
+| **Hombro** (libre) | 1300 µs sube el brazo y 1700 µs lo baja (`A` sube, `D` baja). Se mueve bien |
+| **Codo** (libre) | 1700 µs retrae y 1000 µs estira (`D` retrae, `A` estira). Se mueve bien |
+
+- Con el brazo armado, el hombro **no levanta solo**: "con ayuda de la mano funciona un poco mejor" con el firmware coordinado (`hombro_codo`). Sin resultado numérico.
+- Tensión del riel de servos (M): 5,12 V en reposo y 4,84 V con el servo de la base zumbando.
+- **2026-10-29, `pwm_auto`:** con el LED parpadeando (el programa corre) hay PWM de 50 Hz en GPIO19 y GPIO21 (el tester midió 51 y 58 Hz). Con saltos de 200 µs (unos 23°) **ni el hombro ni el codo se movieron ni zumbaron**.
+- A descartar, en este orden (**P**): la tensión del conector **mientras** el servo debería moverse (un contacto flojo da 5 V en vacío y casi 0 bajo carga); un servo reconocidamente bueno (el de la pinza) en el conector del hombro; el mismo servo con otra fuente de 5 V y GND común; un servo dañado por el esfuerzo de las pruebas.
+- Una prueba de otra clase quedó anotada: el firmware coordinado imprime por el monitor serie, que dio caracteres ilegibles en una carga (causa sin determinar: velocidad del monitor, reinicios o flasheo incompleto).
+
