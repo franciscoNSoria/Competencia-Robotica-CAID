@@ -197,8 +197,12 @@ class Estimador:
                     return
                 cx, cy = centro(celda)
                 borde = cx * u[0] + cy * u[1] + MEDIA
+                vecina = (celda[0] + u[0], celda[1] + u[1])
+                canon = min((celda, h), (vecina, (h + 2) % 4))
+                if con.votos.get(canon, 0) > -4 or con.cajas.get(vecina):
+                    return      # pared poco confirmada o con algo adelante: no se usa
                 innov = (borde - f) - a_s
-                if abs(innov) < 0.04:
+                if abs(innov) < 0.025:
                     d = self.g_frente * innov
                     self.pose[0] += d * u[0]
                     self.pose[1] += d * u[1]

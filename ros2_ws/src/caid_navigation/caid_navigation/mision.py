@@ -53,7 +53,7 @@ PARAMETROS = {
     'radio_abierto': 3,         # celdas: lejos de toda pared solo se explora cerca del inicio
     'penal_abierto': 25.0,      # s
     'penal_flecha': 40.0,       # s
-    'tiempo_max': 600.0,        # s, después vuelve al inicio
+    'tiempo_max': 900.0,        # s, después vuelve al inicio (ajustar al tiempo de la ronda)
     'tiempo_manipular': 30.0,   # s, espera máxima de la respuesta del brazo
     'confirmar_objeto': 2,      # detecciones para dar por visto un cubo o canasto
     'confirmar_zona': 2,        # imágenes con votos para prohibir una celda
@@ -1014,6 +1014,12 @@ class Navegador:
             if previo:
                 return TBarrido(self, c, h, ang, previo[2], previo[3])
             return TBarrido(self, c, h, ang)
+        if self.p['usar_camara'] and ('costados', c, h) not in self.miradas and \
+                self._sin_mirada_previa(c, h) and self._faltan_cubos():
+            # Los cubos están pegados a las paredes de los costados: con 60° de campo no se ven
+            # hasta que están a 2 celdas. Al entrar a un pasillo nuevo se mira a los dos lados.
+            self.miradas.add(('costados', c, h))
+            return TMirar([0.75, -0.75, 0.0], cuadros=2)
         if self.p['usar_camara'] and self.inspecciones.get(n, 0) < 2 and ('piso', n) not in self.miradas:
             self.miradas.add(('piso', n))
             pose = self.est.pose
@@ -1022,6 +1028,17 @@ class Navegador:
             ang = ang_dif(math.atan2(cy - oy, cx - ox), pose[2])
             return TMirar([limitar(ang, 1.5), 0.0], cuadros=3)
         return None
+
+    def _sin_mirada_previa(self, c, h):
+        """True si el robot no viene derecho por este pasillo (entonces no vio los costados)."""
+        atras = vecina(c, (h + 2) % 4)
+        return not (self.con.visitada(atras) and self.con.visitada(vecina(atras, (h + 2) % 4))
+                    and self.con.transitable(atras, h))
+
+    def _faltan_cubos(self):
+        faltan = [c for c in COLORES if c not in self.entregados and c != self.sosteniendo]
+        return any(c not in self.cubos or self.cubos[c].n < self.p['confirmar_objeto']
+                   for c in faltan)
 
     def extension(self, c, h):
         """Al entrar a la celda c en una recta: (celda_final, s, l) para seguir o frenar."""
@@ -1045,6 +1062,9 @@ class Navegador:
     def _necesita_previa(self, c, h, n):
         if self.con.visitada(n):
             return False
+        if self.p['usar_camara'] and ('costados', c, h) not in self.miradas and \
+                self._sin_mirada_previa(c, h) and self._faltan_cubos():
+            return True
         if self.p['barrer_celdas_nuevas'] and (c, h) not in self.barridos and (
                 n not in self.vistas_lejos or self.sospechas.get(n, 0) >= 2):
             return True
