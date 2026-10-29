@@ -3,7 +3,7 @@ project(caid_gazebo)
 
 find_package(ament_cmake REQUIRED)
 
-install(DIRECTORY worlds
+install(DIRECTORY worlds mazes scripts
   DESTINATION share/${PROJECT_NAME})
 
 ament_package()
