@@ -162,23 +162,27 @@ source install/setup.bash
 ros2 launch caid_navigation mision.launch.py laberinto:=e2_bifurcaciones
 ```
 
-## 6. Resultados en el simulador 2D (S, 29/10/2026)
+## 6. Resultados en el simulador 2D (S, 29/10/2026, versión final del día)
 
-Misión completa = 3 cubos en su canasto, robot en la partida y ningún error. "Oráculo" son
-detecciones perfectas; "render" dibuja la imagen y corre el detector real. Odometría con 1 % de error
-de avance y 1,5 % de giro, ultrasonidos con ruido de 5 mm.
+Misión completa = 3 cubos en su canasto, robot terminado en la zona de partida (a 2 celdas o menos
+de la S) y ningún error. "Oráculo" son detecciones perfectas; "render" dibuja la imagen y corre el
+detector real. Odometría con 1 % de error de avance y 1,5 % de giro, ultrasonidos con ruido de 5 mm.
+`tiempo_max` = 900 s. Con `PYTHONHASHSEED=0` los números se repiten exactos.
 
 | Escenario | Oráculo (3 semillas) | Render (2 semillas) | Tiempo de una completa | Falla típica |
 |---|---|---|---|---|
-| E1 serpentina | 2/3 | 1/2 | 800 s | lento (muchos giros); se queda sin tiempo |
-| E2 bifurcaciones | 3/3 | 1/2 | 400-440 s | con render, un cubo no confirmado a tiempo |
-| E3 obstáculos | 2/3 | 1/2 | 510-560 s | roce al salir del callejón del cubo verde (ver 7) |
-| E4 isla | 3/3 | 0/2 | 410-440 s | con render, no encuentra el tercer cubo |
-| E5 competencia | 0/3 | 2/2 | 490 s | roce con un soporte o bloque en pasos de ±1,5 cm |
-| E6 salida abierta | 0/3 | 0/2 | — | área abierta sin paredes: pose de hasta 26 cm de error, lento |
+| E1 serpentina | 2/3 | 0/2 | 840-850 s | lento (muchos giros): entrega 2 y se le acaba el tiempo |
+| E2 bifurcaciones | 3/3 | 2/2 | 430-475 s | — |
+| E3 obstáculos | 2/3 | 2/2 | 560-610 s | paso de ±1,6 cm entre un bloque y un pilar (ver 7) |
+| E4 isla | 2/3 | 1/2 | 435-445 s | 6-8 cm de error de pose en un giro: choques y se queda sin tiempo |
+| E5 competencia | 1/3 | 0/2 | 545 s | se traba contra un bloque de 8 cm en la maniobra de un giro (pasos de ±1,5 cm) |
+| E6 salida abierta | 0/3 | 0/2 | — | lento (1 cubo en 900 s); en el área abierta la pose llega a 5-9 cm; con render, un "cubo azul" falso a 5 m |
 
-Choques con paredes en giros: casi desaparecieron con los giros de máxima holgura y el
-corrimiento lateral. Los choques que quedan son con soportes y bloques en pasos muy justos.
+Total: oráculo 10/18, render 5/12 (antes de esta tanda: 8/18 y 5/12, con E5 y E6 casi siempre
+"atascados"). Lo que mejoró de verdad es la pose: el error máximo en las corridas que terminan bajó
+a 2-3 cm y 6-8° (antes 4-7 cm) y ya casi no hay robots atascados (el vigilante de trabado los
+saca). Los resultados por escenario se mueven bastante de una semilla a otra: con 2-3 semillas, una
+corrida de diferencia no es una tendencia.
 
 ## 7. Pendiente y riesgos
 
@@ -194,7 +198,17 @@ corrimiento lateral. Los choques que quedan son con soportes y bloques en pasos 
   conviene que revise también celdas seguidas.
 - El tiempo de la misión en el simulador está entre 7 y 15 minutos según el laberinto; hay que
   confirmar el tiempo de la ronda con la organización (`tiempo_max`).
+- **Área abierta (E6):** sin paredes la pose solo sale de la odometría y al volver a la entrada el
+  robot llega corrido 5-9 cm. Idea para probar: usar los canastos (posición conocida por la cámara)
+  como referencias para corregir la pose en la zona de partida.
+- **Inclinación de la cámara:** la distancia a cubos y canastos y el filtro de forma de cubo
+  (`forma_de_cubo`) dependen del horizonte de la imagen (`cy`): 1° de inclinación lo corre 9,7 px
+  (554 × tan 1°, C). Hay que calibrarlo en el robot real antes de confiar en la cámara.
+- **Cubo en el 2.º piso:** los límites de carga (0,15 m/s, 0,9 rad/s, 0,4 m/s², 2 rad/s²) salen de
+  suponer el cubo a 0,10 m del centro de giro y μ = 0,3 (P). Falta la foto o la medida de MAN.
+- **Pilares:** se supuso 40 mm de diámetro (`pedestal_lado_mm`); confirmar con la organización.
 
 ## Historial
 
 - 29/10/2026: primera versión.
+- 29/10/2026: puntos guardados (partida, entrada, primera bifurcación), reingreso después de entregar, reposo con 3 entregados, límites de carga, pilares negros cilíndricos, vigilante de trabado, rumbo por regresión, filtro de forma de cubo; teoría en `navegacion-teoria.md`.

@@ -362,6 +362,19 @@ razón ≤ 1,33, relleno ≥ 0,85) y con 4 a 6 vértices al aproximarlo; canasto
 solidez > 0,85. Además, un "cubo" a menos de 0,35 m de un canasto conocido se descarta (un canasto
 de cerca puede parecer un cubo, y ahí van a parar los cubos entregados).
 
+**Forma vertical** (`forma_de_cubo`): con la cámara sin inclinación, un objeto entre las alturas z₀ y
+z₁ (debajo de la cámara) cumple, a cualquier distancia,
+
+```
+(v_arriba − c_y) / (v_abajo − c_y) = (h_cam − z₁) / (h_cam − z₀)
+```
+
+Cubo (108,5-128,5 mm): 10/30 = 0,33; como el borde de arriba que se ve es la arista de atrás (2 cm
+más lejos), 0,31-0,33. Canasto (88,5-108,5 mm): 30/50 = 0,6. Un pedazo de flecha (en la pared, más
+alto) da menos. Se acepta como cubo desde min(0,24; 0,32 − 2 px/(v_abajo − c_y)) hasta 0,43. En el
+render (S): cubos 0,24-0,33 (0,27 a 0,2 m), canastos 0,52-0,58, pedazo de flecha 0,21. Depende del
+horizonte c_y: **hay que calibrar la inclinación de la cámara** (1° = 9,7 px).
+
 **Flechas: retroproyección sobre la pared.** Del contorno se sacan la punta, el cuello (donde
 empieza la punta) y la cola. El rayo del cuello se recorre por la grilla y se anotan las caras de
 bloque que cruza. Para cada cara candidata (plano vertical conocido, normal n, punto p₀) se cortan
