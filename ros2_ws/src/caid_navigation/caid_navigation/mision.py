@@ -1007,13 +1007,12 @@ class Navegador:
             if previo and previo[3] == 2:
                 self.fin_barrido(previo[2])
                 return TEspera(0.05)        # replanificar con lo que vio el giro
-            if ang < 0.17:
-                self.registro(f'sin lugar para barrer en {c}: entro despacio a {n}')
-                self.lentas.add(n)
-                return None
-            if previo:
-                return TBarrido(self, c, h, ang, previo[2], previo[3])
-            return TBarrido(self, c, h, ang)
+            if ang >= 0.17:
+                if previo:
+                    return TBarrido(self, c, h, ang, previo[2], previo[3])
+                return TBarrido(self, c, h, ang)
+            self.registro(f'sin lugar para barrer en {c}: entro despacio a {n}')
+            self.lentas.add(n)
         if self.p['usar_camara'] and ('costados', c, h) not in self.miradas and \
                 self._sin_mirada_previa(c, h) and self._faltan_cubos():
             # Los cubos están pegados a las paredes de los costados: con 60° de campo no se ven
