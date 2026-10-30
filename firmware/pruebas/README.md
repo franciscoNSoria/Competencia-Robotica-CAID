@@ -10,6 +10,8 @@ por Wi-Fi al agente micro-ROS de la PC, y desde la PC se manda todo y se ve todo
 
 ## 1. Mapa de pines
 
+Circuito completo con este pinout (resistencias, capacitores, módulos): [img/circuito_completo_pinout_actual.png](img/circuito_completo_pinout_actual.png).
+
 ### ESP32 de movimiento (DevKit de 38 pines)
 
 | Componente | Señal | GPIO | Estado |
