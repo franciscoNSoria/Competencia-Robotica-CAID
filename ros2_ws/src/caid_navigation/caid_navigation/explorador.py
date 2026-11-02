@@ -21,6 +21,13 @@ Publica: /cmd_vel (Twist), /nav/mapa (String, dibujo del mapa),
          /nav/mapa_rviz (MarkerArray) y la TF map -> base_footprint con la pose corregida
 Los nombres de los tópicos son parámetros: por defecto apuntan a la simulación (/sim/...).
 
+Si se pierde (la odometría falla), no se detiene:
+1. Relocalización: en una celda conocida, si 2 o más lados medidos contradicen el mapa, prueba las
+   celdas vecinas (±1) y se corre a la única donde todo coincide.
+2. Referencias: un canasto ya ubicado que la cámara ve en otra celda (3 veces) corrige la pose.
+3. Volver a mapear: si no se relocaliza 3 veces seguidas o no conoce un camino, borra el mapa y
+   explora otra vez desde donde está, sin perder lo entregado ni lo que lleva.
+
 No hay IMU: el rumbo sale de la odometría y se corrige con las paredes.
 - Posición lateral: con las distancias a las paredes de los costados.
 - Posición longitudinal: con la distancia a la pared de enfrente.
@@ -52,6 +59,7 @@ from tf2_ros import TransformBroadcaster
 from visualization_msgs.msg import MarkerArray
 
 LADOS = ('frente', 'izquierda', 'derecha')
+CANASTO_ANCHO = 0.044    # m, Canasto_Ficticio.stl
 NOMBRE_DIR = ('+x', '+y', '-x', '-y')
 
 
@@ -95,6 +103,10 @@ class Explorador(Node):
             'cubo_topic': '/nav/cubo_verde',
             'detecciones_topic': '/vision/detecciones',
             'colores': ['verde', 'rojo', 'azul'],   # orden en que se buscan los cubos
+            # Entrega en el canasto de su color, que se busca con la cámara. False = entrega en
+            # la celda de atrás de la partida (mundos sin canastos, como chico y maze_2).
+            'canastos_con_camara': False,
+            'confirmar_canasto': 2,     # imágenes con el canasto en la misma celda para anotarlo
             'confirmar_flecha': 2,      # imágenes iguales para usar una flecha
             'tam_celda': 0.45,          # m, lado de la celda del laberinto
             'sensor_frente_x': 0.1399,  # m, desde el centro del robot (dimensions.yaml)
@@ -131,6 +143,10 @@ class Explorador(Node):
 
         self.odom = None                  # (x, y, yaw) crudos
         self.corr = [0.0, 0.0, 0.0]       # corrección sumada a la odometría
+        self.canastos = {}                # color -> celda del canasto, vista con la cámara
+        self.votos_canasto = {}           # (color, celda) -> imágenes que lo mostraron ahí
+        self.perdidas = 0                 # celdas seguidas que no coinciden con el mapa
+        self.remapeos = 0                 # veces que borró el mapa sin poder seguir
         limites = tuple(self.cfg['limites'])
         self.mapa = Mapa(limites=limites if any(limites) else None)
         self.mapa.cerrar((0, 0), 2)       # atrás está la salida: no se explora
@@ -220,6 +236,8 @@ class Explorador(Node):
         # Girando, la pose de la imagen no es confiable; la cámara queda siempre al frente.
         if self.estado == 'GIRAR':
             return
+        for k in det.get('canastos', []):
+            self.ubicar_canasto(k)
         for f in det.get('flechas', []):
             if f['color'] not in self.cfg['colores']:
                 continue
@@ -235,6 +253,80 @@ class Explorador(Node):
                 self.get_logger().info(
                     f'Flecha {f["color"]} en la celda {r["celda"]}: apunta a '
                     f'{NOMBRE_DIR[r["dir"]]} (a {r["distancia"]:.2f} m)')
+
+    def ubicar_canasto(self, k):
+        """
+        Celda del canasto a partir de su caja en la imagen.
+
+        La distancia sale del ancho (el canasto mide 44 mm) y la dirección, de la columna del
+        centro de la caja. Con la pose del robot da un punto del mapa; su celda se anota cuando
+        la misma aparece en confirmar_canasto imágenes.
+        """
+        col = k['color']
+        if col not in self.cfg['colores']:
+            return
+        x, _, w, _ = k['caja']
+        ang = math.atan((self.cam.cx - (x + w / 2)) / self.cam.fx)      # + a la izquierda
+        dist = self.cam.fx * CANASTO_ANCHO / max(w, 1) / math.cos(ang) + CANASTO_ANCHO / 2
+        pose = self.pose()
+        ox, oy, _ = self.cam.origen(pose, 0.0)
+        tam = self.cfg['tam_celda']
+        px = ox + dist * math.cos(pose[2] + ang)
+        py = oy + dist * math.sin(pose[2] + ang)
+        celda = (round(px / tam), round(py / tam))
+        clave = (col, celda)
+        self.votos_canasto[clave] = self.votos_canasto.get(clave, 0) + 1
+        conocido = self.canastos.get(col)
+        if conocido is None and self.votos_canasto[clave] >= self.cfg['confirmar_canasto']:
+            self.canastos[col] = celda
+            self.get_logger().info(f'Cámara: canasto {col} en la celda {celda} (a {dist:.2f} m)')
+        elif conocido not in (None, celda) and self.votos_canasto[clave] >= 3 \
+                and self.estado == 'MEDIR':
+            # Los canastos no se mueven: si se lo ve en otra celda, el que se corrió es el robot.
+            self.votos_canasto[clave] = 0
+            self.desplazar(conocido[0] - celda[0], conocido[1] - celda[1],
+                           f'el canasto {col}')
+
+    # ---------- recuperación ----------
+
+    def desplazar(self, dx, dy, motivo):
+        """Corre la pose estimada (dx, dy) celdas: el robot estaba en otra celda."""
+        tam = self.cfg['tam_celda']
+        self.corr[0] += dx * tam
+        self.corr[1] += dy * tam
+        self.celda = (self.celda[0] + dx, self.celda[1] + dy)
+        if self.estado == 'AVANZAR':
+            self.objetivo = (self.objetivo[0] + dx, self.objetivo[1] + dy)
+        self.get_logger().warn(f'Me relocalicé con {motivo}: estoy en la celda {self.celda}')
+
+    def relocalizar(self, rumbo, hay_paso):
+        """Busca la única celda vecina visitada donde lo medido coincide con el mapa."""
+        candidatas = []
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                c = (self.celda[0] + dx, self.celda[1] + dy)
+                if (dx, dy) == (0, 0) or c not in self.mapa.visitadas:
+                    continue
+                coinciden, contradicen = self.mapa.comparar(c, rumbo, *hay_paso)
+                if contradicen == 0 and coinciden >= 2:
+                    candidatas.append((dx, dy))
+        if len(candidatas) != 1:
+            return False
+        self.desplazar(*candidatas[0], 'las paredes')
+        return True
+
+    def remapear(self, motivo):
+        """Borra el mapa y explora otra vez desde acá; la misión (entregas, carga) sigue."""
+        self.remapeos += 1
+        self.perdidas = 0
+        self.get_logger().warn(f'{motivo}: borro el mapa y vuelvo a mapear desde la celda '
+                               f'{self.celda} (vez {self.remapeos})')
+        self.mapa.reiniciar()
+        for tabla in (self.cubos, self.dir_cubo, self.canastos, self.votos_canasto,
+                      self.flechas, self.vistas_flecha):
+            tabla.clear()
+        self.agotados.clear()
+        self.cambiar('MEDIR')
 
     # ---------- estados ----------
 
@@ -270,6 +362,15 @@ class Explorador(Node):
         dist = [self.distancia(lado) for lado in LADOS]
         hay_paso = [m > self.cfg['umbral_pared'] for m in dist]
         rumbo = self.rumbo()
+        if self.celda in self.mapa.visitadas:
+            _, contradicen = self.mapa.comparar(self.celda, rumbo, *hay_paso)
+            if contradicen >= 2 and not self.relocalizar(rumbo, hay_paso):
+                self.perdidas += 1
+                if self.perdidas >= 3:
+                    self.remapear('Lo que mido no coincide con el mapa')
+                    return
+            elif contradicen == 0:
+                self.perdidas = 0
         self.mapa.registrar(self.celda, rumbo, *hay_paso)
         self.pub_mapa.publish(String(data=self.mapa.dibujo()))
         for col in self.vistos:
@@ -292,7 +393,11 @@ class Explorador(Node):
             self.get_logger().info('En la entrada: salgo del laberinto')
             self.modo = 'SALIR'
             self.mapa.abrir(self.mapa.inicio, 2)
+        # Entrega: en la celda del canasto de su color, si ya lo vio la cámara. Mientras no lo
+        # encuentre, afuera es None y explora (en SALIR). Sin canastos: la celda de atrás.
         afuera = vecina(self.mapa.inicio, 2)
+        if self.cfg['canastos_con_camara'] and self.llevando:
+            afuera = self.canastos.get(self.llevando)
         if self.modo == 'SALIR' and self.celda == afuera:
             if self.llevando:
                 self.entregados.append(self.llevando)
@@ -319,8 +424,9 @@ class Explorador(Node):
                    'SALIR': afuera, 'ENTRAR': self.mapa.inicio}[self.modo]
         preferida = self.flechas.get(self.celda, {}).get(col) if self.modo == 'BUSCAR' else None
         d = self.mapa.decidir(self.celda, rumbo, destino, preferida)
-        if d is None and destino is not None and self.modo == 'BUSCAR':
-            # Sé dónde está el cubo pero todavía no conozco un camino: sigo explorando.
+        if d is None and destino is not None \
+                and self.modo in ('BUSCAR', 'SALIR', 'VOLVER', 'ENTRAR'):
+            # Sé dónde está el cubo (o el canasto) pero todavía no conozco un camino: exploro.
             d = self.mapa.decidir(self.celda, rumbo, preferida=preferida)
         if preferida is not None and d == preferida:
             self.get_logger().info(f'Sigo la flecha {col} hacia {NOMBRE_DIR[d]}')
@@ -334,8 +440,15 @@ class Explorador(Node):
             if self.buscado() is None:
                 self.modo = 'VOLVER'
             self.registrar_y_decidir()
+        elif d is None and self.modo == 'SALIR' and self.llevando and afuera is None:
+            self.get_logger().warn(f'No encontré el canasto {self.llevando}: lo entrego en la '
+                                   'celda de atrás de la partida')
+            self.canastos[self.llevando] = vecina(self.mapa.inicio, 2)
+            self.registrar_y_decidir()
+        elif d is None and self.remapeos < 3:
+            self.remapear(f'{self.modo}: no conozco el camino')
         elif d is None:
-            self.get_logger().warn(f'{self.modo}: no conozco el camino, me detengo')
+            self.get_logger().error(f'{self.modo}: me perdí {self.remapeos} veces, me detengo')
             self.cambiar('TERMINADO')
         elif d == rumbo and self.mapa.abierto(self.celda, d):
             self.cambiar('AVANZAR', vecina(self.celda, d))

@@ -29,7 +29,9 @@ from launch_ros.substitutions import FindPackageShare
 # Pose de aparición (mundo de Gazebo), tamaño de celda y umbral de pared de cada escenario.
 # limites: celdas [x_min, x_max, y_min, y_max] en el marco de la odometría (inicio = 0, 0,
 # x hacia donde mira el robot); hacen falta con áreas abiertas sin paredes.
-_E = {'tam': 0.40, 'umbral': 0.25, 'cubo': None}   # mapas simples: celda de 0,40 m
+# E1 a E6 y cudar tienen canastos en la zona de partida: el robot los busca con la cámara.
+# Mapas simples: celda de 0,40 m.
+_E = {'tam': 0.40, 'umbral': 0.25, 'cubo': None, 'canastos_con_camara': True}
 ESCENARIOS = {
     'chico': {'world': 'laberinto_chico.world', 'x': 2.25, 'y': -0.9, 'yaw': 3.14159,
               'tam': 0.45, 'umbral': 0.30, 'cubo': (-1.8, 1.8), 'colores': ['verde']},
@@ -41,6 +43,10 @@ ESCENARIOS = {
     'e4': {**_E, 'world': 'e4_isla_simple.world', 'x': 1.0, 'y': 2.2, 'yaw': 0.0},
     'e5': {**_E, 'world': 'e5_competencia_simple.world', 'x': 1.0, 'y': 2.6, 'yaw': 0.0},
     'e6': {**_E, 'world': 'e6_salida_abierta_simple.world', 'x': 3.0, 'y': 2.2, 'yaw': 0.0},
+    # Pista vista en el campo (tools/sim/mundo_cudar.py): paredes finas, cerrada, con zona de
+    # partida y canastos como E2. Arranca en la S mirando al sur, hacia la zona de cubos. Misma
+    # misión que los otros: carga un cubo, vuelve a la S, entra a la celda de los canastos y sigue.
+    'cudar': {**_E, 'world': 'cudar.world', 'x': 2.6, 'y': -0.8, 'yaw': -1.5708},
 }
 
 CUBO_SDF = """<sdf version="1.9"><model name="cubo_verde"><static>true</static>
@@ -75,6 +81,7 @@ def armar(context):
              parameters=[{'tam_celda': e['tam'], 'umbral_pared': e['umbral'],
                           'limites': e.get('limites', [0, 0, 0, 0]),
                           'colores': e.get('colores', ['verde', 'rojo', 'azul']),
+                          'canastos_con_camara': e.get('canastos_con_camara', False),
                           'use_sim_time': True}]),
     ]
     if cubo:

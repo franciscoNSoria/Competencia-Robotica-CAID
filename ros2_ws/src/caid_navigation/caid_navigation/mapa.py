@@ -101,6 +101,27 @@ class Mapa:
                 self.votos.pop(paso, None)
                 self.bloqueados.discard(paso)
 
+    def comparar(self, celda, rumbo, frente, izquierda, derecha):
+        """Cuenta cuántos lados medidos coinciden con el mapa y cuántos lo contradicen."""
+        coinciden = contradicen = 0
+        for rel, medido in ((0, frente), (1, izquierda), (3, derecha)):
+            conocido = self.abierto(celda, girar(rumbo, rel))
+            if conocido is None:
+                continue
+            if conocido == medido:
+                coinciden += 1
+            else:
+                contradicen += 1
+        return coinciden, contradicen
+
+    def reiniciar(self):
+        """Borra todo lo medido (para volver a mapear); deja inicio, límites y salida cerrada."""
+        self.lados.clear()
+        self.visitadas.clear()
+        self.recorridos.clear()
+        self.bloqueados.clear()
+        self.votos.clear()
+
     def _usable(self, celda, d):
         return frozenset((celda, vecina(celda, d))) not in self.cerrados
 

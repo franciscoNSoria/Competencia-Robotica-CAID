@@ -193,3 +193,15 @@ def test_lado_que_cambia_no_hace_loop():
     mapa.olvidar((0, 0))                      # se sacó el obstáculo: se vuelve a medir
     mapa.registrar((0, 0), 1, frente=True, izquierda=False, derecha=False)
     assert mapa.abierto((0, 0), 1) is True
+
+
+def test_comparar_y_reiniciar():
+    mapa = Mapa()
+    mapa.registrar((0, 0), 0, frente=True, izquierda=False, derecha=False)
+    assert mapa.comparar((0, 0), 0, True, False, False) == (3, 0)
+    assert mapa.comparar((0, 0), 0, False, True, False) == (1, 2)     # no coincide: perdido
+    assert mapa.comparar((0, 0), 2, True, False, False) == (2, 0)     # atrás no se midió
+    mapa.cerrar((0, 0), 2)
+    mapa.reiniciar()
+    assert not mapa.visitadas and mapa.abierto((0, 0), 0) is None
+    assert 2 not in mapa.pendientes((0, 0))                           # la salida sigue cerrada
