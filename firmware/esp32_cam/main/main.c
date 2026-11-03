@@ -28,6 +28,8 @@
 #include "driver/gpio.h"
 #include "esp_http_server.h"
 #include "esp_camera.h"
+#include "img_converters.h"
+#include "lwip/sockets.h"
 #if CONFIG_SPIRAM
 #include "esp_psram.h"
 #endif
@@ -76,13 +78,13 @@ static camera_config_t camera_config = {
     .pin_vsync = CAM_PIN_VSYNC,
     .pin_href = CAM_PIN_HREF,
     .pin_pclk = CAM_PIN_PCLK,
-    .xclk_freq_hz = 20000000,
+    .xclk_freq_hz = 10000000,
     .ledc_timer = LEDC_TIMER_0,       // timer 0 / canal 0 de LEDC: no usar para otra cosa
     .ledc_channel = LEDC_CHANNEL_0,
-    .pixel_format = PIXFORMAT_JPEG,
-    .frame_size = FRAMESIZE_VGA,      // 640x480 (pedido en CAM-01)
+    .pixel_format = PIXFORMAT_RGB565, //el GC2145 de da JPEG por hardware, se comprime por software
+    .frame_size = FRAMESIZE_QVGA,      // 320x240 
     .jpeg_quality = 12,               // 10-12: menor número = mejor calidad y más pesado
-    .fb_count = 2,
+    .fb_count = 3,
     .fb_location = CAMERA_FB_IN_PSRAM,
     .grab_mode = CAMERA_GRAB_LATEST   // siempre el cuadro más nuevo: menos latencia
 };
@@ -90,6 +92,22 @@ static camera_config_t camera_config = {
 /* ================= ESTADO PARA /status ================= */
 static volatile float s_fps = 0.0f;
 static bool s_psram = false;
+
+static int s_jpeg_q = 80;   // calidad del JPEG por software (1-100, mayor = mejor); solo si el sensor no da JPEG
+
+/* Devuelve el cuadro como JPEG: si el sensor ya lo entrega (OV2640) se usa tal cual; si no (GC2145), lo comprime la ESP32.
+ * *liberar dice si hay que hacer free(*buf) despues de enviarlo. */
+static bool cuadro_a_jpeg(camera_fb_t *fb, uint8_t **buf, size_t *len, bool *liberar)
+{
+    if (fb->format == PIXFORMAT_JPEG) {
+        *buf = fb->buf;
+        *len = fb->len;
+        *liberar = false;
+        return true;
+    }
+    *liberar = true;
+    return frame2jpg(fb, (uint8_t)s_jpeg_q, buf, len);
+}
 
 /* ================= STREAM MJPEG (puerto 81) ================= */
 #define PART_BOUNDARY "123456789000000000000987654321"
@@ -105,23 +123,43 @@ static esp_err_t stream_handler(httpd_req_t *req)
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
     httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
 
+    int nodelay = 1;   // sin Nagle: los envios chicos (frontera y encabezado de cada cuadro) salen en el acto
+    setsockopt(httpd_req_to_sockfd(req), IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
+
     ESP_LOGI(TAG, "Cliente de stream conectado");
     int frames = 0;
     int64_t t0 = esp_timer_get_time();
+    int64_t acum_cam = 0, acum_jpg = 0, acum_send = 0;   // microsegundos acumulados en cada etapa
 
     while (true) {
+        int64_t t_a = esp_timer_get_time();
         camera_fb_t *fb = esp_camera_fb_get();
+        int64_t t_b = esp_timer_get_time();
         if (!fb) {
             ESP_LOGE(TAG, "Fallo la captura");
             res = ESP_FAIL;
             break;
         }
-        size_t hlen = snprintf(part_buf, sizeof(part_buf), STREAM_PART, (unsigned)fb->len);
+        uint8_t *jpg = NULL;
+        size_t jpg_len = 0;
+        bool liberar = false;
+        if (!cuadro_a_jpeg(fb, &jpg, &jpg_len, &liberar)) {
+            esp_camera_fb_return(fb);
+            ESP_LOGE(TAG, "Fallo la compresion a JPEG");
+            res = ESP_FAIL;
+            break;
+        }
+        int64_t t_c = esp_timer_get_time();
+        size_t hlen = snprintf(part_buf, sizeof(part_buf), STREAM_PART, (unsigned)jpg_len);
 
         res = httpd_resp_send_chunk(req, STREAM_BOUNDARY, strlen(STREAM_BOUNDARY));
         if (res == ESP_OK) res = httpd_resp_send_chunk(req, part_buf, hlen);
-        if (res == ESP_OK) res = httpd_resp_send_chunk(req, (const char *)fb->buf, fb->len);
+        if (res == ESP_OK) res = httpd_resp_send_chunk(req, (const char *)jpg, jpg_len);
+        if (liberar) free(jpg);
         esp_camera_fb_return(fb);
+        acum_cam += t_b - t_a;
+        acum_jpg += t_c - t_b;
+        acum_send += esp_timer_get_time() - t_c;
         if (res != ESP_OK) break;   // el cliente cerró la conexión
 
         // fps promedio de cada segundo
@@ -129,12 +167,81 @@ static esp_err_t stream_handler(httpd_req_t *req)
         int64_t now = esp_timer_get_time();
         if (now - t0 >= 1000000) {
             s_fps = frames * 1000000.0f / (float)(now - t0);
+            ESP_LOGI(TAG, "stream: %.1f fps | camara %lld ms | JPEG %lld ms (%u bytes) | enviar %lld ms (por cuadro)", s_fps,
+                     (long long)(acum_cam / 1000 / frames), (long long)(acum_jpg / 1000 / frames), (unsigned)jpg_len,
+                     (long long)(acum_send / 1000 / frames));
+            acum_cam = acum_jpg = acum_send = 0;
             frames = 0;
             t0 = now;
         }
     }
     s_fps = 0.0f;
     ESP_LOGI(TAG, "Cliente de stream desconectado");
+    return res;
+}
+
+/* ================= /raw (puerto 81): cuadros SIN comprimir ================= */
+/* Cada cuadro: cabecera de 16 bytes (little-endian) y despues los bytes tal cual salen del sensor.
+ * formato: 0 RGB565, 1 YUV422, 2 gris, 3 JPEG. La PC lo convierte; la ESP32 no gasta CPU en comprimir. */
+typedef struct __attribute__((packed)) {
+    char magic[4];          // "CAM1"
+    uint16_t ancho, alto;
+    uint8_t formato, reservado;
+    uint16_t reservado2;
+    uint32_t largo;         // bytes que siguen a la cabecera
+} cabecera_cuadro_t;
+
+static esp_err_t raw_handler(httpd_req_t *req)
+{
+    esp_err_t res = httpd_resp_set_type(req, "application/octet-stream");
+    if (res != ESP_OK) return res;
+    httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
+    int nodelay = 1;   // sin Nagle: los envios chicos (encabezados de chunk) salen en el acto
+    setsockopt(httpd_req_to_sockfd(req), IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
+    ESP_LOGI(TAG, "Cliente de /raw conectado");
+    int frames = 0;
+    int64_t t0 = esp_timer_get_time();
+    int64_t acum_get = 0, acum_send = 0;   // microsegundos acumulados en cada etapa (ANTES del while)
+
+    while (true) {
+        int64_t t_a = esp_timer_get_time();
+        camera_fb_t *fb = esp_camera_fb_get();
+        int64_t t_b = esp_timer_get_time();
+        if (!fb) {
+            ESP_LOGE(TAG, "Fallo la captura");
+            res = ESP_FAIL;
+            break;
+        }
+        cabecera_cuadro_t cab = {
+            .magic = {'C', 'A', 'M', '1'},
+            .ancho = (uint16_t)fb->width,
+            .alto = (uint16_t)fb->height,
+            .formato = (fb->format == PIXFORMAT_RGB565) ? 0 : (fb->format == PIXFORMAT_YUV422) ? 1 :
+                       (fb->format == PIXFORMAT_GRAYSCALE) ? 2 : 3,
+            .reservado = 0,
+            .reservado2 = 0,
+            .largo = (uint32_t)fb->len,
+        };
+        res = httpd_resp_send_chunk(req, (const char *)&cab, sizeof(cab));
+        if (res == ESP_OK) res = httpd_resp_send_chunk(req, (const char *)fb->buf, fb->len);
+        esp_camera_fb_return(fb);
+        acum_get += t_b - t_a;
+        acum_send += esp_timer_get_time() - t_b;
+        if (res != ESP_OK) break;   // el cliente cerró la conexión
+
+        frames++;
+        int64_t now = esp_timer_get_time();
+        if (now - t0 >= 1000000) {
+            s_fps = frames * 1000000.0f / (float)(now - t0);
+            ESP_LOGI(TAG, "raw: %.1f fps | esperar la camara %lld ms | enviar %lld ms (por cuadro)", s_fps,
+                     (long long)(acum_get / 1000 / frames), (long long)(acum_send / 1000 / frames));
+            acum_get = acum_send = 0;
+            frames = 0;
+            t0 = now;
+        }
+    }
+    s_fps = 0.0f;
+    ESP_LOGI(TAG, "Cliente de /raw desconectado");
     return res;
 }
 
@@ -146,11 +253,40 @@ static esp_err_t capture_handler(httpd_req_t *req)
         httpd_resp_send_500(req);
         return ESP_FAIL;
     }
+    uint8_t *jpg = NULL;
+    size_t jpg_len = 0;
+    bool liberar = false;
+    if (!cuadro_a_jpeg(fb, &jpg, &jpg_len, &liberar)) {
+        esp_camera_fb_return(fb);
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
     httpd_resp_set_type(req, "image/jpeg");
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-    esp_err_t res = httpd_resp_send(req, (const char *)fb->buf, fb->len);
+    esp_err_t res = httpd_resp_send(req, (const char *)jpg, jpg_len);
+    if (liberar) free(jpg);
     esp_camera_fb_return(fb);
     return res;
+}
+
+/* ================= /bench: fps de la camara SOLA (sin enviar nada) ================= */
+/* Usar con el visor cerrado: la camara la usa un solo cliente a la vez. */
+static esp_err_t bench_handler(httpd_req_t *req)
+{
+    int frames = 0;
+    int64_t t0 = esp_timer_get_time();
+    while (esp_timer_get_time() - t0 < 3000000) {          // 3 segundos seguidos
+        camera_fb_t *fb = esp_camera_fb_get();
+        if (!fb) break;
+        esp_camera_fb_return(fb);
+        frames++;
+    }
+    int64_t dt = esp_timer_get_time() - t0;
+    char txt[96];
+    snprintf(txt, sizeof(txt), "camara sola: %d cuadros en %lld ms = %.1f fps\n",
+             frames, (long long)(dt / 1000), frames * 1e6 / (double)dt);
+    httpd_resp_set_type(req, "text/plain");
+    return httpd_resp_sendstr(req, txt);
 }
 
 /* ================= /control?var=&val= ================= */
@@ -171,7 +307,7 @@ static esp_err_t control_handler(httpd_req_t *req)
     bool conocido = true;
 
     if      (!strcmp(var, "framesize"))  r = (v >= 0 && v < FRAMESIZE_INVALID) ? s->set_framesize(s, (framesize_t)v) : -1;
-    else if (!strcmp(var, "quality"))    r = s->set_quality(s, v);          // 4-63
+    else if (!strcmp(var, "quality"))    { if (s->pixformat == PIXFORMAT_JPEG) { r = s->set_quality(s, v); } else { s_jpeg_q = (v < 1) ? 1 : (v > 100 ? 100 : v); r = 0; } }   // sensor JPEG: 4-63 (menor = mejor); GC2145: 1-100 (mayor = mejor)    
     else if (!strcmp(var, "brightness")) r = s->set_brightness(s, v);       // -2..2
     else if (!strcmp(var, "contrast"))   r = s->set_contrast(s, v);         // -2..2
     else if (!strcmp(var, "saturation")) r = s->set_saturation(s, v);       // -2..2
@@ -185,6 +321,7 @@ static esp_err_t control_handler(httpd_req_t *req)
     else if (!strcmp(var, "vflip"))      r = s->set_vflip(s, v);            // 0/1
     else if (!strcmp(var, "hmirror"))    r = s->set_hmirror(s, v);          // 0/1
     else if (!strcmp(var, "led"))        r = gpio_set_level(FLASH_LED_GPIO, v ? 1 : 0); // flash, 0/1
+    else if (!strcmp(var, "xclk"))       r = (s->set_xclk && v >= 5 && v <= 20) ? s->set_xclk(s, LEDC_TIMER_0, v) : -1;   // MHz: 5-20 (reloj del sensor)
     else conocido = false;
 
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
@@ -267,6 +404,8 @@ static void start_webservers(void)
         httpd_register_uri_handler(web, &u_status);
         httpd_register_uri_handler(web, &u_control);
         httpd_register_uri_handler(web, &u_capture);
+        httpd_uri_t u_bench = { .uri = "/bench", .method = HTTP_GET, .handler = bench_handler };
+        httpd_register_uri_handler(web, &u_bench);
     } else {
         ESP_LOGE(TAG, "No arranco el servidor del puerto 80");
     }
@@ -278,6 +417,8 @@ static void start_webservers(void)
     if (httpd_start(&stream, &cfg) == ESP_OK) {
         httpd_uri_t u_stream = { .uri = "/stream", .method = HTTP_GET, .handler = stream_handler };
         httpd_register_uri_handler(stream, &u_stream);
+        httpd_uri_t u_raw = { .uri = "/raw", .method = HTTP_GET, .handler = raw_handler };
+        httpd_register_uri_handler(stream, &u_raw);
     } else {
         ESP_LOGE(TAG, "No arranco el servidor del puerto 81");
     }
