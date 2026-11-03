@@ -22,13 +22,18 @@
 #define SERVO_CUENTAS_MAX 65535          /* 16 bits */
 #define SERVO_PULSO_0_US 500             /* pulso para 0 grados */
 #define SERVO_PULSO_180_US 2500          /* pulso para 180 grados */
+#define SERVO_DEG_MIN 0.0f               /* tope absoluto: la ESP32 nunca manda menos de 500 us, pida lo que pida la PC */
+#define SERVO_ANCHO_MIN_DEG 1.0f         /* un rango de limites tiene que medir al menos 1 grado */
+/* El tope de arriba es de cada servo (campo tope_max_deg): 180 grados = 2500 us, salvo el que se haya dado de mas en main.c */
 
 typedef struct {
 	const char *nombre;
 	gpio_num_t pin;
 	ledc_channel_t canal;
-	float min_deg, max_deg;              /* limites de seguridad: el servo nunca sale de este rango */
-	volatile float objetivo_deg;         /* lo escribe el callback de micro-ROS */
+	float tope_max_deg;                  /* tope absoluto de ESTE servo (fijo): los limites de la PC nunca lo pasan */
+	volatile float min_deg, max_deg;     /* limites del servo: arrancan con los de main.c y la PC los puede cambiar */
+	volatile float objetivo_deg;         /* lo que pide la PC (lo escribe el callback de micro-ROS) */
+	volatile float meta_deg;             /* adonde va de verdad: es el objetivo, salvo que el reposo seguro lo retenga */
 	volatile bool activo;                /* false = sin pulso, el servo queda libre (sin fuerza) */
 	volatile float actual_deg;           /* lo escribe solo la tarea de control */
 	bool estaba_activo;                  /* para detectar el momento en que se activa */
@@ -81,16 +86,37 @@ static void servos_init(servo_t *s, int n)
 		ESP_ERROR_CHECK(ledc_channel_config(&canal));
 		s[i].activo = false;
 		s[i].estaba_activo = false;
+		s[i].meta_deg = s[i].objetivo_deg;
 	}
 }
 
-/* Cambia el objetivo (siempre dentro de los limites del servo) */
+/* Cambia los limites del servo (los manda la PC). La ESP32 no confia en la PC: los deja entre 0 grados y el tope de este servo
+ * y descarta un rango invalido (con menos de 1 grado de ancho, o con un NaN). Si el rango es invalido, quedan los anteriores. */
+static void servo_poner_limites(servo_t *s, float lo, float hi)
+{
+	if (isnan(lo) || isnan(hi)) {
+		return;
+	}
+	lo = limitar_deg(lo, SERVO_DEG_MIN, s->tope_max_deg);
+	hi = limitar_deg(hi, SERVO_DEG_MIN, s->tope_max_deg);
+	if (hi - lo < SERVO_ANCHO_MIN_DEG) {
+		return;
+	}
+	s->min_deg = lo;
+	s->max_deg = hi;
+}
+
+/* Cambia el objetivo (siempre dentro de los limites del servo). Un NaN se ignora. */
 static void servo_ir_a(servo_t *s, float deg)
 {
+	if (isnan(deg)) {
+		return;
+	}
 	s->objetivo_deg = limitar_deg(deg, s->min_deg, s->max_deg);
 }
 
-/* Una pasada de control. dt_s = tiempo desde la pasada anterior. vel_dps = grados por segundo (0 = salto directo). */
+/* Una pasada de control: cada servo activo se acerca a su meta. dt_s = tiempo desde la pasada anterior.
+ * vel_dps = grados por segundo (0 = salto directo). */
 static void servos_ciclo(servo_t *s, int n, float vel_dps, float dt_s)
 {
 	for (int i = 0; i < n; i++) {
@@ -104,13 +130,13 @@ static void servos_ciclo(servo_t *s, int n, float vel_dps, float dt_s)
 			continue;
 		}
 		if (!v->estaba_activo) {
-			v->actual_deg = v->objetivo_deg;     /* al activar, salta al objetivo (no se puede leer la posicion real) */
+			v->actual_deg = v->meta_deg;         /* al activar, salta a la meta (no se puede leer la posicion real) */
 			v->estaba_activo = true;
 		}
-		float error = v->objetivo_deg - v->actual_deg;
+		float error = v->meta_deg - v->actual_deg;
 		float paso = vel_dps * dt_s;
 		if (vel_dps <= 0.0f || fabsf(error) <= paso) {
-			v->actual_deg = v->objetivo_deg;
+			v->actual_deg = v->meta_deg;
 		} else {
 			v->actual_deg += error > 0.0f ? paso : -paso;
 		}

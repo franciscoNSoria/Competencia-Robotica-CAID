@@ -35,7 +35,7 @@
 #include <rmw_microros/rmw_microros.h>
 #endif
 
-#define ENLACE_N_ORDEN 8                 /* cuantos numeros caben en una orden recibida */
+#define ENLACE_N_ORDEN 24                /* cuantos numeros caben en una orden recibida (v2 manda 14)*/
 #define ENLACE_N_ESTADO 16               /* cuantos numeros caben en el estado publicado */
 #define ENLACE_PIN_LED GPIO_NUM_2        /* LED azul de la placa: parpadea = buscando al agente, apagado = conectado */
 #define ENLACE_PERIODO_ESTADO_US 100000  /* el estado sale 10 veces por segundo */
