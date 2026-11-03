@@ -48,7 +48,13 @@ class Camara(Node):
 
     def abrir(self):
         """Abre la fuente de video usando OpenCV y fija una resolución estándar."""
-        self.cap = cv2.VideoCapture(self.fuente)
+        if isinstance(self.fuente, str):
+            # URL (ESP32-CAM): solo FFmpeg y con plazos de 5 s. Sin esto OpenCV prueba también GStreamer
+            # y puede tardar minutos en rendirse si la cámara no contesta.
+            plazos = [cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000, cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000]
+            self.cap = cv2.VideoCapture(self.fuente, cv2.CAP_FFMPEG, plazos)
+        else:
+            self.cap = cv2.VideoCapture(self.fuente)        
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         self.get_logger().info(f'Fuente: {self.fuente}  abierta={self.cap.isOpened()}')
