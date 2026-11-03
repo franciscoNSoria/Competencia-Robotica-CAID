@@ -2,14 +2,17 @@
 Publica:
   /vision/cubo/<color>  (Point)   x,y = centro en px, z = area
   /vision/flecha        (String)  "color,direccion,segmentos,angulo"  (confirmada N cuadros)
-  /vision/debug         (Image)   imagen con todo dibujado
+  /vision/debug/compressed (CompressedImage) imagen con todo dibujado (JPEG, para el visor)
+  /vision/debug         (Image)   lo mismo sin comprimir, solo si alguien lo está mirando
+Lee imagen_topic (por defecto /camera/image_raw); si termina en /compressed lo lee como JPEG.
 """
 import math
 import cv2
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image
+from rclpy.qos import qos_profile_sensor_data
+from sensor_msgs.msg import CompressedImage, Image
 from geometry_msgs.msg import Point
 from std_msgs.msg import String
 from cv_bridge import CvBridge
@@ -152,16 +155,24 @@ class Vision(Node):
         super().__init__('vision_node')
         self.declare_parameter('confirmar_frames', 5)
         self.br = CvBridge()
-        self.create_subscription(Image, '/camera/image_raw', self.cb, 10)
+        self.declare_parameter('imagen_topic', '/camera/image_raw')
+        topic = self.get_parameter('imagen_topic').value
+        tipo = CompressedImage if topic.endswith('/compressed') else Image
+        self.create_subscription(tipo, topic, self.cb, qos_profile_sensor_data)
         self.pubs = {c: self.create_publisher(Point, f'/vision/cubo/{c}', 10) for c in RANGOS}
         self.pub_flecha = self.create_publisher(String, '/vision/flecha', 10)
-        self.debug = self.create_publisher(Image, '/vision/debug', 10)
+        self.debug = self.create_publisher(Image, '/vision/debug', qos_profile_sensor_data)
+        self.debug_jpg = self.create_publisher(CompressedImage, '/vision/debug/compressed',
+                                               qos_profile_sensor_data)
         self.kernel = np.ones((5, 5), np.uint8)
         self.ultima_flecha = None
         self.cuenta_flecha = 0
 
     def cb(self, msg):
-        img = self.br.imgmsg_to_cv2(msg, 'bgr8')
+        if isinstance(msg, CompressedImage):
+            img = self.br.compressed_imgmsg_to_cv2(msg, 'bgr8')
+        else:
+            img = self.br.imgmsg_to_cv2(msg, 'bgr8')
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         flechas = []
 
@@ -202,7 +213,14 @@ class Vision(Node):
                                     (cx - 60, cy - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
         self.publicar_flecha(flechas)
-        self.debug.publish(self.br.cv2_to_imgmsg(img, 'bgr8'))
+        if self.debug_jpg.get_subscription_count() > 0:
+            out = self.br.cv2_to_compressed_imgmsg(img, 'jpg')
+            out.header = msg.header
+            self.debug_jpg.publish(out)
+        if self.debug.get_subscription_count() > 0:
+            out = self.br.cv2_to_imgmsg(img, 'bgr8')
+            out.header = msg.header
+            self.debug.publish(out)
 
     def publicar_flecha(self, flechas):
         """Publica la flecha mas cercana solo si se vio igual N cuadros seguidos."""

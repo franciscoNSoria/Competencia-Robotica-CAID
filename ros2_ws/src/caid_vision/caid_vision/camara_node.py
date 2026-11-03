@@ -3,6 +3,8 @@ Nodo de ROS 2 -> publica imgenes de una cámara (webcam,permite cambio a ESP32-C
 en el topic /camera/image_raw y metadatos en /camera/camera_info.
 """
 import os
+import threading
+import time
 import cv2  # Libreria para OpenCV
 from cv_bridge import CvBridge  # Puente para convertir imágenes de OpenCV a mensajes ROS
 
@@ -11,7 +13,8 @@ import yaml
 import rclpy
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterDescriptor
-from sensor_msgs.msg import Image, CameraInfo
+from rclpy.qos import qos_profile_sensor_data
+from sensor_msgs.msg import CameraInfo, CompressedImage, Image
 
 
 class Camara(Node):
@@ -30,14 +33,25 @@ class Camara(Node):
         f = str(self.get_parameter('fuente').value)
         self.fuente = int(f) if f.isdigit() else f
         
+        # Último cuadro leído por el hilo lector (y su hora de captura)
+        self.lock = threading.Lock()
+        self.frame = None
+        self.stamp = None
+        self.nuevo = False
+
         # Inicializar la cámara y cargar los datos de calibración si existen
         self.abrir()
         self.info = self.cargar_info(self.get_parameter('calibracion').value)
         
         # 2. CREACIÓN DE PUBLICADORES
         # Publica la imagen en bruto y la información intrínseca de la cámara a 10 Hz de cola de mensajes
-        self.pub_img = self.create_publisher(Image, '/camera/image_raw', 10)
-        self.pub_info = self.create_publisher(CameraInfo, '/camera/camera_info', 10)
+        # QoS de sensor (best effort, cola 1): si alguien va lento, se descartan cuadros viejos
+        self.pub_img = self.create_publisher(Image, '/camera/image_raw', qos_profile_sensor_data)
+        self.pub_info = self.create_publisher(CameraInfo, '/camera/camera_info',
+                                              qos_profile_sensor_data)
+        # Versión JPEG (~40 KB en vez de 900 KB): pasa por DDS sin perder cuadros
+        self.pub_jpg = self.create_publisher(CompressedImage, '/camera/image_raw/compressed',
+                                             qos_profile_sensor_data)
         
         # Inicializar la herramienta de conversión de formatos OpenCV <-> ROS
         self.br = CvBridge()
@@ -46,9 +60,16 @@ class Camara(Node):
         # Llama a la función 'tick' repetidamente en función de los FPS configurados
         self.create_timer(1.0 / self.get_parameter('fps').value, self.tick)
 
+        # 4. HILO LECTOR
+        # Lee el stream sin parar y se queda solo con el cuadro más nuevo. Si leyéramos solo
+        # en el timer, los cuadros que manda la ESP32 de más se acumulan en el buffer de
+        # OpenCV/FFmpeg y la imagen llega cada vez más atrasada.
+        threading.Thread(target=self.leer, daemon=True).start()
+
     def abrir(self):
         """Abre la fuente de video usando OpenCV y fija una resolución estándar."""
         self.cap = cv2.VideoCapture(self.fuente)
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # algunos backends lo respetan
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         self.get_logger().info(f'Fuente: {self.fuente}  abierta={self.cap.isOpened()}')
@@ -66,30 +87,40 @@ class Camara(Node):
             self.get_logger().info('Calibracion cargada')
         return info
 
+    def leer(self):
+        """Hilo: lee cuadros todo el tiempo y guarda el último."""
+        while rclpy.ok():
+            ok, frame = self.cap.read()
+            if not ok:
+                self.get_logger().warn('Sin imagen, reconectando...')
+                self.cap.release()
+                time.sleep(0.5)
+                self.abrir()
+                continue
+            stamp = self.get_clock().now().to_msg()  # hora de captura, no de publicación
+            with self.lock:
+                self.frame, self.stamp, self.nuevo = frame, stamp, True
+
     def tick(self):
-        """Ciclo principal que captura, convierte y publica cada fotograma."""
-        ok, frame = self.cap.read()
-        
-        # Control de errores: si la cámara se desconecta, libera y reintenta abrir
-        if not ok:
-            self.get_logger().warn('Sin imagen, reconectando...')
-            self.cap.release()
-            self.abrir()
-            return
-        
-        # Convertir la matriz de OpenCV (BGR8) a un mensaje ROS de tipo sensor_msgs/Image
-        msg = self.br.cv2_to_imgmsg(frame, 'bgr8')
-        
-        # Asignar marca de tiempo actual y el marco de referencia ('frame_id')
-        msg.header.stamp = self.get_clock().now().to_msg()
-        msg.header.frame_id = 'camara'
-        
-        # Sincronizar el encabezado de la información de la cámara con el de la imagen
-        self.info.header = msg.header
-        
-        # Publicar ambos mensajes en sus respectivos tópicos
-        self.pub_img.publish(msg)
+        """Publica el cuadro más nuevo (si llegó uno desde la última vez)."""
+        with self.lock:
+            if not self.nuevo:
+                return
+            frame, stamp, self.nuevo = self.frame, self.stamp, False
+
+        self.info.header.stamp = stamp
+        self.info.header.frame_id = 'camara'
         self.pub_info.publish(self.info)
+
+        # Solo se arma cada versión si alguien la está escuchando
+        if self.pub_jpg.get_subscription_count() > 0:
+            jpg = self.br.cv2_to_compressed_imgmsg(frame, 'jpg')
+            jpg.header = self.info.header
+            self.pub_jpg.publish(jpg)
+        if self.pub_img.get_subscription_count() > 0:
+            msg = self.br.cv2_to_imgmsg(frame, 'bgr8')
+            msg.header = self.info.header
+            self.pub_img.publish(msg)
 
 
 def main():

@@ -24,6 +24,7 @@ setup(
         'console_scripts': [
             'camara_node = caid_vision.camara_node:main',
             'vision_node = caid_vision.vision_node:main',
+            'visor = caid_vision.visor:main',
         ],
     },
 )
