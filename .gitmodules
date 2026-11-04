@@ -1,0 +1,3 @@
+[submodule "firmware/caid_bot_firmware"]
+	path = firmware/caid_bot_firmware
+	url = https://github.com/absss03/caid_bot_firmware
