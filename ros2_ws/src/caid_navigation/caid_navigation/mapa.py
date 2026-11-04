@@ -24,6 +24,34 @@ def vecina(celda, d):
     return (celda[0] + dx, celda[1] + dy)
 
 
+def seguir_guia(mapa, celda, guia):
+    """
+    Dirección que manda una flecha que se viene siguiendo, y la guía que queda para la próxima.
+
+    `guia` es {'color', 'dir', 'tramos'}: `tramos` es el largo que dijo la flecha, o sea cuántos
+    tramos rectos quedan hasta el objetivo (3 = "tres o más", no se agota). Mientras el pasillo
+    siga abierto hacia `dir`, el robot va derecho: todavía está recorriendo ese tramo, y las ramas
+    laterales no lo desvían. Cuando ese lado se cierra, el tramo se terminó: si quedan tramos y el
+    pasillo dobla para un solo lado, dobla y sigue contando; si hay más de una salida, la flecha
+    no alcanza para elegir y la guía se descarta (decide la exploración). Al agotarse los tramos
+    el objetivo está sobre este tramo: también se descarta y el robot explora y mira alrededor.
+
+    Devuelve (dirección absoluta o None, guía nueva o None).
+    """
+    d = guia['dir']
+    if mapa.abierto(celda, d) and mapa._usable(celda, d):
+        return d, guia
+    tramos = guia['tramos'] if guia['tramos'] >= 3 else guia['tramos'] - 1
+    if tramos <= 0:
+        return None, None
+    atras = (d + 2) % 4
+    salidas = [e for e in range(4)
+               if e != atras and mapa.abierto(celda, e) and mapa._usable(celda, e)]
+    if len(salidas) != 1:
+        return None, None
+    return salidas[0], dict(guia, dir=salidas[0], tramos=tramos)
+
+
 def girar(rumbo, relativo):
     """Devuelve la dirección absoluta; relativo: 0 = frente, 1 = izq., 2 = atrás, 3 = der."""
     return (rumbo + relativo) % 4
@@ -148,16 +176,22 @@ class Mapa:
         return self.camino(self.inicio,
                            lambda c: c in self.visitadas and bool(self.pendientes(c))) is not None
 
-    def camino(self, desde, objetivo):
+    def camino(self, desde, objetivo, optimista=False, evitar=(), max_celdas=2000):
         """
         Busca el camino más corto (BFS) por pasos conocidos.
 
         Devuelve las direcciones hasta la primera celda que cumple objetivo(celda): [] si desde ya
         lo cumple y None si no se llega.
+
+        optimista: los lados que todavía no se midieron también cuentan como paso. Sirve en la
+        zona de partida abierta, donde casi nada está medido y no hay paredes: el robot va hacia
+        el objetivo y mide en cada celda; si aparece una pared, vuelve a planificar.
+        evitar: celdas por las que no se pasa (los otros canastos, que son obstáculos).
+        max_celdas: tope de celdas a recorrer, porque con optimista el plano no tiene fin.
         """
         previo = {desde: None}
         cola = deque([desde])
-        while cola:
+        while cola and len(previo) <= max_celdas:
             c = cola.popleft()
             if objetivo(c):
                 pasos = []
@@ -167,12 +201,14 @@ class Mapa:
                 return pasos[::-1]
             for d in range(4):
                 n = vecina(c, d)
-                if self.abierto(c, d) and self._usable(c, d) and n not in previo:
+                estado = self.abierto(c, d)
+                pasa = estado or (optimista and estado is None and self.dentro(n))
+                if pasa and self._usable(c, d) and n not in previo and n not in evitar:
                     previo[n] = (c, d)
                     cola.append(n)
         return None
 
-    def decidir(self, celda, rumbo, destino=None, preferida=None):
+    def decidir(self, celda, rumbo, destino=None, preferida=None, insistir=False):
         """
         Elige la próxima dirección absoluta; None si ya exploró todo y está en el inicio.
 
@@ -181,15 +217,18 @@ class Mapa:
         Con destino, en vez de explorar va por el camino más corto conocido hasta esa celda y
         devuelve None al llegar o si todavía no se conoce un camino.
         preferida es la dirección de una flecha del color buscado en esta celda: va antes que la
-        exploración si está pendiente o es un paso por el que todavía no pasó.
+        exploración si está pendiente o es un paso por el que todavía no pasó. Con insistir, manda
+        también por un paso ya recorrido: el camino a un cubo puede compartir tramos con el de otro
+        (en E2 el azul y el verde salen juntos del primer cruce). El que llama evita los ciclos.
         """
         if destino is not None:
             ruta = self.camino(celda, lambda c: c == destino)
             return ruta[0] if ruta else None
         locales = self.pendientes(celda)
-        if preferida is not None and (preferida in locales or (
-                self.abierto(celda, preferida)
-                and frozenset((celda, vecina(celda, preferida))) not in self.recorridos)):
+        if preferida is not None and self._usable(celda, preferida) and (
+                preferida in locales or (self.abierto(celda, preferida) and (
+                    insistir
+                    or frozenset((celda, vecina(celda, preferida))) not in self.recorridos))):
             return preferida
         if locales:
             # Frente, derecha, izquierda, atrás: menos giros primero.

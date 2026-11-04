@@ -7,7 +7,7 @@ alto_pared_m: 0.17
 inicio_dir: E
 canastos_pared: O
 altura_flechas_mm: 115
-altura_apoyo_cubo_mm: 128.5
+altura_apoyo_cubo_mm: 108.5
 altura_borde_canasto_mm: 108.5
 significado_colores:
   rojo:
@@ -202,17 +202,4 @@ flechas:
   color: rojo
   desplaza_mm: 80
 pedestal_forma: cilindro
-pedestal_lado_mm: 80.0
-cubos:
-  R:
-    dx_mm: 0
-    dy_mm: 0
-    bloquea: false
-  G:
-    dx_mm: 0
-    dy_mm: 0
-    bloquea: false
-  B:
-    dx_mm: 0
-    dy_mm: 0
-    bloquea: false
+pedestal_lado_mm: 40.0

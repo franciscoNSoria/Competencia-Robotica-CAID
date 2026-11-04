@@ -19,8 +19,13 @@ from caid_navigation.geometria import (
     a_mundo, CAMARA_ADELANTE, CAMARA_ALTO, CAMARA_ALTURA, CAMARA_ANCHO, CAMARA_EJE_X, CAMARA_HFOV,
     celda_de, centro, PASOS)
 
-FLECHA_PUNTA_LARGO = 0.050    # R: alto de la punta (a lo largo del eje)
-LARGO_CUERPO = (0.045, 0.080)  # cortes entre 30 / 60 / 100 mm
+# Medidas de los STL del equipo, las mismas que usa el generador de mundos
+# (FLECHA_GEOM_M en caid_gazebo/scripts/gen_maze.py). NO son las del anexo transcripto en
+# docs/reglamento/desafio-laberinto.md: la flecha mide 30 / 60 / 99 mm en total, no L + punta.
+FLECHA_PUNTA_LARGO = 0.0125   # largo de la punta a lo largo del eje (11, 13 y 14 mm segun la clase)
+LARGO_CUERPO = (0.033, 0.066)  # cortes del largo del cuerpo entre 19 / 47 / 85 mm
+FLECHA_GROSOR = 0.0015        # espesor de la chapa
+FLECHA_LUZ_PARED = 0.0005     # luz entre la flecha y la cara del bloque (gen_maze)
 
 
 class Camara:
@@ -110,10 +115,14 @@ def caras_en_rayo(con, ox, oy, dx, dy, alcance=3.0):
 
 
 def _en_plano(o, d, celda, dpared):
-    """Intersección del rayo (o, d) con el plano de la cara dpared de la celda (a 1,5 mm)."""
+    """Intersección del rayo (o, d) con la cara visible de la flecha de la pared dpared.
+
+    La flecha es una chapa pegada a la cara del bloque con 0,5 mm de luz, así que su cara de
+    adelante queda a 0,5 + 1,5 = 2 mm hacia adentro de la celda (ver posicion_flecha en gen_maze).
+    """
     u = PASOS[dpared]
     cx, cy = centro(celda)
-    plano = cx * u[0] + cy * u[1] + geometria.MEDIA - 0.0015
+    plano = cx * u[0] + cy * u[1] + geometria.MEDIA - FLECHA_LUZ_PARED - FLECHA_GROSOR
     den = d[0] * u[0] + d[1] * u[1]
     if abs(den) < 1e-6:
         return None

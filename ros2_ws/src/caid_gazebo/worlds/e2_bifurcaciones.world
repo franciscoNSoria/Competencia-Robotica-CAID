@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!-- Generado por gen_maze.py a partir de mazes/e2_bifurcaciones.yaml. No editar a mano: editar el YAML y regenerar. -->
 <!-- E2 Bifurcaciones: el color de la flecha elige el camino -->
-<!-- Inicio del robot: x=0.8 y=1.76 yaw=0 -->
+<!-- Inicio del robot: x=1 y=2.2 yaw=0 -->
 <sdf version="1.9">
   <world name="ros2_world">
 
@@ -55,14 +55,14 @@
     <model name="paredes">
       <static>true</static>
       <link name="bloque_0">
-        <pose>3.04 3.2 0.085 0 0 0</pose>
+        <pose>3.8 4 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>6.08 0.64 0.17</size></box></geometry>
+          <geometry><box><size>7.6 0.8 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>6.08 0.64 0.17</size></box></geometry>
+          <geometry><box><size>7.6 0.8 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -70,14 +70,14 @@
         </visual>
       </link>
       <link name="bloque_1">
-        <pose>0.96 2.56 0.085 0 0 0</pose>
+        <pose>1.2 3.2 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>1.92 0.64 0.17</size></box></geometry>
+          <geometry><box><size>2.4 0.8 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>1.92 0.64 0.17</size></box></geometry>
+          <geometry><box><size>2.4 0.8 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -85,14 +85,14 @@
         </visual>
       </link>
       <link name="bloque_2">
-        <pose>3.52 2.56 0.085 0 0 0</pose>
+        <pose>4.4 3.2 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.64 0.64 0.17</size></box></geometry>
+          <geometry><box><size>0.8 0.8 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.64 0.64 0.17</size></box></geometry>
+          <geometry><box><size>0.8 0.8 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -100,14 +100,14 @@
         </visual>
       </link>
       <link name="bloque_3">
-        <pose>5.12 2.56 0.085 0 0 0</pose>
+        <pose>6.4 3.2 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>1.92 0.64 0.17</size></box></geometry>
+          <geometry><box><size>2.4 0.8 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>1.92 0.64 0.17</size></box></geometry>
+          <geometry><box><size>2.4 0.8 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -115,14 +115,14 @@
         </visual>
       </link>
       <link name="bloque_4">
-        <pose>2.4 1.76 0.085 0 0 0</pose>
+        <pose>3 2.2 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.32 1.6 0.17</size></box></geometry>
+          <geometry><box><size>0.4 2 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.32 1.6 0.17</size></box></geometry>
+          <geometry><box><size>0.4 2 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -130,14 +130,14 @@
         </visual>
       </link>
       <link name="bloque_5">
-        <pose>3.04 1.76 0.085 0 0 0</pose>
+        <pose>3.8 2.2 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.32 1.6 0.17</size></box></geometry>
+          <geometry><box><size>0.4 2 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.32 1.6 0.17</size></box></geometry>
+          <geometry><box><size>0.4 2 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -145,14 +145,14 @@
         </visual>
       </link>
       <link name="bloque_6">
-        <pose>0.16 1.12 0.085 0 0 0</pose>
+        <pose>0.2 1.4 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.32 2.24 0.17</size></box></geometry>
+          <geometry><box><size>0.4 2.8 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.32 2.24 0.17</size></box></geometry>
+          <geometry><box><size>0.4 2.8 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -160,14 +160,14 @@
         </visual>
       </link>
       <link name="bloque_7">
-        <pose>1.44 2.08 0.085 0 0 0</pose>
+        <pose>1.8 2.6 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.96 0.32 0.17</size></box></geometry>
+          <geometry><box><size>1.2 0.4 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.96 0.32 0.17</size></box></geometry>
+          <geometry><box><size>1.2 0.4 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -175,14 +175,14 @@
         </visual>
       </link>
       <link name="bloque_8">
-        <pose>5.44 1.12 0.085 0 0 0</pose>
+        <pose>6.8 1.4 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>1.28 2.24 0.17</size></box></geometry>
+          <geometry><box><size>1.6 2.8 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>1.28 2.24 0.17</size></box></geometry>
+          <geometry><box><size>1.6 2.8 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -190,14 +190,14 @@
         </visual>
       </link>
       <link name="bloque_9">
-        <pose>2.72 1.44 0.085 0 0 0</pose>
+        <pose>3.4 1.8 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.32 0.96 0.17</size></box></geometry>
+          <geometry><box><size>0.4 1.2 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.32 0.96 0.17</size></box></geometry>
+          <geometry><box><size>0.4 1.2 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -205,14 +205,14 @@
         </visual>
       </link>
       <link name="bloque_10">
-        <pose>4.16 1.28 0.085 0 0 0</pose>
+        <pose>5.2 1.6 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>1.28 1.28 0.17</size></box></geometry>
+          <geometry><box><size>1.6 1.6 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>1.28 1.28 0.17</size></box></geometry>
+          <geometry><box><size>1.6 1.6 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -220,14 +220,14 @@
         </visual>
       </link>
       <link name="bloque_11">
-        <pose>1.44 0.8 0.085 0 0 0</pose>
+        <pose>1.8 1 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.96 1.6 0.17</size></box></geometry>
+          <geometry><box><size>1.2 2 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.96 1.6 0.17</size></box></geometry>
+          <geometry><box><size>1.2 2 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -235,14 +235,14 @@
         </visual>
       </link>
       <link name="bloque_12">
-        <pose>0.64 0.64 0.085 0 0 0</pose>
+        <pose>0.8 0.8 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.64 1.28 0.17</size></box></geometry>
+          <geometry><box><size>0.8 1.6 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.64 1.28 0.17</size></box></geometry>
+          <geometry><box><size>0.8 1.6 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -250,14 +250,14 @@
         </visual>
       </link>
       <link name="bloque_13">
-        <pose>2.56 0.32 0.085 0 0 0</pose>
+        <pose>3.2 0.4 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>1.28 0.64 0.17</size></box></geometry>
+          <geometry><box><size>1.6 0.8 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>1.28 0.64 0.17</size></box></geometry>
+          <geometry><box><size>1.6 0.8 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -265,14 +265,14 @@
         </visual>
       </link>
       <link name="bloque_14">
-        <pose>4.64 0.32 0.085 0 0 0</pose>
+        <pose>5.8 0.4 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.32 0.64 0.17</size></box></geometry>
+          <geometry><box><size>0.4 0.8 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.32 0.64 0.17</size></box></geometry>
+          <geometry><box><size>0.4 0.8 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -280,14 +280,14 @@
         </visual>
       </link>
       <link name="bloque_15">
-        <pose>3.84 0.16 0.085 0 0 0</pose>
+        <pose>4.8 0.2 0.085 0 0 0</pose>
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>1.28 0.32 0.17</size></box></geometry>
+          <geometry><box><size>1.6 0.4 0.17</size></box></geometry>
         </collision>
         <visual name="visual">
           <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>1.28 0.32 0.17</size></box></geometry>
+          <geometry><box><size>1.6 0.4 0.17</size></box></geometry>
           <material>
             <ambient>0.9 0.9 0.86 1</ambient>
             <diffuse>0.9 0.9 0.86 1</diffuse>
@@ -299,210 +299,210 @@
     <model name="flechas">
       <static>true</static>
       <link name="flecha_0">
-        <pose>2.08 2.8785 0.115 0 0 0</pose>
+        <pose>2.6 3.59875 0.115 0 0 0</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.1 0.002 0.03</size></box></geometry>
+          <pose>-0.007 0 0 0 0 0</pose>
+          <geometry><box><size>0.085 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.03578 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.03634 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0369 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.03746 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.03802 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.03858 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.03914 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0397 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.04026 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.04082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.04138 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.04194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0425 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.04306 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.04362 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.056 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.04418 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.058 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.04474 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.06 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0453 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.062 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.04586 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.064 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.04642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.066 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.04698 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.068 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.04754 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.07 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0481 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.072 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.04866 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.074 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.04922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
@@ -510,210 +510,210 @@
         </visual>
       </link>
       <link name="flecha_1">
-        <pose>2.72 2.8785 0.115 0 -0.20944 0</pose>
+        <pose>3.4 3.59875 0.115 0 -0.20944 0</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.03 0.002 0.03</size></box></geometry>
+          <pose>-0.0055 0 0 0 0 0</pose>
+          <geometry><box><size>0.019 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>-0.009 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.00422 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.03</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>-0.007 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.00466 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0288</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>-0.005 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0051 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0276</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>-0.003 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.00554 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0264</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>-0.001 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.00598 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0252</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.001 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.00642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.024</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.003 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.00686 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0228</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.005 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0073 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0216</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.007 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.00774 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0204</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.009 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.00818 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0192</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.011 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.00862 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.018</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.013 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.00906 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0168</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.015 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0095 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0156</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.017 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.00994 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0144</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.019 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.01038 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0132</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.021 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.01082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.012</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.023 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.01126 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0108</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0117 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0096</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.027 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.01214 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0084</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.029 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.01258 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0072</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.031 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.01302 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.006</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.033 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.01346 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0048</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.035 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0139 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0036</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.037 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.01434 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0024</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.039 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.01478 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0012</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
@@ -721,210 +721,210 @@
         </visual>
       </link>
       <link name="flecha_2">
-        <pose>3.36 2.2385 0.115 0 0.15708 0</pose>
+        <pose>4.2 2.79875 0.115 0 0.15708 0</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.1 0.002 0.03</size></box></geometry>
+          <pose>-0.007 0 0 0 0 0</pose>
+          <geometry><box><size>0.085 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.03578 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.03634 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0369 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.03746 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.03802 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.03858 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.03914 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0397 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.04026 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.04082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.04138 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.04194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0425 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.04306 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.04362 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.056 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.04418 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.058 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.04474 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.06 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0453 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.062 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.04586 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.064 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.04642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.066 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.04698 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.068 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.04754 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.07 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0481 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.072 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.04866 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.074 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.04922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
@@ -932,210 +932,210 @@
         </visual>
       </link>
       <link name="flecha_3">
-        <pose>4 1.9215 0.115 0 0.31416 0</pose>
+        <pose>5 2.40125 0.115 0 0.31416 0</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.06 0.002 0.03</size></box></geometry>
+          <pose>-0.0065 0 0 0 0 0</pose>
+          <geometry><box><size>0.047 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.006 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.01726 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.008 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.01778 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.01 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0183 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.012 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.01882 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.014 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.01934 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.016 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.01986 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.018 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.02038 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.02 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0209 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.022 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.02142 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.024 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.02194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.02246 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.02298 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0235 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.02402 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.02454 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.02506 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.02558 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0261 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.02662 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.02714 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.02766 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.02818 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0287 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.02922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.02974 0 0 0 0 0</pose>
+          <geometry><box><size>0.00052 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
@@ -1143,210 +1143,210 @@
         </visual>
       </link>
       <link name="flecha_4">
-        <pose>1.04 1.9185 0.115 0 0 0</pose>
+        <pose>1.32 2.39875 0.115 0 0 0</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.1 0.002 0.03</size></box></geometry>
+          <pose>-0.007 0 0 0 0 0</pose>
+          <geometry><box><size>0.085 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.03578 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.03634 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0369 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.03746 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.03802 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.03858 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.03914 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0397 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.04026 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.04082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.04138 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.04194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0425 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.04306 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.04362 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.056 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.04418 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.058 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.04474 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.06 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0453 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.062 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.04586 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.064 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.04642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.066 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.04698 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.068 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.04754 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.07 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0481 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.072 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.04866 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.074 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.04922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
@@ -1354,210 +1354,210 @@
         </visual>
       </link>
       <link name="flecha_5">
-        <pose>1.2 1.9185 0.125 0 0 0</pose>
+        <pose>1.48 2.39875 0.125 0 0 0</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.1 0.002 0.03</size></box></geometry>
+          <pose>-0.007 0 0 0 0 0</pose>
+          <geometry><box><size>0.085 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.03578 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.03634 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0369 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.03746 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.03802 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.03858 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.03914 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0397 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.04026 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.04082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.04138 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.04194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0425 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.04306 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.04362 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.056 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.04418 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.058 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.04474 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.06 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0453 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.062 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.04586 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.064 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.04642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.066 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.04698 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.068 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.04754 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.07 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0481 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.072 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.04866 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.074 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.04922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
@@ -1565,210 +1565,210 @@
         </visual>
       </link>
       <link name="flecha_6">
-        <pose>1.2 1.9185 0.045 0 0 0</pose>
+        <pose>1.48 2.39875 0.045 0 0 0</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.1 0.002 0.03</size></box></geometry>
+          <pose>-0.007 0 0 0 0 0</pose>
+          <geometry><box><size>0.085 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.03578 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.03634 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0369 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.03746 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.03802 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.03858 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.03914 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0397 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.04026 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.04082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.04138 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.04194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0425 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.04306 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.04362 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.056 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.04418 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.058 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.04474 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.06 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0453 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.062 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.04586 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.064 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.04642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.066 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.04698 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.068 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.04754 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.07 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0481 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.072 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.04866 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.074 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.04922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
@@ -1776,210 +1776,210 @@
         </visual>
       </link>
       <link name="flecha_7">
-        <pose>2.2385 1.68 0.115 0 0 1.5708</pose>
+        <pose>2.79875 2.12 0.115 0 0 1.5708</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.1 0.002 0.03</size></box></geometry>
+          <pose>-0.007 0 0 0 0 0</pose>
+          <geometry><box><size>0.085 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.03578 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.03634 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0369 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.03746 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.03802 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.03858 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.03914 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0397 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.04026 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.04082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.04138 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.04194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0425 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.04306 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.04362 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.056 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.04418 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.058 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.04474 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.06 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0453 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.062 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.04586 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.064 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.04642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.066 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.04698 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.068 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.04754 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.07 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0481 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.072 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.04866 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.074 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.04922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>1 0 0 1</ambient>
             <diffuse>1 0 0 1</diffuse>
@@ -1987,210 +1987,210 @@
         </visual>
       </link>
       <link name="flecha_8">
-        <pose>2.2385 1.84 0.125 0 0 -1.5708</pose>
+        <pose>2.79875 2.28 0.125 0 0 -1.5708</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.1 0.002 0.03</size></box></geometry>
+          <pose>-0.007 0 0 0 0 0</pose>
+          <geometry><box><size>0.085 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.03578 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.03634 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0369 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.03746 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.03802 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.03858 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.03914 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0397 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.04026 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.04082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.04138 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.04194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0425 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.04306 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.04362 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.056 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.04418 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.058 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.04474 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.06 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0453 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.062 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.04586 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.064 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.04642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.066 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.04698 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.068 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.04754 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.07 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0481 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.072 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.04866 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.074 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.04922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
@@ -2198,210 +2198,210 @@
         </visual>
       </link>
       <link name="flecha_9">
-        <pose>2.2385 1.84 0.045 0 0 -1.5708</pose>
+        <pose>2.79875 2.28 0.045 0 0 -1.5708</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.1 0.002 0.03</size></box></geometry>
+          <pose>-0.007 0 0 0 0 0</pose>
+          <geometry><box><size>0.085 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.03578 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.03634 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0369 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.03746 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.03802 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.03858 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.03914 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0397 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.04026 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.04082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.04138 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.04194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0425 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.04306 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.04362 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.056 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.04418 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.058 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.04474 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.06 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0453 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.062 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.04586 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.064 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.04642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.066 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.04698 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.068 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.04754 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.07 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0481 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.072 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.04866 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.074 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.04922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
@@ -2409,210 +2409,210 @@
         </visual>
       </link>
       <link name="flecha_10">
-        <pose>2 0.6415 0.115 0 0 0</pose>
+        <pose>2.52 0.80125 0.115 0 0 0</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.1 0.002 0.03</size></box></geometry>
+          <pose>-0.007 0 0 0 0 0</pose>
+          <geometry><box><size>0.085 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.03578 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.03634 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0369 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.03746 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.03802 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.03858 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.03914 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0397 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.04026 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.04082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.04138 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.04194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0425 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.04306 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.04362 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.056 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.04418 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.058 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.04474 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.06 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0453 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.062 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.04586 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.064 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.04642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.066 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.04698 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.068 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.04754 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.07 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0481 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.072 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.04866 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.074 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.04922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
@@ -2620,210 +2620,210 @@
         </visual>
       </link>
       <link name="flecha_11">
-        <pose>2.16 0.6415 0.115 0 0 0</pose>
+        <pose>2.68 0.80125 0.115 0 0 0</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.1 0.002 0.03</size></box></geometry>
+          <pose>-0.007 0 0 0 0 0</pose>
+          <geometry><box><size>0.085 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.03578 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.03634 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0369 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.03746 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.03802 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.03858 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.03914 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0397 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.04026 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.04082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.04138 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.04194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0425 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.04306 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.04362 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.056 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.04418 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.058 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.04474 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.06 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0453 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.062 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.04586 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.064 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.04642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.066 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.04698 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.068 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.04754 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.07 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0481 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.072 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.04866 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.074 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.04922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
@@ -2831,210 +2831,210 @@
         </visual>
       </link>
       <link name="flecha_12">
-        <pose>3.5185 0.72 0.115 0 0 1.5708</pose>
+        <pose>4.39875 0.92 0.115 0 0 1.5708</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.1 0.002 0.03</size></box></geometry>
+          <pose>-0.007 0 0 0 0 0</pose>
+          <geometry><box><size>0.085 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.03578 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.03634 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0369 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.03746 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.03802 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.03858 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.03914 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0397 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.04026 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.04082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.04138 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.04194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0425 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.04306 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.04362 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.056 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.04418 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.058 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.04474 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.06 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0453 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.062 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.04586 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.064 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.04642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.066 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.04698 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.068 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.04754 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.07 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0481 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.072 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.04866 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.074 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.04922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>0 0.7 0.1 1</ambient>
             <diffuse>0 0.7 0.1 1</diffuse>
@@ -3042,210 +3042,210 @@
         </visual>
       </link>
       <link name="flecha_13">
-        <pose>3.5185 0.88 0.115 0 0 -1.5708</pose>
+        <pose>4.39875 1.08 0.115 0 0 -1.5708</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.03 0.002 0.03</size></box></geometry>
+          <pose>-0.0055 0 0 0 0 0</pose>
+          <geometry><box><size>0.019 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>-0.009 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.00422 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.03</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>-0.007 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.00466 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0288</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>-0.005 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0051 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0276</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>-0.003 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.00554 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0264</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>-0.001 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.00598 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0252</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.001 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.00642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.024</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.003 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.00686 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0228</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.005 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0073 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0216</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.007 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.00774 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0204</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.009 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.00818 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0192</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.011 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.00862 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.018</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.013 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.00906 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0168</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.015 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0095 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0156</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.017 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.00994 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0144</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.019 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.01038 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0132</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.021 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.01082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.012</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.023 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.01126 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0108</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0117 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0096</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.027 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.01214 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0084</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.029 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.01258 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0072</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.031 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.01302 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.006</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.033 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.01346 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0048</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.035 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0139 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0036</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.037 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.01434 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0024</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.039 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.01478 0 0 0 0 0</pose>
+          <geometry><box><size>0.00044 0.0015 0.0012</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
@@ -3253,210 +3253,210 @@
         </visual>
       </link>
       <link name="flecha_14">
-        <pose>3.36 0.3215 0.115 0 0.10472 0</pose>
+        <pose>4.2 0.40125 0.115 0 0.10472 0</pose>
         <visual name="p0">
-          <pose>-0.025 0 0 0 0 0</pose>
-          <geometry><box><size>0.1 0.002 0.03</size></box></geometry>
+          <pose>-0.007 0 0 0 0 0</pose>
+          <geometry><box><size>0.085 0.0015 0.01</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p1">
-          <pose>0.026 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.07</size></box></geometry>
+          <pose>0.03578 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.029</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p2">
-          <pose>0.028 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0672</size></box></geometry>
+          <pose>0.03634 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02784</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p3">
-          <pose>0.03 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0644</size></box></geometry>
+          <pose>0.0369 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02668</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p4">
-          <pose>0.032 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0616</size></box></geometry>
+          <pose>0.03746 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02552</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p5">
-          <pose>0.034 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0588</size></box></geometry>
+          <pose>0.03802 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02436</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p6">
-          <pose>0.036 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.056</size></box></geometry>
+          <pose>0.03858 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0232</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p7">
-          <pose>0.038 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0532</size></box></geometry>
+          <pose>0.03914 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02204</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p8">
-          <pose>0.04 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0504</size></box></geometry>
+          <pose>0.0397 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.02088</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p9">
-          <pose>0.042 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0476</size></box></geometry>
+          <pose>0.04026 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01972</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p10">
-          <pose>0.044 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0448</size></box></geometry>
+          <pose>0.04082 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01856</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p11">
-          <pose>0.046 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.042</size></box></geometry>
+          <pose>0.04138 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0174</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p12">
-          <pose>0.048 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0392</size></box></geometry>
+          <pose>0.04194 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01624</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p13">
-          <pose>0.05 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0364</size></box></geometry>
+          <pose>0.0425 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01508</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p14">
-          <pose>0.052 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0336</size></box></geometry>
+          <pose>0.04306 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01392</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p15">
-          <pose>0.054 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0308</size></box></geometry>
+          <pose>0.04362 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01276</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p16">
-          <pose>0.056 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.028</size></box></geometry>
+          <pose>0.04418 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0116</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p17">
-          <pose>0.058 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0252</size></box></geometry>
+          <pose>0.04474 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.01044</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p18">
-          <pose>0.06 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0224</size></box></geometry>
+          <pose>0.0453 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00928</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p19">
-          <pose>0.062 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0196</size></box></geometry>
+          <pose>0.04586 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00812</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p20">
-          <pose>0.064 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0168</size></box></geometry>
+          <pose>0.04642 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00696</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p21">
-          <pose>0.066 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.014</size></box></geometry>
+          <pose>0.04698 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.0058</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p22">
-          <pose>0.068 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0112</size></box></geometry>
+          <pose>0.04754 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00464</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p23">
-          <pose>0.07 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0084</size></box></geometry>
+          <pose>0.0481 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00348</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p24">
-          <pose>0.072 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0056</size></box></geometry>
+          <pose>0.04866 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00232</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
           </material>
         </visual>
         <visual name="p25">
-          <pose>0.074 0 0 0 0 0</pose>
-          <geometry><box><size>0.002 0.002 0.0028</size></box></geometry>
+          <pose>0.04922 0 0 0 0 0</pose>
+          <geometry><box><size>0.00056 0.0015 0.00116</size></box></geometry>
           <material>
             <ambient>0 0.2 1 1</ambient>
             <diffuse>0 0.2 1 1</diffuse>
@@ -3467,7 +3467,7 @@
 
     <model name="soporte_canasto_rojo">
       <static>true</static>
-      <pose>0.352 2.08 0.04425 0 0 0</pose>
+      <pose>0.432 2.6 0.04425 0 0 0</pose>
       <link name="link">
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -3477,8 +3477,8 @@
           <pose>0 0 0 0 0 0</pose>
           <geometry><box><size>0.036 0.036 0.0885</size></box></geometry>
           <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.05 0.05 0.05 1</diffuse>
           </material>
         </visual>
       </link>
@@ -3486,7 +3486,7 @@
 
     <model name="canasto_rojo">
       <static>true</static>
-      <pose>0.352 2.08 0.0885 0 0 0</pose>
+      <pose>0.432 2.6 0.0885 0 0 0</pose>
       <link name="link">
         <collision name="c_fondo">
           <pose>0 0 0.0005 0 0 0</pose>
@@ -3558,7 +3558,7 @@
 
     <model name="soporte_canasto_verde">
       <static>true</static>
-      <pose>0.352 1.76 0.04425 0 0 0</pose>
+      <pose>0.432 2.2 0.04425 0 0 0</pose>
       <link name="link">
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -3568,8 +3568,8 @@
           <pose>0 0 0 0 0 0</pose>
           <geometry><box><size>0.036 0.036 0.0885</size></box></geometry>
           <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.05 0.05 0.05 1</diffuse>
           </material>
         </visual>
       </link>
@@ -3577,7 +3577,7 @@
 
     <model name="canasto_verde">
       <static>true</static>
-      <pose>0.352 1.76 0.0885 0 0 0</pose>
+      <pose>0.432 2.2 0.0885 0 0 0</pose>
       <link name="link">
         <collision name="c_fondo">
           <pose>0 0 0.0005 0 0 0</pose>
@@ -3649,7 +3649,7 @@
 
     <model name="soporte_canasto_azul">
       <static>true</static>
-      <pose>0.352 1.44 0.04425 0 0 0</pose>
+      <pose>0.432 1.8 0.04425 0 0 0</pose>
       <link name="link">
         <collision name="colision">
           <pose>0 0 0 0 0 0</pose>
@@ -3659,8 +3659,8 @@
           <pose>0 0 0 0 0 0</pose>
           <geometry><box><size>0.036 0.036 0.0885</size></box></geometry>
           <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.05 0.05 0.05 1</diffuse>
           </material>
         </visual>
       </link>
@@ -3668,7 +3668,7 @@
 
     <model name="canasto_azul">
       <static>true</static>
-      <pose>0.352 1.44 0.0885 0 0 0</pose>
+      <pose>0.432 1.8 0.0885 0 0 0</pose>
       <link name="link">
         <collision name="c_fondo">
           <pose>0 0 0.0005 0 0 0</pose>
@@ -3739,7 +3739,7 @@
     </model>
 
     <model name="cubo_azul">
-      <pose>4.32 0.615 0.1187 0 0 0</pose>
+      <pose>5.4 0.775 0.1187 0 0 0</pose>
       <link name="link">
         <inertial>
           <mass>0.0099</mass>
@@ -3764,7 +3764,7 @@
     </model>
 
     <model name="cubo_verde">
-      <pose>4.64 2.215 0.1187 0 0 0</pose>
+      <pose>5.8 2.775 0.1187 0 0 0</pose>
       <link name="link">
         <inertial>
           <mass>0.0099</mass>
@@ -3789,7 +3789,7 @@
     </model>
 
     <model name="cubo_rojo">
-      <pose>3.04 2.855 0.1187 0 0 0</pose>
+      <pose>3.8 3.575 0.1187 0 0 0</pose>
       <link name="link">
         <inertial>
           <mass>0.0099</mass>
@@ -3815,18 +3815,16 @@
 
     <model name="soporte_cubo_rojo">
       <static>true</static>
-      <pose>3.04 2.855 0.05425 0 0 0</pose>
+      <pose>3.8 3.575 0.05425 0 0 0</pose>
       <link name="link">
         <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
         </collision>
         <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
           <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.05 0.05 0.05 1</diffuse>
           </material>
         </visual>
       </link>
@@ -3834,18 +3832,16 @@
 
     <model name="soporte_cubo_verde">
       <static>true</static>
-      <pose>4.64 2.215 0.05425 0 0 0</pose>
+      <pose>5.8 2.775 0.05425 0 0 0</pose>
       <link name="link">
         <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
         </collision>
         <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
           <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.05 0.05 0.05 1</diffuse>
           </material>
         </visual>
       </link>
@@ -3853,18 +3849,16 @@
 
     <model name="soporte_cubo_azul">
       <static>true</static>
-      <pose>4.32 0.615 0.05425 0 0 0</pose>
+      <pose>5.4 0.775 0.05425 0 0 0</pose>
       <link name="link">
         <collision name="colision">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
         </collision>
         <visual name="visual">
-          <pose>0 0 0 0 0 0</pose>
-          <geometry><box><size>0.04 0.04 0.1085</size></box></geometry>
+          <geometry><cylinder><radius>0.02</radius><length>0.1085</length></cylinder></geometry>
           <material>
-            <ambient>0.7 0.7 0.66 1</ambient>
-            <diffuse>0.7 0.7 0.66 1</diffuse>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.05 0.05 0.05 1</diffuse>
           </material>
         </visual>
       </link>

@@ -1,12 +1,16 @@
-# Cargar un cubo con el brazo (por ahora simulado en caid_navigation/carga_simulada.py).
+# Cargar un cubo con el brazo (caid_manipulation/carga_brazo; en los mundos sin brazo,
+# caid_navigation/carga_simulada).
 
 # Pedido
 string color          # color del cubo: rojo, verde o azul
+float32 x             # m, centro del cubo en base_link (x hacia adelante, y a la izquierda). El
+float32 y             # robot frena antes donde el cubo queda al alcance del brazo (193 a 237 mm
+                      # del eje de la base: caid_manipulation/cinematica.py)
 ---
 # Resultado
 bool exito
 string mensaje
 ---
 # Avance
-string etapa          # qué está haciendo: acercar, bajar brazo, cerrar pinza, levantar
+string etapa          # qué está haciendo: abrir pinza, girar base, acercar, bajar, cerrar pinza, levantar
 float32 progreso      # de 0 a 1

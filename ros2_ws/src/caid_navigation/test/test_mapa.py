@@ -205,3 +205,85 @@ def test_comparar_y_reiniciar():
     mapa.reiniciar()
     assert not mapa.visitadas and mapa.abierto((0, 0), 0) is None
     assert 2 not in mapa.pendientes((0, 0))                           # la salida sigue cerrada
+
+
+# Pasillo recto hacia +x con ramas laterales y una curva al final, para probar el largo de flecha.
+#   y=2        ....
+#   y=1    .   .   .      (ramas laterales en x=2 y x=4)
+#   y=0    I...........
+CON_RAMAS = """
+#########
+#...#.#.#
+#.#.#.#.#
+#I......#
+#########
+"""
+
+
+def _mapa_con_ramas():
+    """Mapa de CON_RAMAS con el pasillo de abajo recorrido: las ramas quedan sin visitar."""
+    libres, inicio = leer(CON_RAMAS)
+    mapa = Mapa(inicio=inicio)
+    for celda in sorted(c for c in libres if c[1] == inicio[1]):
+        mapa.registrar(celda, 0, *(vecina(celda, girar(0, rel)) in libres for rel in (0, 1, 3)))
+    return mapa, inicio
+
+
+def test_la_guia_de_la_flecha_no_se_desvia_por_las_ramas():
+    from caid_navigation.mapa import seguir_guia
+    mapa, inicio = _mapa_con_ramas()
+    # Flecha que dice "3 o más tramos rectos" hacia +x: cruza las dos ramas laterales sin doblar.
+    guia = {'color': 'verde', 'dir': 0, 'tramos': 3}
+    celda = inicio
+    for _ in range(4):
+        d, guia = seguir_guia(mapa, celda, guia)
+        assert d == 0, celda
+        assert guia['tramos'] == 3          # "tres o más" no se agota
+        celda = vecina(celda, d)
+    # La diferencia: en (3,1), con la celda de adelante ya visitada y la rama todavía no,
+    # la exploración dobla hacia la rama y la guía sigue derecho.
+    assert mapa.pendientes((3, 1)) == [1]
+    assert mapa.decidir((3, 1), 0, preferida=None) == 1
+    d, _ = seguir_guia(mapa, (3, 1), {'color': 'verde', 'dir': 0, 'tramos': 3})
+    assert d == 0
+
+
+def test_la_guia_dobla_sola_cuando_el_pasillo_dobla_y_se_agota():
+    from caid_navigation.mapa import seguir_guia
+    mapa, _ = _mapa_con_ramas()
+    # En el fondo del pasillo (x=7) el único camino es hacia +y: la guía de 2 tramos dobla.
+    guia = {'color': 'verde', 'dir': 0, 'tramos': 2}
+    d, guia = seguir_guia(mapa, (7, 1), guia)
+    assert (d, guia['tramos'], guia['dir']) == (1, 1, 1)
+    # Con un solo tramo, al cerrarse el pasillo la guía se agota y decide la exploración.
+    d, guia = seguir_guia(mapa, (7, 3), {'color': 'verde', 'dir': 1, 'tramos': 1})
+    assert (d, guia) == (None, None)
+
+
+def test_la_guia_se_descarta_en_una_bifurcacion_que_no_puede_resolver():
+    from caid_navigation.mapa import seguir_guia
+    mapa, _ = _mapa_con_ramas()
+    # Llegando a (2,1) desde +y, el pasillo se abre a dos lados: la flecha no alcanza.
+    d, guia = seguir_guia(mapa, (2, 1), {'color': 'verde', 'dir': 3, 'tramos': 2})
+    assert (d, guia) == (None, None)
+
+
+def test_camino_optimista_cruza_lo_no_medido_y_esquiva():
+    # Zona de partida abierta: casi nada medido. Con optimista se planifica igual.
+    mapa = Mapa()
+    mapa.registrar((0, 0), 2, frente=True, izquierda=True, derecha=True)
+    meta = (-3, 0)
+    assert mapa.camino((0, 0), lambda c: c == meta) is None
+    assert mapa.camino((0, 0), lambda c: c == meta, optimista=True) == [2, 2, 2]
+    # Esquivando un canasto en el medio, da la vuelta.
+    ruta = mapa.camino((0, 0), lambda c: c == meta, optimista=True, evitar={(-2, 0)})
+    assert ruta is not None and len(ruta) == 5
+    # Una pared medida no se cruza aunque sea optimista.
+    mapa.marcar_lado((0, 0), 2, False)
+    assert mapa.camino((0, 0), lambda c: c == (-1, 0), optimista=True) != [2]
+
+
+def test_camino_optimista_tiene_tope():
+    # Sin nada medido y un objetivo imposible, el plano no tiene fin: tiene que cortar.
+    mapa = Mapa()
+    assert mapa.camino((0, 0), lambda c: False, optimista=True, max_celdas=500) is None

@@ -1,7 +1,7 @@
 nombre: 'E2 Bifurcaciones: el color de la flecha elige el camino'
 descripcion: Arbol con dos bifurcaciones en T y ramas ciegas. En cada T hay una flecha por cubo, del color de ese cubo, apuntando al lado en que
   esta. Prueba la lectura del color y la decision por viaje.
-celda_m: 0.32
+celda_m: 0.40
 alto_pared_m: 0.17
 inicio_dir: E
 canastos_pared: O

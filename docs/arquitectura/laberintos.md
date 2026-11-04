@@ -7,15 +7,20 @@
 
 | Cosa | Valor | Estado | Fuente |
 |---|---|---|---|
-| Ancho del pasillo | 320 mm | O | Dato del equipo (24/10) |
-| Bloque de pared | 320 x 320 x 170 mm (macizo) | O, M | Dato del equipo y `Bloque de pared reglamentario.stl` (320 x 320 x 170) |
+| Ancho del pasillo | **400 mm** | O | Dato del equipo (04/11). Antes eran 320 mm |
+| Bloque de pared | 400 x 400 x 170 mm (una celda entera) | P | El STL del equipo mide 320 x 320 x 170. Al pasar el pasillo a 400 mm se eligió una grilla uniforme (celda = bloque = 400) para no romper el supuesto de paso constante del navegador. **Confirmar cómo se arma la pared real** |
 | Cubos | 20 mm de lado, rojo / verde / azul | R | `desafio-laberinto.md` |
 | **Altura del cubo** | Apoya a **108,5 mm** del piso: la altura de la base del brazo (cara superior del 2.º piso del robot) | O, C | Dato del equipo (26/10); 108,5 = 104,5 + 4 en `dimensions.yaml` |
-| Soporte del cubo | Columna cuadrada de 40 mm de lado, de 108,5 mm de alto | P | Desconocido (equipo, 26/10): "probablemente sobre algún cuerpo de esa altura" |
-| Punta de la flecha | 70 mm de ancho, 50 mm de alto | R | Anexo del desafío |
-| Cuerpo de la flecha | 30 mm de ancho; largo L = 30 / 60 / 100 mm | R | Anexo del desafío |
-| Largo total de la flecha | 80 / 110 / 150 mm | C | L + 50; coincide con los STL `Flecha corta / media / Larga` |
-| Espesor de la flecha | 2 mm | M | STL del equipo |
+| Soporte del cubo | **Cilindro negro de 40 mm de diámetro**, de 108,5 mm de alto | O, P | Dato del equipo (04/11): cilindro negro a la altura del 2.º piso. El diámetro sigue siendo supuesto |
+| Punta de la flecha | 29–30 mm de ancho; 11 / 13 / 14 mm de alto según la clase | O, M | Malla de los STL nuevos `Flecha_corta / media / larga` (04/11) |
+| Cuerpo de la flecha | **10 mm** de ancho; largo 19 / 47 / 85 mm | O, M | Los mismos STL |
+| Largo total de la flecha | **30 / 60 / 99 mm** | O, M | El 30 / 60 / 100 del reglamento es el largo **total**, no L + punta |
+| Espesor de la flecha | 1,5 mm | O, M | Los mismos STL |
+
+> **Las flechas cambiaron (04/11).** La organización comunicó las medidas nuevas y son las de los STL: la flecha mide 30 / 60 / 99 mm en **total**, no 80 / 110 / 150. La tabla vieja del anexo en `docs/reglamento/desafio-laberinto.md` quedó sin efecto. Hay **una sola fuente de verdad**: `FLECHA_GEOM_M` en `ros2_ws/src/caid_gazebo/scripts/gen_maze.py`, que es lo que también usa `caid_navigation/camara.py`.
+>
+> Consecuencia medida: son chicas, así que **solo se leen a 0,45–0,80 m** según la clase, o sea desde la celda contigua. Por eso el explorador barre con el servo de la cámara en los cruces.
+
 | Altura del centro de la flecha | 115 mm sobre el piso | P | **Arbitraria** (dato del equipo, 26/10). Se cambia con `altura_flechas_mm` |
 | Inclinación de las flechas | hasta ±30° | R | Reglamento del desafío |
 | Canasto | 44 x 44 x 20 mm, pared de 2 mm, fondo de 1 mm | M, P | `Canasto Ficticio.stl`: es un canasto de prueba, no el oficial |
@@ -24,14 +29,14 @@
 
 Números que salen de acá (C):
 
-- Con un pasillo de 320 mm y un robot de 163 mm sobran **78,5 mm por lado**.
-- Para girar en el lugar en un pasillo recto hace falta que quepa la diagonal del robot: √(278,1² + 163²) = **322,3 mm**, que es **2,3 mm más** que el pasillo. Con el brazo extendido en la pose del ensamblado el largo es mayor (336 mm de punta a punta), así que con el brazo así no hay forma de girar 180° dentro de una sola celda de 320 mm.
-- Un soporte de 40 mm pegado a una pared deja **275 mm** libres: el robot pasa. El mismo soporte **en el eje del pasillo** deja 140 mm por lado: no pasa. Y en una **esquina** también molesta, porque al girar el robot barre casi toda la celda: los cubos van en tramos rectos, fondos ciegos o zonas abiertas, nunca en una esquina.
+- Con un pasillo de 400 mm y un robot de 163 mm sobran **118,5 mm por lado**.
+- Para girar en el lugar hace falta que quepa la diagonal del robot: √(278,1² + 163²) = **322,3 mm**. Con 400 mm **ahora entra con 77,7 mm de sobra**; con los 320 mm viejos faltaban 2,3 mm y el robot no podía girar en el lugar. Con el brazo extendido en la pose del ensamblado el largo es 336 mm, que también entra.
+- Un soporte de 40 mm pegado a una pared deja **355 mm** libres: el robot pasa cómodo. El mismo soporte **en el eje del pasillo** deja 180 mm por lado y el robot (163 mm) pasa raspando, con 17 mm: no conviene. Y en una **esquina** molesta igual, porque al girar el robot barre casi toda la celda: los cubos van en tramos rectos, fondos ciegos o zonas abiertas, nunca en una esquina.
 
 ## 2. Coordenadas
 
 - La grilla se dibuja con el norte arriba: la fila 0 es la de más al norte y la columna 0 la de más al oeste.
-- Mundo de Gazebo: el origen está en la esquina suroeste de la grilla, **x al este, y al norte**, z hacia arriba desde el piso. El centro de la celda (fila `r`, columna `c`) es `x = (c + 0,5)·0,32`, `y = (filas − r − 0,5)·0,32`.
+- Mundo de Gazebo: el origen está en la esquina suroeste de la grilla, **x al este, y al norte**, z hacia arriba desde el piso. El centro de la celda (fila `r`, columna `c`) es `x = (c + 0,5)·0,40`, `y = (filas − r − 0,5)·0,40`.
 - Direcciones: `N`, `E`, `S`, `O` (oeste). El `yaw` del robot es 0 al este, π/2 al norte, π al oeste y −π/2 al sur.
 
 ## 3. El archivo YAML
@@ -39,12 +44,13 @@ Números que salen de acá (C):
 ```yaml
 nombre: 'E6 Salida abierta: laberinto grande, sala abierta y entrada entre paredes'
 descripcion: texto libre
-celda_m: 0.32               # ancho del pasillo y lado del bloque (opcional, 0.32 por defecto)
+celda_m: 0.40               # ancho del pasillo y lado del bloque (opcional, 0.40 por defecto)
 alto_pared_m: 0.17          # alto del bloque (opcional, 0.17 por defecto)
 altura_flechas_mm: 115      # centro de las flechas sobre el piso (opcional, 115 por defecto)
 altura_apoyo_cubo_mm: 108.5 # donde apoyan los cubos: la base del brazo (opcional)
 altura_borde_canasto_mm: 108.5  # borde de la pared trasera del canasto (opcional)
-pedestal_lado_mm: 40        # lado de la columna que sostiene cada cubo (opcional)
+pedestal_lado_mm: 40        # diámetro del cilindro que sostiene cada cubo (opcional)
+pedestal_forma: cilindro    # 'cilindro' (por defecto) o 'cuadrado'
 inicio_dir: E               # hacia dónde mira el robot en la S
 canastos_pared: O           # opcional: pared contra la que se apoyan los canastos; sin esto, al centro de su celda
 mapa: |

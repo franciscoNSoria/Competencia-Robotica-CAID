@@ -10,6 +10,7 @@
   <exec_depend>rclpy</exec_depend>
   <exec_depend>caid_interfaces</exec_depend>
   <exec_depend>caid_vision</exec_depend>
+  <exec_depend>caid_manipulation</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>

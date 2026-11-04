@@ -104,6 +104,50 @@
     </plugin>
   </gazebo>
 
+    <!-- ===== Brazo (solo con arm:=actuated): un controlador de posición por articulación =====
+         Los comanda caid_manipulation/brazo_sim, que recibe /brazo/cmd igual que la ESP32 real. -->
+  <xacro:macro name="control_brazo" params="junta">
+    <gazebo>
+      <plugin filename="gz-sim-joint-position-controller-system"
+              name="gz::sim::systems::JointPositionController">
+        <joint_name>${junta}</joint_name>
+        <topic>/sim/brazo/${junta}/cmd</topic>
+        <use_velocity_commands>true</use_velocity_commands>
+        <cmd_max>4.0</cmd_max>
+        <cmd_min>-4.0</cmd_min>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- Agarre: el cubo agarrado es una copia (cubo_<color>_agarrado) que carga_brazo crea en la
+       punta de la pinza al cerrarla. La unión desmontable se engancha sola apenas aparece el
+       modelo, y se suelta por /sim/pinza/soltar/<color> para dejarlo caer en el canasto.
+       Se usa una copia porque esta unión engancha al arrancar: con el cubo del mundo lo ataría al
+       robot desde el principio, a metros de distancia. -->
+  <xacro:macro name="agarre" params="color">
+    <gazebo>
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint">
+        <parent_link>arm_wrist_link</parent_link>
+        <child_model>cubo_${color}_agarrado</child_model>
+        <child_link>link</child_link>
+        <detach_topic>/sim/pinza/soltar/${color}</detach_topic>
+        <suppress_child_warning>true</suppress_child_warning>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:if value="${'$(arg arm)' == 'actuated'}">
+    <xacro:control_brazo junta="arm_yaw_joint"/>
+    <xacro:control_brazo junta="arm_shoulder_joint"/>
+    <xacro:control_brazo junta="arm_elbow_joint"/>
+    <xacro:control_brazo junta="arm_wrist_joint"/>
+    <xacro:control_brazo junta="arm_claw_a_joint"/>
+    <xacro:control_brazo junta="arm_claw_b_joint"/>
+    <xacro:agarre color="rojo"/>
+    <xacro:agarre color="verde"/>
+    <xacro:agarre color="azul"/>
+  </xacro:if>
+
     <!-- ===== Estado de las articulaciones (ruedas, servo de cámara) ===== -->
   <gazebo>
     <plugin filename="gz-sim-joint-state-publisher-system"

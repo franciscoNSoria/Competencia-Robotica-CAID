@@ -29,6 +29,7 @@ setup(
     entry_points={
         'console_scripts': [
             'scan_to_range = caid_bringup.scan_to_range:main',
+            'odom_ruedas = caid_bringup.odom_ruedas:main',
         ],
     },
 )

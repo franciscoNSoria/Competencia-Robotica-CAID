@@ -23,6 +23,7 @@ class CuboSimulado(Node):
             'robot_x': 2.25, 'robot_y': -0.9, 'robot_yaw': math.pi,  # pose de aparición
             'tam_celda': 0.45,
         }
+        self.declare_parameter('odom_topic', '/sim/odom')
         for nombre, valor in p.items():
             self.declare_parameter(nombre, valor)
         self.cfg = {n: self.get_parameter(n).value for n in p}
@@ -35,7 +36,10 @@ class CuboSimulado(Node):
         self.celda_cubo = self.celda(self.cubo.x, self.cubo.y)
 
         self.pub = self.create_publisher(Point, '/nav/cubo_verde', 10)
-        self.create_subscription(Odometry, '/sim/odom', self.on_odom, 10)
+        # La misma odometría que escucha el explorador: si él usa la de encoders, el cubo se
+        # tiene que anunciar en ese mismo marco o las celdas no coinciden.
+        self.create_subscription(Odometry, self.get_parameter('odom_topic').value,
+                                 self.on_odom, 10)
 
     def celda(self, x, y):
         tam = self.cfg['tam_celda']

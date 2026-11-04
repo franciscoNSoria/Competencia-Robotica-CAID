@@ -66,13 +66,14 @@ class TestGeometria(unittest.TestCase):
         self.assertLess(u[2], 0)
 
     def test_medidas_de_las_flechas_contra_el_reglamento(self):
-        for largo, total in ((1, 0.080), (2, 0.110), (3, 0.150)):
+        # Medidas de los STL del equipo, no las del anexo (ver FLECHA_GEOM_M en gen_maze.py).
+        for largo, total, punta_ancho in ((1, 0.030, 0.030), (2, 0.060, 0.029), (3, 0.099, 0.029)):
             piezas = g.piezas_flecha(largo)
             u_min = min(c - a / 2 for c, a, _ in piezas)
             u_max = max(c + a / 2 for c, a, _ in piezas)
             self.assertAlmostEqual(u_max - u_min, total, places=6)
-            self.assertAlmostEqual(max(h for _, _, h in piezas), 0.070, places=6)      # ancho de punta
-            self.assertAlmostEqual(piezas[0][2], 0.030, places=6)                        # ancho del cuerpo
+            self.assertAlmostEqual(max(h for _, _, h in piezas), punta_ancho, places=6)
+            self.assertAlmostEqual(piezas[0][2], 0.010, places=6)                        # ancho del cuerpo
             self.assertAlmostEqual(piezas[0][1], g.FLECHA_CUERPO_LARGO_M[largo], places=6)
 
 
@@ -125,6 +126,8 @@ class TestMundos(unittest.TestCase):
 
     def test_flechas_en_su_pared_apuntando_donde_dice(self):
         for nid, (lab, msgs, info) in self.labs.items():
+            if not lab.flechas:
+                continue        # practica_brazo no tiene flechas
             raiz = ET.fromstring(g.generar_sdf(lab, info))
             modelo = [m for m in raiz.find('world').findall('model') if m.get('name') == 'flechas'][0]
             links = modelo.findall('link')
@@ -134,9 +137,10 @@ class TestMundos(unittest.TestCase):
                 r, c = fl['celda']
                 cx, cy = lab.centro(r, c)
                 n = g._vec_mundo(fl['pared'])
-                # a 1,5 mm de la cara del bloque (0,5 de luz + la mitad del espesor) y dentro de la celda libre
+                # 0,5 mm de luz hasta la cara del bloque, mas la mitad del espesor, hacia la celda libre
                 prof = (x - cx) * n[0] + (y - cy) * n[1]
-                self.assertAlmostEqual(prof, lab.celda / 2 - 0.0015, places=5, msg=nid)
+                self.assertAlmostEqual(prof, lab.celda / 2 - 0.0005 - g.FLECHA_GROSOR_M / 2,
+                                       places=5, msg=nid)
                 # el eje X del link es la flecha; la punta debe quedar del lado que dice `dir`
                 u = rotar((roll, pitch, yaw), (1, 0, 0))
                 D = g._vec_mundo(fl['dir'])
@@ -329,7 +333,10 @@ class TestAlturasYEntrada(unittest.TestCase):
                 self.assertAlmostEqual(z_cubo, 0.1085 + 0.010 + 0.0002, places=5)
                 soporte = mods['soporte_cubo_' + color]
                 zs = pose(soporte.find('pose').text)[2]
-                alto = pose(soporte.find('link/collision/geometry/box/size').text)[2]
+                # el soporte es un cilindro (por defecto) o una columna cuadrada
+                cil = soporte.find('link/collision/geometry/cylinder/length')
+                alto = (float(cil.text) if cil is not None
+                        else pose(soporte.find('link/collision/geometry/box/size').text)[2])
                 self.assertAlmostEqual(zs + alto / 2, 0.1085, places=5)          # la cara de arriba del soporte
                 self.assertAlmostEqual(zs - alto / 2, 0.0, places=5)             # y apoya en el piso
 

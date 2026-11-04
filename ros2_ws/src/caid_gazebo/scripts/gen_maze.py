@@ -21,7 +21,7 @@ import yaml
 # ---------------------------------------------------------------------------------------------
 # Medidas (metros). Fuente entre parentesis.
 # ---------------------------------------------------------------------------------------------
-CELDA_M = 0.32               # ancho del pasillo y lado del bloque de pared (oficial, informado por el equipo)
+CELDA_M = 0.40               # ancho del pasillo y lado del bloque de pared (oficial, informado por el equipo 04/11)
 ALTO_PARED_M = 0.17          # alto del bloque de pared (oficial, informado por el equipo)
 ROBOT_ANCHO_M = 0.163        # hardware/cad/dimensions.yaml: paredes.ancho
 ROBOT_LARGO_M = 0.2781       # dimensions.yaml: 139,9 + 138,2 (de paragolpes a paragolpes, sin el brazo)
@@ -30,11 +30,19 @@ MARGEN_M = 0.015             # holgura lateral exigida a cada lado para consider
 CUBO_M = 0.020               # reglamento del desafio, anexo
 CUBO_MASA_KG = 0.0099        # dimensions.yaml: cubo.masa_g (PLA macizo, provisorio)
 
-FLECHA_PUNTA_ANCHO_M = 0.070  # reglamento, anexo (70 +-1 mm), medido perpendicular al eje
-FLECHA_PUNTA_ALTO_M = 0.050   # reglamento, anexo (50 +-1 mm), medido a lo largo del eje
-FLECHA_CUERPO_ANCHO_M = 0.030
-FLECHA_CUERPO_LARGO_M = {1: 0.030, 2: 0.060, 3: 0.100}   # "cerca", "normal", "lejos"
-FLECHA_GROSOR_M = 0.002       # espesor de las flechas del STL del equipo
+# Flechas: medidas sobre la malla de los STL del equipo (hardware/stl/flechas/).
+# OJO: NO coinciden con la tabla del anexo transcripta en docs/reglamento/desafio-laberinto.md
+# (punta de 70 x 50 mm, cuerpo de 30 mm de ancho, L = 30/60/100 y total 80/110/150). El equipo
+# decidio (04/11) que mandan los STL: la flecha mide 30/60/99 mm en TOTAL, no L + punta.
+# clase: (largo total, largo de la punta, ancho de la punta, largo del cuerpo, ancho del cuerpo), en m
+FLECHA_GEOM_M = {
+    1: (0.030, 0.011, 0.030, 0.019, 0.010),   # "cerca":  un tramo recto antes de la curva
+    2: (0.060, 0.013, 0.029, 0.047, 0.010),   # "normal": dos tramos
+    3: (0.099, 0.014, 0.029, 0.085, 0.010),   # "lejos":  tres o mas tramos
+}
+FLECHA_CUERPO_LARGO_M = {k: v[3] for k, v in FLECHA_GEOM_M.items()}
+FLECHA_LARGO_TOTAL_M = {k: v[0] for k, v in FLECHA_GEOM_M.items()}
+FLECHA_GROSOR_M = 0.0015      # espesor medido en los STL
 FLECHA_ALTURA_CENTRO_M = 0.115  # centro de la flecha sobre el piso (STL del equipo: z = 80..150 mm)
 FLECHA_TILT_MAX_GRADOS = 30.0   # reglamento: inclinacion maxima +-30 grados
 FLECHA_TIRAS_PUNTA = 25         # la punta triangular se arma con 25 tiras de 2 mm (SDF no tiene prismas)
@@ -47,7 +55,7 @@ CANASTO_SEPARACION_M = 0.010  # separacion entre el canasto y la pared contra la
 CANASTO_SOPORTE_M = 0.036     # P: columna que sostiene el canasto a la altura del borde pedido
 ALTURA_APOYO_CUBO_M = 0.1085  # el cubo apoya a la altura de la base del brazo = cara superior del 2.o piso (dimensions.yaml: 108,5)
 ALTURA_BORDE_CANASTO_M = 0.1085  # P: el borde de la pared trasera del canasto queda a esa altura
-PEDESTAL_LADO_M = 0.040       # P: lado de la columna que sostiene cada cubo
+PEDESTAL_LADO_M = 0.040       # diametro del cilindro que sostiene cada cubo (equipo, 04/11)
 CUBO_HOLGURA_PARED_M = 0.005  # luz entre el soporte del cubo y el bloque contra el que se apoya
 
 TIPOS_OBJETO = {
@@ -66,7 +74,7 @@ COLOR_FLECHA = {'gris': (0.22, 0.22, 0.22), 'rojo': (1.0, 0.0, 0.0), 'verde': (0
 SIGNIFICADO_COLOR_DEFECTO = {'rojo': ['R'], 'verde': ['G'], 'azul': ['B'], 'gris': []}
 COLOR_PARED = (0.90, 0.90, 0.86)
 COLOR_PISO = (0.55, 0.55, 0.55)
-COLOR_SOPORTE = (0.70, 0.70, 0.66)
+COLOR_SOPORTE = (0.05, 0.05, 0.05)   # cilindro negro (dato del equipo, 04/11)
 COLOR_ZONA_ROJA = (0.85, 0.0, 0.0)
 ZONA_LINEA_M = 0.020
 ZONA_INSET_M = 0.005
@@ -95,8 +103,8 @@ class Laberinto:
         self.altura_apoyo = float(datos.get('altura_apoyo_cubo_mm', ALTURA_APOYO_CUBO_M * 1000.0)) / 1000.0
         self.altura_borde_canasto = float(datos.get('altura_borde_canasto_mm', ALTURA_BORDE_CANASTO_M * 1000.0)) / 1000.0
         self.pedestal_lado = float(datos.get('pedestal_lado_mm', PEDESTAL_LADO_M * 1000.0)) / 1000.0
-        # 'cuadrado' (columna, por defecto) o 'cilindro' (pedestal_lado es el diametro)
-        self.pedestal_forma = str(datos.get('pedestal_forma', 'cuadrado'))
+        # 'cilindro' (por defecto, pedestal_lado es el diametro) o 'cuadrado' (columna)
+        self.pedestal_forma = str(datos.get('pedestal_forma', 'cilindro'))
         self.cubos_cfg = {str(k): dict(v) for k, v in (datos.get('cubos') or {}).items()}
         significado = dict(SIGNIFICADO_COLOR_DEFECTO)
         significado.update({str(k): list(v or []) for k, v in (datos.get('significado_colores') or {}).items()})
@@ -699,14 +707,13 @@ def rpy_a_matriz(roll, pitch, yaw):
 
 def piezas_flecha(largo):
     """Cajas (centro_u, ancho_u, alto) en el marco local de la flecha, con el origen en el centro de su longitud."""
-    Lc = FLECHA_CUERPO_LARGO_M[largo]
-    total = Lc + FLECHA_PUNTA_ALTO_M
+    total, punta_alto, punta_ancho, Lc, cuerpo_ancho = FLECHA_GEOM_M[largo]
     u0 = -total / 2.0
-    piezas = [(u0 + Lc / 2.0, Lc, FLECHA_CUERPO_ANCHO_M)]
-    paso = FLECHA_PUNTA_ALTO_M / FLECHA_TIRAS_PUNTA
+    piezas = [(u0 + Lc / 2.0, Lc, cuerpo_ancho)]
+    paso = punta_alto / FLECHA_TIRAS_PUNTA
     for i in range(FLECHA_TIRAS_PUNTA):
         um = u0 + Lc + (i + 0.5) * paso
-        alto = FLECHA_PUNTA_ANCHO_M * (1.0 - i / FLECHA_TIRAS_PUNTA)    # la primera tira mide los 70 mm de la punta
+        alto = punta_ancho * (1.0 - i / FLECHA_TIRAS_PUNTA)    # la primera tira es la base de la punta
         piezas.append((um, paso, alto))
     return piezas
 
@@ -823,11 +830,10 @@ def extension_flecha(lab, fl):
     centro, (u, p, _) = posicion_flecha(lab, fl)
     cx, cy = lab.centro(fl['celda'][0], fl['celda'][1])
     t = tangente_pared(fl['pared'])
-    Lc = FLECHA_CUERPO_LARGO_M[int(fl['largo'])]
-    total = Lc + FLECHA_PUNTA_ALTO_M
+    total, _punta_alto, punta_ancho, Lc, cuerpo_ancho = FLECHA_GEOM_M[int(fl['largo'])]
     a0 = -total / 2.0
-    pts = [(a0, FLECHA_CUERPO_ANCHO_M / 2), (a0, -FLECHA_CUERPO_ANCHO_M / 2),
-           (a0 + Lc, FLECHA_PUNTA_ANCHO_M / 2), (a0 + Lc, -FLECHA_PUNTA_ANCHO_M / 2), (total / 2, 0.0)]
+    pts = [(a0, cuerpo_ancho / 2), (a0, -cuerpo_ancho / 2),
+           (a0 + Lc, punta_ancho / 2), (a0 + Lc, -punta_ancho / 2), (total / 2, 0.0)]
     hs, zs = [], []
     for a, b in pts:
         v = tuple(a * ui + b * pi for ui, pi in zip(u, p))
@@ -1093,13 +1099,13 @@ def generar_svg(lab, infoval, con_rutas=False):
         pr, pc = DIRS[pared]
         ax, ay = x + pc * (px / 2 - 4), y + pr * (px / 2 - 4)
         dd = DIRS[d]
-        Lc = FLECHA_CUERPO_LARGO_M[int(fl['largo'])] / lab.celda * px
-        Lh = FLECHA_PUNTA_ALTO_M / lab.celda * px
-        total = Lc + Lh
+        geom = FLECHA_GEOM_M[int(fl['largo'])]
+        total = geom[0] / lab.celda * px
+        Lc = geom[3] / lab.celda * px
         ux, uy = dd[1], dd[0]
         nx, ny = -uy, ux
         wb = 3.0
-        wh = FLECHA_PUNTA_ANCHO_M / lab.celda * px / 2
+        wh = geom[2] / lab.celda * px / 2
         pts = [(-total / 2, wb / 2), (-total / 2 + Lc, wb / 2), (-total / 2 + Lc, wh), (total / 2, 0),
                (-total / 2 + Lc, -wh), (-total / 2 + Lc, -wb / 2), (-total / 2, -wb / 2)]
         # en la vista desde arriba la flecha se ve de canto: se achica el ancho para que no tape el pasillo

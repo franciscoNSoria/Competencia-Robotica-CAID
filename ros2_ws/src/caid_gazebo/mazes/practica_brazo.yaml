@@ -1,0 +1,18 @@
+nombre: 'Práctica del brazo: un cubo verde al alcance, delante del robot'
+descripcion: >-
+  El robot arranca 4 cm delante de la S, mirando al este, con el cubo verde a 181 mm de su centro (202 mm del
+  eje de la base del brazo, la cara a unos 3 cm del paragolpes): se lo agarra sin moverse. Los
+  otros cubos y los canastos están para que el mundo sea válido.
+celda_m: 0.40
+inicio_dir: E
+mapa: |
+  #######
+  #1.R..#
+  #2SG..#
+  #3.B..#
+  #######
+cubos:
+  G:
+    dx_mm: -179
+    dy_mm: 0
+    bloquea: false

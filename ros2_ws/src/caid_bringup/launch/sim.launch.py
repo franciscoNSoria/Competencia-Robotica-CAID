@@ -50,6 +50,15 @@ def generate_launch_description():
         cmd=['gz', 'sim', '-g'], output='screen',
         condition=IfCondition(gui), on_exit=Shutdown())
 
+    # Odometría contada por flancos de encoder, como la del robot real (ver odom_ruedas.py).
+    # Publica /sim/odom_ruedas en paralelo con /sim/odom; el explorador elige cuál escucha.
+    odom_ruedas = Node(
+        package='caid_bringup', executable='odom_ruedas', output='screen',
+        parameters=[{'error_radio': LaunchConfiguration('error_radio'),
+                     'error_separacion': LaunchConfiguration('error_separacion'),
+                     'desliz_giro': LaunchConfiguration('desliz_giro'),
+                     'use_sim_time': True}])
+
     ranges = [
         Node(package='caid_bringup', executable='scan_to_range',
              name='scan_to_range_' + lado,
@@ -74,11 +83,16 @@ def generate_launch_description():
         DeclareLaunchArgument('yaw', default_value='1.5708'),
         DeclareLaunchArgument('gui', default_value='true'),
         DeclareLaunchArgument('rviz', default_value='true'),
+        # Errores de la odometría por encoders (0 = la PC conoce el robot exacto).
+        DeclareLaunchArgument('error_radio', default_value='0.0'),
+        DeclareLaunchArgument('error_separacion', default_value='0.0'),
+        DeclareLaunchArgument('desliz_giro', default_value='0.0'),
         gz_server,
         bridge,
         rsp,
         rviz,
         *ranges,
+        odom_ruedas,
         # Esperamos a que el servidor esté listo antes de crear el robot.
         TimerAction(period=5.0, actions=[spawn]),
         # La GUI arranca después de crear el robot: así lo dibuja completo.

@@ -175,6 +175,13 @@ según la distancia al objetivo.
 | Ancho del cuerpo | 30 mm (±1 mm) |
 | Largo del cuerpo (L) | 30 mm "cerca", 60 mm "normal", 100 mm "lejos" |
 
+> ⚠️ **Esta tabla quedó sin efecto el 04/11.** La organización comunicó medidas nuevas y son las de
+> los STL del equipo (`Flecha_corta / media / larga`): la flecha mide **30 / 60 / 99 mm de largo
+> total**, con punta de 29–30 mm de ancho por 11–14 mm de alto, cuerpo de 10 mm de ancho y 1,5 mm
+> de espesor. O sea: el 30 / 60 / 100 del reglamento es el largo **total**, no el del cuerpo. Los
+> mundos y la percepción se generan con esas medidas (`FLECHA_GEOM_M` en `gen_maze.py`). La tabla
+> de arriba y los "datos derivados" de abajo se dejan como está para que quede registro del cambio.
+
 Los dibujos del anexo muestran las flechas en gris oscuro.
 
 ### Cubos
@@ -198,3 +205,4 @@ relleno parcial pesa menos).
 ## Historial
 
 - 12/10/2026: transcripción inicial.
+- 04/11/2026: la organización comunica dos cambios: el pasillo pasa a 400 mm (antes 320) y las flechas pasan a medir 30 / 60 / 99 mm de largo total (antes 80 / 110 / 150). Los cubos van elevados sobre un cilindro negro a 108,5 mm.

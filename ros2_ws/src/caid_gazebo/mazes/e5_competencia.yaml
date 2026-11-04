@@ -1,7 +1,7 @@
 nombre: E5 Tamano de campo (12 x 18 celdas = 3,84 x 5,76 m)
 descripcion: Tres bifurcaciones en T y un anillo libre alrededor de una isla (hay dos caminos al cubo verde, uno mas corto), 7 obstaculos y 2
   zonas prohibidas, con flechas inclinadas. Ocupa 3,84 x 5,76 m, dentro del campo de 4 x 6 m del reglamento general.
-celda_m: 0.32
+celda_m: 0.40
 alto_pared_m: 0.17
 inicio_dir: E
 canastos_pared: O

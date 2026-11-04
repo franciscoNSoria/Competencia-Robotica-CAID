@@ -71,3 +71,51 @@
   ros_type_name: "rosgraph_msgs/msg/Clock"
   gz_type_name: "gz.msgs.Clock"
   direction: GZ_TO_ROS
+# Brazo simulado (caid_manipulation/brazo_sim): una posición (rad) por articulación
+- ros_topic_name: "/sim/brazo/arm_yaw_joint/cmd"
+  gz_topic_name: "/sim/brazo/arm_yaw_joint/cmd"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+- ros_topic_name: "/sim/brazo/arm_shoulder_joint/cmd"
+  gz_topic_name: "/sim/brazo/arm_shoulder_joint/cmd"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+- ros_topic_name: "/sim/brazo/arm_elbow_joint/cmd"
+  gz_topic_name: "/sim/brazo/arm_elbow_joint/cmd"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+- ros_topic_name: "/sim/brazo/arm_wrist_joint/cmd"
+  gz_topic_name: "/sim/brazo/arm_wrist_joint/cmd"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+- ros_topic_name: "/sim/brazo/arm_claw_a_joint/cmd"
+  gz_topic_name: "/sim/brazo/arm_claw_a_joint/cmd"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+- ros_topic_name: "/sim/brazo/arm_claw_b_joint/cmd"
+  gz_topic_name: "/sim/brazo/arm_claw_b_joint/cmd"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+# Soltar el cubo agarrado (unión desmontable de la pinza)
+- ros_topic_name: "/sim/pinza/soltar/rojo"
+  gz_topic_name: "/sim/pinza/soltar/rojo"
+  ros_type_name: "std_msgs/msg/Empty"
+  gz_type_name: "gz.msgs.Empty"
+  direction: ROS_TO_GZ
+- ros_topic_name: "/sim/pinza/soltar/verde"
+  gz_topic_name: "/sim/pinza/soltar/verde"
+  ros_type_name: "std_msgs/msg/Empty"
+  gz_type_name: "gz.msgs.Empty"
+  direction: ROS_TO_GZ
+- ros_topic_name: "/sim/pinza/soltar/azul"
+  gz_topic_name: "/sim/pinza/soltar/azul"
+  ros_type_name: "std_msgs/msg/Empty"
+  gz_type_name: "gz.msgs.Empty"
+  direction: ROS_TO_GZ

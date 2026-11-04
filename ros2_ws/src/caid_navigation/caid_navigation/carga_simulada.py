@@ -1,5 +1,8 @@
 """
-Servidor de la action /cargar (caid_interfaces/action/Cargar), simulado.
+Servidores de las actions /cargar y /dejar (caid_interfaces), simulados SIN brazo.
+
+Para los mundos donde el brazo no está actuado (arm:=fixed). Con el brazo de verdad en Gazebo,
+las atiende caid_manipulation/carga_brazo, que mueve el brazo y agarra el cubo.
 
 Reemplaza al brazo mientras MAN no está integrado: recorre las etapas de un agarre con su avance
 (feedback) y al terminar saca del mundo de Gazebo el cubo y su pilar (el pilar está en el medio
@@ -11,7 +14,7 @@ import re
 import subprocess
 import time
 
-from caid_interfaces.action import Cargar
+from caid_interfaces.action import Cargar, Dejar
 import rclpy
 from rclpy.action import ActionServer
 from rclpy.node import Node
@@ -28,6 +31,21 @@ class CargaSimulada(Node):
         self.duracion = self.get_parameter('duracion').value
         self.mundo = self.get_parameter('mundo').value
         ActionServer(self, Cargar, '/cargar', self.ejecutar)
+        ActionServer(self, Dejar, '/dejar', self.dejar)
+
+    def dejar(self, goal):
+        """Sin brazo no hay nada que mover: avisa el avance y da por dejado el cubo."""
+        avance = Dejar.Feedback()
+        for i, etapa in enumerate(('acercar', 'abrir pinza', 'levantar')):
+            avance.etapa = etapa
+            avance.progreso = (i + 1) / 3
+            goal.publish_feedback(avance)
+            time.sleep(self.duracion / 6)
+        goal.succeed()
+        resultado = Dejar.Result()
+        resultado.exito = True
+        resultado.mensaje = f'cubo {goal.request.color} dejado'
+        return resultado
 
     def ejecutar(self, goal):
         color = goal.request.color

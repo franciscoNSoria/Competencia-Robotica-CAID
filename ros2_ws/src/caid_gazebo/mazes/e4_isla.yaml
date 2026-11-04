@@ -2,7 +2,7 @@ nombre: 'E4 Isla: un anillo con dos caminos'
 descripcion: 'Un anillo de pasillo alrededor de una isla, con tres ramas cortas (un cubo en cada una). El camino geometricamente mas corto al
   cubo rojo es el del sur, pero un bloque de 20 cm lo cierra: hay que detectar el bloqueo y rodear la isla por el norte. Las bifurcaciones pasantes
   del anillo no admiten flecha (la flecha va a lo largo de la pared): se resuelven explorando.'
-celda_m: 0.32
+celda_m: 0.40
 alto_pared_m: 0.17
 inicio_dir: E
 canastos_pared: O

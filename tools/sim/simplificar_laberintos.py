@@ -10,13 +10,18 @@ Por cada YAML escribe <nombre>_simple.yaml al lado, sin tocar el original:
 - Cambia las zonas prohibidas (Z) por bloques de pared: igual no se podían pisar, así los caminos
   más cortos no cambian y las flechas que quedan siguen siendo correctas para el validador.
 - Agranda la celda a 0,40 m: con 0,32 m el robot (diagonal de 322 mm) no puede girar en el lugar.
-- Pone los cubos en el centro de su celda, a la altura de la cámara (centro a 138,5 mm), sobre un
-  pilar cilíndrico de 80 mm, para que la cámara los vea de frente.
+- Eleva los cubos sobre un cilindro negro de 40 mm hasta la cara de arriba del 2.º piso (108,5 mm),
+  como en la pista real. gen_maze los apoya contra una pared del pasillo: en el centro de una celda
+  de 400 mm el cilindro deja 180 mm por lado y el robot (163 mm) no pasa.
 - Si la partida es un área abierta (~, como E6), la cambia por una zona cerrada como la de E1 a
   E5: 2 x 3 celdas pegadas a la entrada, con los canastos contra la pared oeste y la S al lado, y
   saca los distractores y bloques: quedan solo los tres cubos.
 - Saca las flechas que el validador de gen_maze.py rechaza después de estos cambios (al sacar un
   bloque puede cambiar el camino más corto).
+Además escribe <nombre>_simple_abierta.yaml: el mismo laberinto con la zona de partida SIN
+paredes (partida_abierta), como va a ser en la pista real. Ahí el robot no tiene paredes de
+referencia para volver a entrar.
+
 Después hay que generar el mundo con caid_gazebo/scripts/gen_maze.py.
 """
 from collections import deque
@@ -32,8 +37,9 @@ GEN_MAZE = os.path.join(os.path.dirname(__file__), '..', '..', 'ros2_ws', 'src',
 PASO = {'N': (-1, 0), 'S': (1, 0), 'E': (0, 1), 'O': (0, -1)}
 OPUESTA = {'N': 'S', 'S': 'N', 'E': 'O', 'O': 'E'}
 CAMARA_ALTURA_MM = 138.5   # hardware/cad/dimensions.yaml
+ALTURA_APOYO_MM = 108.5    # cara de arriba del 2.o piso del robot (base del brazo)
 CUBO_LADO_MM = 20.0
-PILAR_DIAMETRO_MM = 80.0
+PILAR_DIAMETRO_MM = 40.0   # cilindro negro de 40 mm (equipo, 04/11)
 CELDA_M = 0.40
 
 
@@ -80,6 +86,49 @@ def zona_cerrada(filas):
     return [''.join(f) for f in filas]
 
 
+def partida_abierta(filas):
+    """
+    Saca las paredes que rodean la zona de partida (la S y los canastos 1, 2 y 3).
+
+    La zona son la S, los canastos y las celdas libres pegadas a ellos que no son pasillo (un
+    pasillo tiene pared a los dos costados: así queda afuera la entrada). Se abren los bloques que
+    tocan la zona, salvo los que también tocan un pasillo del laberinto: esos son las paredes de
+    la entrada y se quedan, para que la puerta siga estando entre paredes.
+    """
+    alto = len(filas)
+
+    def car(r, c):
+        return filas[r][c] if 0 <= r < alto and 0 <= c < len(filas[r]) else '#'
+
+    zona = {(r, c) for r in range(alto) for c in range(len(filas[r])) if filas[r][c] in 'S123'}
+    for r, c in list(zona):
+        for dr, dc in PASO.values():
+            n = (r + dr, c + dc)
+            if car(*n) != '.' or n in zona:
+                continue
+            pasillo_ns = car(n[0] - 1, n[1]) == '#' and car(n[0] + 1, n[1]) == '#'
+            pasillo_eo = car(n[0], n[1] - 1) == '#' and car(n[0], n[1] + 1) == '#'
+            if not (pasillo_ns or pasillo_eo):
+                zona.add(n)
+    nuevas = [list(f) for f in filas]
+    for r, c in zona:
+        for dr in (-1, 0, 1):
+            for dc in (-1, 0, 1):
+                b = (r + dr, c + dc)
+                if car(*b) != '#' or not (0 <= b[0] < alto and 0 <= b[1] < len(filas[b[0]])):
+                    continue
+                toca_pasillo = any(car(b[0] + pr, b[1] + pc) not in '#~' and
+                                   (b[0] + pr, b[1] + pc) not in zona for pr, pc in PASO.values())
+                if not toca_pasillo:
+                    nuevas[b[0]][b[1]] = '~'
+    # Las celdas libres de la zona pasan a ser piso del área abierta: si quedaran como pasillo,
+    # para gen_maze serían otras entradas al laberinto además de la puerta.
+    for r, c in zona:
+        if nuevas[r][c] == '.':
+            nuevas[r][c] = '~'
+    return [''.join(f) for f in nuevas]
+
+
 def simplificar(ruta):
     lab = yaml.safe_load(open(ruta))
     filas = [f.replace('Z', '#') for f in lab['mapa'].rstrip('\n').split('\n')]
@@ -96,13 +145,12 @@ def simplificar(ruta):
             sacadas += 1
     lab['mapa'] = Bloque('\n'.join(filas) + '\n')
     lab['flechas'] = quedan
-    lab['altura_apoyo_cubo_mm'] = CAMARA_ALTURA_MM - CUBO_LADO_MM / 2
+    lab['altura_apoyo_cubo_mm'] = ALTURA_APOYO_MM
     lab['pedestal_forma'] = 'cilindro'
     lab['pedestal_lado_mm'] = PILAR_DIAMETRO_MM
     lab['celda_m'] = CELDA_M
-    # Los tres al centro de su celda, para verlos de frente. El pilar corta el pasillo, pero la carga
-    # simulada lo saca junto con el cubo; para el validador no bloquea.
-    lab['cubos'] = {s: {'dx_mm': 0, 'dy_mm': 0, 'bloquea': False} for s in 'RGB'}
+    # Los cubos quedan donde los pone gen_maze: sobre su cilindro, pegados a una pared del pasillo.
+    lab.pop('cubos', None)
     lab['nombre'] = lab.get('nombre', '') + ' (simple: sin flechas laterales ni zonas)'
     salida = ruta.replace('.yaml', '_simple.yaml')
     invalidas = 0
@@ -115,6 +163,14 @@ def simplificar(ruta):
         invalidas += len(malas)
     print(f'{salida}: {len(lab["flechas"])} flechas quedan, {sacadas} laterales y '
           f'{invalidas} inválidas sacadas')
+
+    abierta = dict(lab)
+    abierta['mapa'] = Bloque('\n'.join(partida_abierta(filas)) + '\n')
+    abierta['nombre'] = lab['nombre'] + ' (partida abierta)'
+    abierta.pop('canastos_pared', None)       # sin paredes, los canastos van al centro de su celda
+    salida = ruta.replace('.yaml', '_simple_abierta.yaml')
+    escribir(abierta, ruta, salida)
+    print(f'{salida}: la misma, con la zona de partida sin paredes')
 
 
 def escribir(lab, ruta, salida):

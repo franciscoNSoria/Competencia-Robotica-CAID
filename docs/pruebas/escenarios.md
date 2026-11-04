@@ -3,6 +3,12 @@
 > Documento de DESC-04. Seis laberintos con las medidas oficiales del equipo (pasillo de 32 cm, bloques de 32 x 17 cm, cubos y canastos a la altura de la base del brazo) para entrenar y probar el algoritmo de decisión sin depender de un único mapa. El formato y los supuestos están en `docs/arquitectura/laberintos.md`.
 > Los mundos están **verificados por el generador** (alcanzabilidad de cada cubo y canasto, paso del robot, entrada entre paredes en E6, y que cada flecha diga la verdad según la regla de 3.2 del formato), con 38 pruebas automáticas. **No se abrieron en Gazebo** al escribirlos: la primera carga en `gz sim` es parte de la prueba.
 
+> **Al 04/11 estos seis escenarios están desactualizados en tamaño.** Se dibujaron con el pasillo
+> de 320 mm; con los 400 mm nuevos las medidas de abajo quedan chicas y **ninguno entra en el campo
+> de 4 x 6 m** (E1 pasa a 8,40 x 4,40 m, E5 a 7,20 x 4,80 m, E6 a 9,60 x 5,20 m). Siguen sirviendo
+> para probar el algoritmo de decisión, que no mira el tamaño del campo, pero hace falta una tanda
+> nueva dibujada para 400 mm: en 4 x 6 m entran **10 columnas por 15 filas**.
+
 ## 1. Resumen
 
 | Escenario | Filas x columnas (tamaño) | Celdas libres | Ruta a R / G / B (celdas) | Bifurcaciones de pasillo | Ciclos | Flechas L1 / L2 / L3 | Objetos | Zonas rojas (celdas) |

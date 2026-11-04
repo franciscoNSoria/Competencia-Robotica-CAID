@@ -1,7 +1,7 @@
 nombre: 'E1 Serpentina: curvas y largos de flecha'
 descripcion: Un solo camino sin bifurcaciones, con rectas de 1, 2 y 3 o mas pasos. Cubos en fila sobre el camino. Prueba giros, el avance entre
   curvas y la lectura del largo de las flechas (hay una flecha por cubo en cada punto, del color de ese cubo).
-celda_m: 0.32
+celda_m: 0.40
 alto_pared_m: 0.17
 inicio_dir: E
 canastos_pared: O

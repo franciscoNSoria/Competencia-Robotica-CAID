@@ -57,7 +57,8 @@ Todo lo del simulador va bajo `/sim/`, salvo `/clock`.
 | Tópico | Tipo ROS | Sentido | Descripción |
 |---|---|---|---|
 | `/sim/cmd_vel` | `geometry_msgs/Twist` | ROS → Gazebo | Velocidad lineal x (m/s) y angular z (rad/s) |
-| `/sim/odom` | `nav_msgs/Odometry` | Gazebo → ROS | Odometría calculada con el giro de las ruedas (sin covarianzas) |
+| `/sim/odom` | `nav_msgs/Odometry` | Gazebo → ROS | Odometría del plugin: integra el giro exacto de las ruedas con la separación exacta. Es casi perfecta |
+| `/sim/odom_ruedas` | `nav_msgs/Odometry` | nodo `odom_ruedas` | La misma cuenta que hace el robot real: flancos de encoder enteros (40 por vuelta) y, si se piden, los errores sistemáticos de un 4x4 |
 | `/sim/ultrasonic/{front,left,right}/scan` | `sensor_msgs/LaserScan` | Gazebo → ROS | 5 rayos en un cono de 15° |
 | `/sim/ultrasonic/{front,left,right}` | `sensor_msgs/Range` | nodo `scan_to_range` | Distancia mínima de los 5 rayos |
 | `/sim/camera/image_raw` | `sensor_msgs/Image` | Gazebo → ROS | 640×480, `camera_optical_frame` |
@@ -84,6 +85,106 @@ Hay que reemplazarlos con mediciones del robot real.
 | Límites de aceleración | ±1 m/s², ±5 rad/s² | `gazebo.xacro` |
 | Velocidad máxima del servo | 3 rad/s | `gazebo.xacro` |
 | Mundo: celda 0,45 m, pared 0,28 m | de un proyecto anterior, **no** del reglamento | `maze_2.world` |
+
+## Simulador rápido de la misión (sin Gazebo)
+
+`tools/sim/mision_rapida.py` corre el `explorador.py` **de verdad**, sin ROS ni Gazebo, en menos
+de un segundo. Reemplaza ROS por módulos de mentira, teletransporta al robot de celda en celda,
+calcula los ultrasonidos con la grilla y hace de cámara con un oráculo: proyecta las flechas, los
+cubos y los canastos del mismo YAML que usa `gen_maze.py`, con el mismo modelo de cámara que la
+navegación, y respeta las paredes que tapan. Sirve para probar la **lógica de la misión** antes
+de gastar una corrida de Gazebo; no prueba el control fino ni la visión real.
+
+```bash
+python3 tools/sim/mision_rapida.py ros2_ws/src/caid_gazebo/mazes/e2_bifurcaciones_simple_abierta.yaml
+python3 tools/sim/mision_rapida.py <yaml> --canasto-falso   # repite el falso canasto de E2
+python3 tools/sim/mision_rapida.py <yaml> -v                # todo el log del explorador
+```
+
+Sale con código 0 si entregó los tres cubos. `caid_navigation/test/test_mision_rapida.py` lo
+corre como prueba.
+
+Al 04/11 reproduce la falla de la primera corrida en Gazebo con E2 (un "canasto verde" falso
+adentro del laberinto y un salto de 13–14 celdas al relocalizarse) y, con los arreglos, entrega
+los tres cubos en los 12 escenarios simples (E1 a E6, con la partida cerrada y abierta).
+
+## Zona de partida abierta (e1a a e6a)
+
+En la pista real la zona de partida es **abierta**: no hay paredes de referencia para volver a
+entrar. `simplificar_laberintos.py` escribe, además de cada `_simple.yaml`, un
+`_simple_abierta.yaml` con las paredes de la zona sacadas (la puerta sigue entre paredes y los
+canastos van al centro de su celda). En el launch son los escenarios `e1a` a `e6a`.
+
+El explorador lo resuelve así:
+
+1. **Reconocimiento** al arrancar: barrido con el servo, media vuelta y otro barrido, para
+   ubicar los tres canastos con la pose perfecta de la partida. Los canastos solo se aceptan
+   con el robot en la zona.
+2. **Puerta**: la primera celda con pared a los dos lados. Mientras busca, no sale por ahí.
+3. **Punto de reingreso**: la primera bifurcación pasando la puerta, con el rumbo que traía.
+   Toda ruta hacia adentro pasa por ahí. Después de cada entrega vuelve, se orienta igual,
+   verifica las paredes contra el mapa y sigue buscando.
+
+## Servo de la cámara
+
+El `camera_pan_joint` está en el URDF y en el puente desde SIM-02, pero hasta el 04/11 no lo movía
+nadie: el explorador leía siempre con la cámara al frente. Con las flechas nuevas eso perdía la
+mitad de las pistas, porque una flecha solo se lee a 0,45–0,80 m y la pared lateral de la celda de
+al lado **no entra en el campo visual** mirando de frente (60° de FOV: la pared de al lado queda a
+unos 76°).
+
+Ahora, en un cruce, el explorador pasa por el estado `MIRAR`: frena, manda el servo a cada ángulo
+de `angulos_camara` (por defecto 0 y ±0,95 rad), espera a que llegue, mira `tiempo_mirar` y sigue.
+Solo barre cuando vale la pena: en una celda con dos o más salidas, buscando un cubo y si todavía
+no leyó una flecha de ese color ahí. Las detecciones se descartan mientras el servo se mueve,
+porque el ángulo de la foto no sería el que se usa para proyectar el rayo.
+
+Medido con flechas renderizadas, para la pared lateral de la celda contigua:
+
+| ángulo del servo | resultado |
+|---|---|
+| 0 rad (al frente) | la flecha **no entra en cuadro** |
+| 0,95 rad | se detecta, se ubica y se clasifica bien, las tres clases |
+
+Se apaga con `usar_servo_camara:=false`.
+
+## Odometría: cuál usar
+
+`/sim/odom` es demasiado buena y esconde el problema real. El nodo `caid_bringup/odom_ruedas.py`
+rehace la cuenta como la va a hacer el robot: cuenta **flancos enteros** de los encoders ópticos
+(40 por vuelta de rueda, medido en `docs/guias/caracterizacion-motores.md`) y permite meterle los
+dos errores sistemáticos que importan.
+
+Por qué eso y no ruido blanco sobre `/sim/odom`: el error de un skid-steer de 4 ruedas **no es
+ruido**, es un error de **escala en el rumbo** que se acumula giro a giro. Las cuatro ruedas
+arrastran de costado al girar, así que el robot se comporta como si la trocha fuera mayor que los
+131 mm geométricos (en `gazebo.xacro` está calibrada en 204 mm, y ese número cambia con el piso,
+la carga y la velocidad de giro). Si la separación que usa la cuenta se desvía un 10 %, cada giro
+de 90° se va 9°, siempre para el mismo lado. Ruido blanco no reproduce eso.
+
+Números de este robot (radio 33,5 mm, 40 flancos por vuelta):
+
+| Cosa | Valor |
+|---|---|
+| Un flanco | 5,26 mm de avance de la rueda |
+| Una celda de 400 mm | 76 flancos |
+| Un giro de 90° (separación 204 mm) | 30,4 flancos por rueda |
+| Error de rumbo por un flanco de diferencia | 1,5° |
+
+O sea: un giro de 90° se resuelve con **30 flancos**, y errar por uno solo ya son 1,5°. Sin IMU,
+el rumbo solo se endereza contra las paredes (`corregir_posicion` y `estimar_rumbo` en
+`explorador.py`), y por eso conviene probar con la odometría mala.
+
+Se elige al lanzar la misión:
+
+```bash
+ros2 launch caid_navigation mision_sim.launch.py odom:=ruedas    # por defecto: solo cuantización
+ros2 launch caid_navigation mision_sim.launch.py odom:=ruidosa   # + errores sistemáticos
+ros2 launch caid_navigation mision_sim.launch.py odom:=gazebo    # la vieja, casi perfecta
+```
+
+Los valores de `ruidosa` (radio +2 %, separación +8 %, deslizamiento 5 %) son una **estimación**:
+hay que calibrarlos contra el robot real con `tools/sim/prueba_giro.sh`.
 
 ## Calibración del giro
 

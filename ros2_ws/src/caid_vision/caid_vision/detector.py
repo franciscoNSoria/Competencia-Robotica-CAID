@@ -24,8 +24,12 @@ RANGOS = {  # HSV de OpenCV (H 0-180). Ajustar con la luz real.
     'azul': [((95, 110, 40), (130, 255, 255))],
 }
 AREA_MIN_CUBO = 60
-AREA_MIN_FLECHA = 250
+AREA_MIN_FLECHA = 150   # el mismo piso que analizar_flecha; con menos no hay forma que medir
 AREA_MIN_CANASTO = 120
+# Lado del kernel de la apertura morfológica que limpia ruido. El vástago de la flecha mide
+# 10 mm: con la cámara de 554 px de foco son 7 px a 0,8 m, así que una apertura grande se lo come
+# y el análisis de forma deja de reconocerla.
+KERNEL_APERTURA = 3
 
 
 def mascara(hsv, color):
@@ -51,11 +55,19 @@ def es_cubo(c):
 
 
 def es_canasto(c):
-    """Canasto visto de costado y un poco desde arriba: ancho >= 1,4 veces el alto y macizo."""
+    """
+    Canasto visto de costado y un poco desde arriba: entre 1,4 y 3,5 veces más ancho que alto, y
+    macizo.
+
+    El canasto mide 44 x 20 mm de frente (2,2 veces) y en diagonal se ven dos caras (unos 62 mm de
+    ancho, 3,1 veces). El tope de 3,5 deja afuera los pedazos alargados del mismo color, como el
+    vástago de una flecha (85 x 10 mm, 8,5 veces), que en E2 se tomó por un canasto.
+    """
     x, y, w, h = cv2.boundingRect(c)
     hull = cv2.convexHull(c)
     solidez = cv2.contourArea(c) / max(cv2.contourArea(hull), 1)
-    return w >= 1.4 * h and solidez > 0.85 and cv2.contourArea(c) / max(w * h, 1) > 0.7
+    return 1.4 * h <= w <= 3.5 * h and solidez > 0.85 \
+        and cv2.contourArea(c) / max(w * h, 1) > 0.7
 
 
 def analizar_flecha(c):
@@ -136,27 +148,41 @@ def detectar(img, horizonte=None, max_puntos_zona=400):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     alto = img.shape[0]
     horizonte = alto / 2 if horizonte is None else horizonte
-    kernel = np.ones((3, 3), np.uint8)
+    kernel = np.ones((KERNEL_APERTURA, KERNEL_APERTURA), np.uint8)
     salida = {'flechas': [], 'cubos': [], 'canastos': [], 'zonas': []}
     for color in RANGOS:
-        m = mascara(hsv, color)
-        m = cv2.morphologyEx(m, cv2.MORPH_OPEN, kernel)
-        cnts, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        cruda = mascara(hsv, color)
+        m = cv2.morphologyEx(cruda, cv2.MORPH_OPEN, kernel)
         usados = np.zeros_like(m)
-        for c in cnts:
+        # Las flechas se analizan sobre la máscara SIN abrir y los cubos y canastos sobre la
+        # abierta. El vástago mide 10 mm (7 px a 0,8 m) y la apertura lo adelgaza hasta romper el
+        # análisis de forma: medido con las flechas de los STL, el alcance con el que la flecha se
+        # lee bien de punta a punta pasa de 0,55 / 0,45 / 0,30 m (apertura 3x3) a 0,80 / 0,70 /
+        # 0,45 m (sin apertura) para las clases 1 / 2 / 3. Los cubos y canastos son macizos y no
+        # pierden nada con la apertura, que ahí sigue limpiando ruido.
+        for c in cv2.findContours(cruda, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]:
+            area = cv2.contourArea(c)
+            if area < AREA_MIN_FLECHA:
+                continue
+            x, y, w, h = cv2.boundingRect(c)
+            if x <= 1 or x + w >= img.shape[1] - 1:
+                continue        # cortado por el borde: la caja no sirve para medir
+            f = analizar_flecha(c)
+            if f:
+                f.update(color=color, area=float(area))
+                salida['flechas'].append(f)
+                cv2.drawContours(usados, [c], -1, 255, -1)
+        for c in cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]:
             area = cv2.contourArea(c)
             if area < AREA_MIN_CUBO:
                 continue
             x, y, w, h = cv2.boundingRect(c)
             if x <= 1 or x + w >= img.shape[1] - 1:
                 continue        # cortado por el borde: la caja no sirve para medir
-            if area >= AREA_MIN_FLECHA:
-                f = analizar_flecha(c)
-                if f:
-                    f.update(color=color, area=float(area))
-                    salida['flechas'].append(f)
-                    cv2.drawContours(usados, [c], -1, 255, -1)
-                    continue
+            mom = cv2.moments(c)
+            if mom['m00'] > 0 and usados[min(int(mom['m01'] / mom['m00']), usados.shape[0] - 1),
+                                         min(int(mom['m10'] / mom['m00']), usados.shape[1] - 1)]:
+                continue        # ese contorno ya se contó como flecha
             if es_cubo(c):
                 salida['cubos'].append({'color': color, 'caja': (x, y, w, h), 'area': float(area)})
                 cv2.drawContours(usados, [c], -1, 255, -1)

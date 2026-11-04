@@ -2,7 +2,7 @@ nombre: 'E6 Salida abierta: laberinto grande, sala abierta y entrada entre pared
 descripcion: 'El mas complejo: 13 x 24 celdas. Afuera hay un area abierta sin paredes con la S y los 3 canastos; el robot sale por una entrada
   de 2 celdas entre paredes y tiene que volver a encontrarla. Adentro hay una red de pasillos con lazos, una sala abierta de 3 x 7 celdas con
   dos zonas rojas y un bloque de 20 cm (que se esquiva), distractores y el cubo verde en la sala.'
-celda_m: 0.32
+celda_m: 0.40
 alto_pared_m: 0.17
 inicio_dir: E
 altura_flechas_mm: 115

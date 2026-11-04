@@ -1,7 +1,7 @@
 nombre: E3 Obstaculos y zonas prohibidas
 descripcion: Arbol con tres bifurcaciones en T, distractores de otros colores, bloques chicos pegados a una pared (se pasa por el lado), un ramo
   ciego tapado con zona roja y un bloque de 20 cm que cierra un pasillo.
-celda_m: 0.32
+celda_m: 0.40
 alto_pared_m: 0.17
 inicio_dir: E
 canastos_pared: O

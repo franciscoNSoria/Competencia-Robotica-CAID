@@ -1,0 +1,15 @@
+# Dejar el cubo que lleva la pinza en su canasto (caid_manipulation/carga_brazo; en los mundos sin
+# brazo, caid_navigation/carga_simulada).
+
+# Pedido
+string color          # color del cubo que lleva: rojo, verde o azul
+float32 x             # m, centro del canasto en base_link
+float32 y
+---
+# Resultado
+bool exito
+string mensaje
+---
+# Avance
+string etapa
+float32 progreso      # de 0 a 1

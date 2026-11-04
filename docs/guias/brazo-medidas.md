@@ -6,7 +6,7 @@
 
 ## 1. Pose de reposo con cubo
 
-- El brazo apunta **hacia atrás** del robot, **completamente retraído y apoyado sobre el 2.º piso** (parte trasera). El cubo queda sujeto en la pinza, sobre el piso, y no puede caerse (M, fotos).
+- **Cambió el 04/11: el brazo trabaja hacia adelante** (ver `brazo-calibracion.md`). Lo que sigue es la versión anterior: el brazo apuntaba **hacia atrás** del robot, **completamente retraído y apoyado sobre el 2.º piso** (parte trasera). El cubo queda sujeto en la pinza, sobre el piso, y no puede caerse (M, fotos).
 - La base gira con el plato; en el reposo el brazo está **sobre el eje del robot: 0°** (dato del equipo). Medido en la foto superior: 2,7° de desvío (C, error de la foto de varios grados), así que se toma como 0°.
 - Esta es la pose "transporte con cubo". El cubo se agarra a la altura de la base del brazo (108,5 mm) y se lleva a esta pose.
 

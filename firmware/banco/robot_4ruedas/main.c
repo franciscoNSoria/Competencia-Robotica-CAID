@@ -25,6 +25,13 @@
 #include <rmw_microros/rmw_microros.h>
 #endif
 
+/* sonar.h trae funciones de las pruebas que este firmware no usa: que no avisen */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+#include "sonar.h"
+#pragma GCC diagnostic pop
+#include "guardia.h"
+
 /* Robot de 4 ruedas con micro-ROS y comandos desde la PC (robot_teclado.py). Un PI de velocidad por rueda (el de
  * main_motor_v8_pi.c, una instancia por rueda).
  * Entra:   /cmd_vel      geometry_msgs/Twist, linear.x en m/s y angular.z en rad/s (cinematica diferencial)
@@ -33,17 +40,33 @@
  *                          2 v0 v1 v2 v3      velocidad por rueda en m/s, con PI (FL, FR, RL, RR)
  *                          3 dist_m vel       mover dist_m (con signo) con rampas; vel en flancos/s (0 = por defecto)
  *                          4                  parar todo
- *                          5 diam trocha fren config en metros: diametro efectivo, trocha efectiva, adelanto de frenado
+ *                          5 diam trocha fren [fren_giro]  config en metros: diametro efectivo, trocha efectiva, adelanto de
+ *                                                          frenado (y, opcional, el adelanto de frenado de los giros)
  *                          6 rueda dmin n v1 d1 v2 d2 ...   curva de prealimentacion de una rueda (n <= 10 puntos)
+ *                          7 ang_rad vel      girar EN EL LUGAR ang_rad (con signo: + izquierda, antihorario) con rampas; vel en
+ *                                             flancos/s por rueda (0 = por defecto). Usa la trocha efectiva: arco = ang x trocha / 2
+ *                          8 act d_stop d_lento [ciego_s]   freno local por sonar (guardia.h). act 1 = activo (0 = apagado,
+ *                                             es el estado al arrancar). Sin orden en 1 s las ruedas igual se frenan.
+ *                                             Con la guardia activa, el sonar frontal topa la velocidad HACIA ADELANTE:
+ *                                             d >= d_lento (m) libre; entre d_stop y d_lento 0,13 m/s; a d <= d_stop, 0.
+ *                                             Girar en el lugar y retroceder siguen permitidos. Sin medicion fresca del
+ *                                             frontal, o sin ningun eco hace mas de ciego_s (por defecto 5 s), tampoco avanza.
  * Sale:    /wheel_ticks   std_msgs/Int32MultiArray, 4 flancos acumulados con signo [FL, FR, RL, RR], 20 Hz
- *          /wheel_state   std_msgs/Float32MultiArray, 24 valores, 10 Hz:
+ *          /wheel_state   std_msgs/Float32MultiArray, 34 valores, 10 Hz:
  *                          [0..3] velocidad medida (flancos/s con signo)  [4..7] velocidad pedida (flancos/s)
  *                          [8..11] duty con signo   [12..15] rueda bloqueada (1) o no (0)
  *                          [16] movimiento activo   [17] recorrido actual (m, con signo)   [18] recorrido final (m)
  *                          [19] contador de movimientos terminados   [20] diametro efectivo (mm)   [21] adelanto de frenado (mm)
  *                          [22] contador de configuraciones y curvas aceptadas   [23] trocha efectiva (mm)
+ *                          [24] tipo del ultimo movimiento: 0 distancia, 1 giro   [25] adelanto de frenado de los giros (mm)
+ *                          (en un giro, [17] y [18] son el arco que recorre cada rueda en m, con signo: angulo = arco / (trocha / 2))
+ *                          [26] sonar frontal  [27] sonar izquierdo  [28] sonar derecho (m; -1 = sin eco)
+ *                          [29] guardia: 0 apagada, 1 libre, 2 lenta, 3 frenada, 4 falla (sin medicion fresca o ciego)
+ *                          [30] d_stop (m)  [31] d_lento (m)  [32] mediciones terminadas del frontal  [33] ciego_s
  * linear.x es m/s de verdad (en v8d, 0,5 equivalia a 75 flancos/s = 0,395 m/s).
- * Pines: hardware/electronica/propuesta-v0.2.md, mapa B-rueda (RR_IB en el 32). */
+ * Pines: hardware/electronica/propuesta-v0.2.md, mapa B-rueda (RR_IB en el 32).
+ * Sonares (firmware/pruebas/comun/sonar.h): frontal TRIG 5 / ECHO 13, derecho 15 / 4, izquierdo 14 / 12. Un disparo cada 60 ms
+ * en la secuencia frontal, derecho, frontal, izquierdo: el frontal se mide cada 120 ms y los laterales cada 240 ms. */
 
 #define N_RUEDAS 4
 #define PIN_LED GPIO_NUM_2
@@ -56,6 +79,9 @@
 #define FRENADO_M 0.030f            /* se corta esto antes de llegar para que la inercia complete el recorrido; la PC lo ajusta sola */
 #define ACEL_FLANCOS_S2 100.0f      /* rampa de arranque y de frenado en los movimientos de distancia (0,53 m/s2) */
 #define VEL_MOV_DEFECTO 40.0f       /* flancos/s (0,21 m/s) */
+#define FRENADO_GIRO_M 0.005f       /* en los giros: arco (por rueda) que se corta antes de llegar; 5 mm = 4,4 grados con trocha 0,131 (P: ajustar) */
+#define VEL_GIRO_DEFECTO 30.0f      /* flancos/s por rueda en un giro: 0,16 m/s, unos 138 grados/s con trocha 0,131 */
+#define GIRO_MAX_RAD 12.6f          /* un giro pedido no pasa de 12,6 rad (721 grados) */
 #define MOV_ESPERA_CICLOS 150       /* 1,5 s para que termine de rodar antes de dar el recorrido final */
 #define MOV_MAX_CICLOS 2000         /* 20 s: tope de un movimiento */
 #define MAX_PUNTOS 10
@@ -76,6 +102,10 @@
 
 #define PERIODO_TICKS_US 50000      /* /wheel_ticks a 20 Hz */
 #define PERIODO_ESTADO_US 100000    /* /wheel_state a 10 Hz */
+#define N_ESTADO 34                 /* valores de /wheel_state */
+#define ZONA_MUERTA_FLANCOS (VEL_MIN_FLANCOS * 0.5f)   /* bajo esto una rueda no se pide (ver ms_a_flancos) */
+#define GUARDIA_VEL_LENTA VEL_MIN_FLANCOS              /* tope de la zona lenta: lo menos que sostienen los 4 motores */
+#define SONAR_RANURA_US 60000       /* un disparo cada 60 ms */
 
 typedef struct { float v; float duty; } punto_t;
 static const punto_t CURVA_DEL[] = {
@@ -159,7 +189,7 @@ static std_msgs__msg__Int32MultiArray msg_ticks;
 static std_msgs__msg__Float32MultiArray msg_estado;
 static float recv_robot_buf[24];
 static int32_t ticks_buf[N_RUEDAS];
-static float estado_buf[24];
+static float estado_buf[N_ESTADO];
 
 static volatile uint32_t ultimo_cmd_ms = 0;
 static volatile bool agente_conectado = false;
@@ -167,6 +197,7 @@ static volatile bool agente_conectado = false;
 static volatile float diametro_m = DIAMETRO_RUEDA_M;
 static volatile float trocha_m = TROCHA_M;
 static volatile float frenado_m = FRENADO_M;
+static volatile float frenado_giro_m = FRENADO_GIRO_M;
 static volatile int cfg_seq = 0;                 /* configuraciones y curvas aceptadas */
 
 /* Movimiento de distancia: lo pide el callback y lo ejecuta la tarea de control */
@@ -174,10 +205,57 @@ static volatile int mov_pedido = 0;
 static volatile int mov_abortar = 0;
 static volatile float mov_dist_ped_m = 0.0f;
 static volatile float mov_vel_ped = 0.0f;
+static volatile float mov_ang_ped_rad = 0.0f;   /* giro pedido (+ izquierda) */
+static volatile int mov_tipo_ped = 0;           /* 0 distancia, 1 giro (lo fija el callback antes de mov_pedido) */
+static volatile int mov_tipo = 0;               /* tipo del movimiento en curso o del ultimo */
 static volatile int mov_activo = 0;
 static volatile float mov_recorrido_m = 0.0f;
 static volatile float mov_final_m = 0.0f;
 static volatile int mov_seq = 0;
+
+/* ---- Sonares y freno local ---- */
+enum { SON_F = 0, SON_D = 1, SON_I = 2, N_SONARES = 3 };
+static sonar_t S[N_SONARES] = {
+	{.nombre = "frontal", .trig = GPIO_NUM_5, .echo = GPIO_NUM_13},
+	{.nombre = "derecho", .trig = GPIO_NUM_15, .echo = GPIO_NUM_4},
+	{.nombre = "izquierdo", .trig = GPIO_NUM_14, .echo = GPIO_NUM_12},
+};
+static const int SON_SECUENCIA[4] = {SON_F, SON_D, SON_F, SON_I};   /* el frontal cada 120 ms, los laterales cada 240 ms */
+static volatile float son_m[N_SONARES] = {-1.0f, -1.0f, -1.0f};    /* ultima medicion en m; -1 si no hubo eco */
+static volatile uint32_t son_ms[N_SONARES];                         /* instante (ms) de la ultima medicion terminada */
+static volatile uint32_t son_valido_ms[N_SONARES];                  /* instante (ms) del ultimo eco valido */
+static volatile uint32_t son_n[N_SONARES];                          /* mediciones terminadas, con o sin eco */
+static guardia_t guardia;
+static int guardia_ult = GUARDIA_APAGADA;                           /* para avisar por el puerto serie cuando cambia */
+
+/* Un ciclo de 10 ms de los sonares: la misma logica que firmware/pruebas/13_sonares_3.c en modo secuencial. */
+static void sonar_ciclo(uint32_t ahora_ms)
+{
+	static int turno = 0;
+	static int64_t ultimo_disparo_us = 0;
+	int64_t ahora_us = esp_timer_get_time();
+	int ocupado = 0;
+
+	for (int i = 0; i < N_SONARES; i++) {
+		if (S[i].esperando) {
+			if (sonar_revisar(&S[i])) {
+				son_m[i] = isnan(S[i].dist_m) ? -1.0f : S[i].dist_m;
+				son_ms[i] = ahora_ms;
+				if (!isnan(S[i].dist_m)) {
+					son_valido_ms[i] = ahora_ms;
+				}
+				son_n[i]++;
+			}
+			ocupado |= S[i].esperando;
+		}
+	}
+	if (ocupado || ahora_us - ultimo_disparo_us < SONAR_RANURA_US) {
+		return;
+	}
+	ultimo_disparo_us = ahora_us;
+	sonar_disparar(&S[SON_SECUENCIA[turno]]);
+	turno = (turno + 1) % 4;
+}
 
 static float flancos_por_m(void)
 {
@@ -401,19 +479,30 @@ static void ordenar_todas(float flancos)
 	}
 }
 
-/* Un ciclo de 10 ms de todo el control: movimiento de distancia, ordenes y las 4 ruedas */
+/* Las ruedas de la izquierda (FL, RL) y las de la derecha (FR, RR) por separado: un giro en el lugar */
+static void ordenar_lados(float izq, float der)
+{
+	W[0].objetivo_cmd = W[2].objetivo_cmd = izq;
+	W[1].objetivo_cmd = W[3].objetivo_cmd = der;
+}
+
+/* Un ciclo de 10 ms de todo el control: movimiento de distancia o de giro, ordenes y las 4 ruedas */
 static void control_paso(void)
 {
 	static int ciclo = 0;
 	static int mov_fase = 0;             /* 0 libre, 1 andando, 2 asentando */
 	static int mov_dir = 1;
+	static int mov_giro = 0;             /* 1: el movimiento en curso es un giro en el lugar */
 	static float mov_obj_fl = 0.0f;
+	static float mov_frenado_fl = 0.0f;  /* adelanto de frenado de este movimiento, en flancos */
 	static float mov_vel = 0.0f;
 	static int mov_ciclos = 0;
 	static long mov_base[N_RUEDAS] = {0};
 
 	{
 		uint32_t ahora_ms = (uint32_t)(esp_timer_get_time() / 1000);
+
+		sonar_ciclo(ahora_ms);
 
 		/* ---- movimiento de distancia ---- */
 		if (mov_abortar) {
@@ -424,10 +513,21 @@ static void control_paso(void)
 			ordenar_todas(0.0f);
 		}
 		if (mov_pedido && mov_fase == 0) {
-			float dist = mov_dist_ped_m;
-			float vel = mov_vel_ped > 0.0f ? mov_vel_ped : VEL_MOV_DEFECTO;
+			float vel = mov_vel_ped;
+			float dist = 0.0f;                       /* metros que tiene que recorrer cada rueda (con signo) */
 
 			mov_pedido = 0;
+			mov_giro = mov_tipo_ped;
+			if (mov_giro) {
+				dist = mov_ang_ped_rad * trocha_m / 2.0f;      /* arco de cada rueda: angulo x radio, con radio = trocha / 2 */
+				vel = vel > 0.0f ? vel : VEL_GIRO_DEFECTO;
+				mov_frenado_fl = frenado_giro_m * flancos_por_m();
+			} else {
+				dist = mov_dist_ped_m;
+				vel = vel > 0.0f ? vel : VEL_MOV_DEFECTO;
+				mov_frenado_fl = frenado_m * flancos_por_m();
+			}
+			mov_tipo = mov_giro;
 			mov_dir = dist >= 0.0f ? 1 : -1;
 			mov_obj_fl = fabsf(dist) * flancos_por_m();
 			mov_vel = fminf(VEL_MAX_FLANCOS, fmaxf(VEL_MIN_FLANCOS, vel));
@@ -438,11 +538,16 @@ static void control_paso(void)
 			mov_ciclos = 0;
 			mov_fase = 1;
 			mov_activo = 1;
-			printf("mover %.3f m = %.1f flancos a %.0f flancos/s\n", dist, mov_obj_fl, mov_vel);
+			if (mov_giro) {
+				printf("girar %.1f grados (arco %.3f m = %.1f flancos por rueda) a %.0f flancos/s\n",
+				       mov_ang_ped_rad * 57.29578f, dist, mov_obj_fl, mov_vel);
+			} else {
+				printf("mover %.3f m = %.1f flancos a %.0f flancos/s\n", dist, mov_obj_fl, mov_vel);
+			}
 		}
 		if (mov_fase == 1) {
 			float rec = flancos_recorridos(mov_base);
-			float resta = mov_obj_fl - frenado_m * flancos_por_m() - rec;
+			float resta = mov_obj_fl - mov_frenado_fl - rec;
 
 			ultimo_cmd_ms = ahora_ms;
 			mov_recorrido_m = mov_dir * rec / flancos_por_m();
@@ -455,7 +560,11 @@ static void control_paso(void)
 				float v_dec = sqrtf(2.0f * ACEL_FLANCOS_S2 * resta);
 				float v = fmaxf(VEL_MIN_FLANCOS, fminf(mov_vel, fminf(v_acc, v_dec)));
 
-				ordenar_todas(mov_dir * v);
+				if (mov_giro) {
+					ordenar_lados(-mov_dir * v, mov_dir * v);   /* izquierda para atras y derecha para adelante = giro antihorario */
+				} else {
+					ordenar_todas(mov_dir * v);
+				}
 			}
 		} else if (mov_fase == 2) {
 			ultimo_cmd_ms = ahora_ms;
@@ -466,21 +575,42 @@ static void control_paso(void)
 				mov_seq++;
 				mov_fase = 0;
 				mov_activo = 0;
-				printf("movimiento terminado: %.3f m calculados\n", mov_final_m);
+				if (mov_giro) {
+					printf("giro terminado: arco %.3f m = %.1f grados calculados\n", mov_final_m,
+					       mov_final_m / (trocha_m / 2.0f) * 57.29578f);
+				} else {
+					printf("movimiento terminado: %.3f m calculados\n", mov_final_m);
+				}
 			}
 		}
 
 		bool vencido = (uint32_t)(ahora_ms - ultimo_cmd_ms) > TIMEOUT_CMD_MS;
+		float cmd_v[N_RUEDAS];
+		float tope;
+
+		/* Freno local por sonar (solo si la PC lo activo, orden 8): topa la velocidad lineal hacia adelante. No toca los giros
+		 * en el lugar ni la marcha atras, ni el duty directo (calibracion). */
+		for (int i = 0; i < N_RUEDAS; i++) {
+			cmd_v[i] = (vencido || W[i].modo_duty) ? 0.0f : W[i].objetivo_cmd;
+		}
+		tope = guardia_paso(&guardia, ahora_ms, son_m[SON_F], son_n[SON_F], son_ms[SON_F], son_valido_ms[SON_F],
+							GUARDIA_VEL_LENTA);
+		if (guardia.estado != guardia_ult) {
+			guardia_ult = guardia.estado;
+			printf("guardia: estado %d (frente %.2f m)\n", guardia.estado, (double)son_m[SON_F]);
+		}
+		guardia_limitar(cmd_v, N_RUEDAS, tope, ZONA_MUERTA_FLANCOS);
+		if (mov_activo && mov_fase == 1 && !mov_giro && mov_dir > 0 && tope == 0.0f && !mov_abortar) {
+			mov_abortar = 1;                    /* un movimiento hacia adelante no se queda esperando delante de un obstaculo */
+			printf("guardia: movimiento abortado por obstaculo\n");
+		}
 
 		for (int i = 0; i < N_RUEDAS; i++) {
-			float cmd = vencido ? 0.0f : W[i].objetivo_cmd;
+			float cmd = cmd_v[i];
 
 			if (vencido && W[i].modo_duty) {
 				W[i].modo_duty = false;
 				W[i].duty_directo = 0.0f;
-			}
-			if (W[i].modo_duty) {
-				cmd = 0.0f;
 			}
 			if (cmd == 0.0f) {
 				if (W[i].objetivo != 0.0f && vencido) {
@@ -591,9 +721,18 @@ static void callback_robot_cmd(const void *msgin)
 		}
 		break;
 	case 3:                                        /* mover una distancia */
-		if (n >= 2 && !mov_activo && !mov_pedido) {
+		if (n >= 2 && !isnan(d[1]) && !mov_activo && !mov_pedido) {
 			mov_dist_ped_m = d[1];
-			mov_vel_ped = n >= 3 ? d[2] : 0.0f;
+			mov_vel_ped = (n >= 3 && !isnan(d[2])) ? d[2] : 0.0f;
+			mov_tipo_ped = 0;                      /* el tipo se fija ANTES de mov_pedido: la tarea de control lo lee al verlo */
+			mov_pedido = 1;
+		}
+		break;
+	case 7:                                        /* girar en el lugar: ang_rad con signo (+ izquierda), vel en flancos/s */
+		if (n >= 2 && !isnan(d[1]) && fabsf(d[1]) > 0.0f && fabsf(d[1]) <= GIRO_MAX_RAD && !mov_activo && !mov_pedido) {
+			mov_ang_ped_rad = d[1];
+			mov_vel_ped = (n >= 3 && !isnan(d[2])) ? d[2] : 0.0f;
+			mov_tipo_ped = 1;
 			mov_pedido = 1;
 		}
 		break;
@@ -616,6 +755,9 @@ static void callback_robot_cmd(const void *msgin)
 			if (d[3] >= 0.0f && d[3] < 0.1f) {
 				frenado_m = d[3];
 			}
+			if (n >= 5 && d[4] >= 0.0f && d[4] < 0.05f) {
+				frenado_giro_m = d[4];
+			}
 			cfg_seq++;
 		}
 		break;
@@ -633,6 +775,20 @@ static void callback_robot_cmd(const void *msgin)
 				W[r].n_curva = np;
 				W[r].curva = W[r].curva_cal;
 				cfg_seq++;
+			}
+		}
+		break;
+	case 8:                                        /* freno local por sonar: activa d_stop_m d_lento_m [ciego_s] */
+		if (n >= 4 && !isnan(d[1])) {
+			int activa = d[1] > 0.5f;
+			int antes = guardia.activa;
+			float ciego = (n >= 5 && !isnan(d[4])) ? d[4] : guardia.ciego_s;
+
+			if (!guardia_configurar(&guardia, activa, d[2], d[3], ciego)) {
+				printf("guardia: valores fuera de rango, no se cambia nada\n");
+			} else if (activa != antes) {
+				printf("guardia: %s (frena a %.2f m, lenta desde %.2f m, ciego %.0f s)\n", activa ? "ACTIVA" : "apagada",
+					   (double)guardia.d_stop_m, (double)guardia.d_lento_m, (double)guardia.ciego_s);
 			}
 		}
 		break;
@@ -734,6 +890,16 @@ static void publicar_estado(void)
 	estado_buf[21] = frenado_m * 1000.0f;
 	estado_buf[22] = (float)cfg_seq;
 	estado_buf[23] = trocha_m * 1000.0f;
+	estado_buf[24] = (float)mov_tipo;
+	estado_buf[25] = frenado_giro_m * 1000.0f;
+	estado_buf[26] = son_m[SON_F];
+	estado_buf[27] = son_m[SON_I];
+	estado_buf[28] = son_m[SON_D];
+	estado_buf[29] = (float)guardia.estado;
+	estado_buf[30] = guardia.d_stop_m;
+	estado_buf[31] = guardia.d_lento_m;
+	estado_buf[32] = (float)son_n[SON_F];
+	estado_buf[33] = guardia.ciego_s;
 	(void)rcl_publish(&pub_estado, &msg_estado, NULL);
 }
 
@@ -828,6 +994,12 @@ void app_main(void)
 	gpio_set_direction(PIN_LED, GPIO_MODE_OUTPUT);
 	gpio_set_level(PIN_LED, 0);
 
+	/* Sonares (GPIO12, el eco izquierdo, tiene que estar en bajo al arrancar) y freno local, apagado hasta que la PC lo active */
+	guardia_init(&guardia);
+	for (int i = 0; i < N_SONARES; i++) {
+		sonar_init(&S[i]);
+	}
+
 	/* Mensajes con memoria estatica: los arreglos de los multiarray apuntan a buffers propios */
 	std_msgs__msg__Int32MultiArray__init(&msg_ticks);
 	msg_ticks.data.data = ticks_buf;
@@ -835,8 +1007,8 @@ void app_main(void)
 	msg_ticks.data.capacity = N_RUEDAS;
 	std_msgs__msg__Float32MultiArray__init(&msg_estado);
 	msg_estado.data.data = estado_buf;
-	msg_estado.data.size = 24;
-	msg_estado.data.capacity = 24;
+	msg_estado.data.size = N_ESTADO;
+	msg_estado.data.capacity = N_ESTADO;
 	std_msgs__msg__Float32MultiArray__init(&recv_robot);
 	recv_robot.data.data = recv_robot_buf;
 	recv_robot.data.size = 0;
