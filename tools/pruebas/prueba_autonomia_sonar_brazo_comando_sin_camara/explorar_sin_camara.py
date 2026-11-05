@@ -84,6 +84,7 @@ class ExplorarSinCamara(Node):
         self.objetivo = None
         self.muestras_rumbo = []
         self.agarrado = threading.Event()
+        self._ult_debug_avanzar = 0.0
         threading.Thread(target=self._leer_teclado, daemon=True).start()
         self.create_timer(0.05, self.tick)
         self.get_logger().info('Arranco: exploro con sonar, sin cámara ni flechas')
@@ -189,6 +190,14 @@ class ExplorarSinCamara(Node):
         s = (self.objetivo[0] * u[0] + self.objetivo[1] * u[1]) * tam - (x * u[0] + y * u[1])
         e = (x * n[0] + y * n[1]) - (self.objetivo[0] * n[0] + self.objetivo[1] * n[1]) * tam
         d_th = ang_dif(th, d * math.pi / 2)
+        v = min(self.cfg['vel_lineal'], max(0.04, 1.5 * s))
+        w = limitar(3.0 * (math.atan(-2.0 * e) - d_th), self.cfg['vel_angular'])
+        if self.ahora() - self._ult_debug_avanzar >= 1.0:
+            self._ult_debug_avanzar = self.ahora()
+            self.get_logger().info(
+                f'  [avanzar] objetivo={self.objetivo} d={d} pose=({x:.3f},{y:.3f},{th:.3f}) '
+                f's={s:.3f} e={e:.3f} d_th={d_th:.3f} v={v:.3f} w={w:.3f} '
+                f'frente={self.distancia("frente"):.3f}')
         if s < 0.01:
             self.mapa.recorrer(self.celda, d)
             self.celda = self.objetivo
@@ -202,9 +211,7 @@ class ExplorarSinCamara(Node):
             self.celda = celda
             self.cambiar('MEDIR')
             return
-        v = min(self.cfg['vel_lineal'], max(0.04, 1.5 * s))
-        w = 3.0 * (math.atan(-2.0 * e) - d_th)
-        self.mover(v, limitar(w, self.cfg['vel_angular']))
+        self.mover(v, w)
         self.corregir_posicion(d)
 
     def tick_retroceder(self):
@@ -276,8 +283,14 @@ class ExplorarSinCamara(Node):
                 self.cambiar('MEDIR')
         elif self.estado == 'MEDIR':
             self.corregir_posicion(self.rumbo())
-            if self.ahora() - self.t_estado >= self.cfg['tiempo_medir'] and \
-                    all(len(d) == 3 for d in self.lecturas.values()):
+            listo = all(len(d) == 3 for d in self.lecturas.values())
+            if self.ahora() - self._ult_debug_avanzar >= 1.0:
+                self._ult_debug_avanzar = self.ahora()
+                largos = {lado: len(self.lecturas[lado]) for lado in LADOS}
+                self.get_logger().info(
+                    f'  [medir] hace {self.ahora() - self.t_estado:.2f}s, listo={listo}, '
+                    f'muestras={largos}')
+            if self.ahora() - self.t_estado >= self.cfg['tiempo_medir'] and listo:
                 self.registrar_y_decidir()
         elif self.estado == 'GIRAR':
             self.tick_girar()
