@@ -182,7 +182,7 @@ V_LENTA_MS, V_CURVA_MS = 0.16, 0.24    # avance lento y tope al que sube si hace
 K_Y, K_PSI, W_TOPE = 2.5, 1.5, 0.8     # rumbo deseado = atan(-K_Y y); w = K_PSI (deseado - estimado) + sesgo; rad/s
 K_I, SESGO_TOPE = 0.30, 0.45           # integral del error de rumbo (rad/s por rad y por s): compensa una rueda mas floja que la otra
 MARGEN_RUEDA_MS = 0.012                # m/s sobre el minimo de rueda que se deja al corregir
-STOP_FRENTE_M, STOP_LATERAL_M = 0.08, 0.03   # el avance guiado frena si el frente o un costado llegan a esto
+STOP_FRENTE_M, STOP_LATERAL_M = 0.14, 0.03   # frena si el frente llega a 14 cm (el robot sigue unos cm: queda a ~10 cm o mas de la pared) o un costado a 3
 ALERTA_LATERAL_M = 0.055               # un costado a menos de esto (o que lo va a estar en 10 cm): frena, piensa, se endereza y sigue
 ANTICIPO_M = 0.15                      # ... se mira lo que va a medir el lateral dentro de este avance (el robot sigue ~8 cm despues de la orden de frenar)
 F_RETROCESO_M = 0.12                   # antes de girar 180, si el frente esta a menos de esto retrocede (el giro en el lugar 'avanza un poco')

@@ -29,6 +29,7 @@ LATERAL_PARED_M = 0.25                # un lateral lee menos que esto: hay pared
 LATERAL_GIRO_MIN_M = 0.09             # el cuerpo barre 16,1 cm: con un lateral a menos de esto no se gira en el lugar
 POS_TOLERANCIA_M = 0.03               # pasado o corto del centro mas que esto: se corre antes de girar
 Y_CENTRO_180_M = 0.025               # antes de una media vuelta el centro tiene que estar a menos de esto del eje del pasillo
+T_ASENTAR_S, T_MEDIR_S = 0.4, 0.9      # quieto: espera que se asiente y mide hasta aqui (antes 0,7 y 1,5 s: tardaba mucho en decidir)
 NOMBRES = ('+x', '+y', '-x', '-y')
 
 
@@ -87,10 +88,10 @@ class Recorrido:
         if son is None:
             self.detener('la ESP32 no informa los sonares')
             return
-        if ahora - self.t_estado < 0.7:
+        if ahora - self.t_estado < T_ASENTAR_S:
             return
         self.muestras.append(son)
-        if ahora - self.t_estado < 1.5 or len(self.muestras) < 8:
+        if ahora - self.t_estado < T_MEDIR_S or len(self.muestras) < 5:
             return
         f, i, d = (self._mediana([m[k] for m in self.muestras]) for k in range(3))
         frente = f is None or f > FRENTE_PARED_M
@@ -121,7 +122,8 @@ class Recorrido:
         k = (self.celda, self.rumbo)
         # antes de girar en el lugar: centrado a lo largo del pasillo y con lugar a los costados
         cerca = min([x for x in (i, d) if x is not None], default=None)
-        if abs(self.pos) > POS_TOLERANCIA_M and self.intentos.get(('c', k), 0) < 1:
+        corto_con_pared = self.pos < 0 and f is not None and f < 0.2        # frenó a 10 cm de la pared de enfrente a proposito: no se acerca mas
+        if abs(self.pos) > POS_TOLERANCIA_M and not corto_con_pared and self.intentos.get(('c', k), 0) < 1:
             self.intentos[('c', k)] = 1
             self._corrida(-self.pos, 'estoy %.0f cm %s del centro: me corro antes de girar' % (
                 abs(100 * self.pos), 'pasado' if self.pos > 0 else 'corto'))
