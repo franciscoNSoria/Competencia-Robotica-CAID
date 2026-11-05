@@ -16,4 +16,4 @@ rangos:
   azul:
   - - [86, 60, 25]
     - [124, 255, 255]
-camara: {brightness: 2}
+camara: {brightness: 2, vflip: 0, hmirror: 1}   # cámara girada 180° (2026-11-05): se invierten los dos
