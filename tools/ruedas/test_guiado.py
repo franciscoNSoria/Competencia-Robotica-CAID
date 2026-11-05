@@ -80,6 +80,8 @@ class RobotPasillo:
             self.mov = None
         elif ident == 7 and self.mov is None:
             self.cola_cmd.append((self.t + self.retardo, a))
+        elif ident == 3 and self.mov is None:                                       # mover una distancia en recto (con signo)
+            self.cola_cmd.append((self.t + self.retardo, ('d',) + tuple(a)))
 
     def atender(self):
         pass
@@ -97,7 +99,13 @@ class RobotPasillo:
     def _paso(self, dt):
         self.t += dt
         while self.cola_cmd and self.cola_cmd[0][0] <= self.t:
-            ang, vel = self.cola_cmd.pop(0)[1][:2]
+            cmd = self.cola_cmd.pop(0)[1]
+            if cmd[0] == 'd':                                                        # distancia en recto
+                if self.mov is None and abs(cmd[1]) > 1e-6:
+                    self.mov = {'dir': 1.0 if cmd[1] > 0 else -1.0, 'vel': cmd[2] if cmd[2] > 0 else 30.0, 'rec': 0.0, 'fase': 1,
+                                'obj': abs(cmd[1]) * self.fpm - 0.02 * self.fpm, 'recto': True}
+                continue
+            ang, vel = cmd[:2]
             if self.mov is None and abs(ang) > 1e-6:
                 self.mov = {'dir': 1.0 if ang > 0 else -1.0, 'vel': vel if vel > 0 else 30.0, 'rec': 0.0, 'fase': 1,
                             'obj': abs(ang) * self.trocha_cfg / 2 * self.fpm - 0.0015 * self.fpm}
@@ -109,7 +117,7 @@ class RobotPasillo:
         m = self.mov
         if m is not None:
             if m['fase'] == 1:
-                self.obj = [-m['dir'] * m['vel'], m['dir'] * m['vel']]
+                self.obj = [m['dir'] * m['vel']] * 2 if m.get('recto') else [-m['dir'] * m['vel'], m['dir'] * m['vel']]
                 if m['rec'] >= m['obj']:
                     m['fase'], m['t2'] = 2, self.t
                     self.obj = [0.0, 0.0]

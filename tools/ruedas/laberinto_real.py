@@ -39,8 +39,11 @@ def main():
     c = rl.Controlador(enlace)
     corr90 = float(c.cal.get('giro90_corr_deg', 0.0))
     corr180 = float(c.cal.get('giro180_corr_deg', 0.0))
-    rec = lr.Recorrido(c, vel_dps=a.vel_giro, corr90=corr90, corr180=corr180, v=a.v, frenada_m=a.frenada)
-    print('Giro 90: se piden %g° | sumador 180: %+g° | avance %.2f m/s | giro %.0f °/s' % (90 + corr90, corr180, a.v, a.vel_giro))
+    esc_atras = float(c.cal.get('escape_atras_cm', 10.0)) / 100.0
+    esc_giro = float(c.cal.get('escape_giro_deg', 45.0))
+    rec = lr.Recorrido(c, vel_dps=a.vel_giro, corr90=corr90, corr180=corr180, v=a.v, frenada_m=a.frenada,
+                       escape_atras_m=esc_atras, escape_grados=esc_giro)
+    print('Escape: retrocede %.0f cm y gira %g° | Giro 90: se piden %g° | sumador 180: %+g° | avance %.2f m/s | giro %.0f °/s' % (100 * esc_atras, esc_giro, 90 + corr90, corr180, a.v, a.vel_giro))
     print('  g arrancar    ESPACIO o p frenar    q salir')
     ant = termios.tcgetattr(sys.stdin)
     tty.setcbreak(sys.stdin.fileno())

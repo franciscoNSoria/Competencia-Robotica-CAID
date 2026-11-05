@@ -27,13 +27,16 @@ FRENTE_REFERENCIA_M = 1.2             # el frontal sirve de referencia hasta est
 LATERAL_PARED_M = 0.25                # un lateral lee menos que esto: hay pared (a 8,15 cm del eje, centrado lee ~12 cm)
 POS_TOLERANCIA_M = 0.03               # pasado o corto del centro mas que esto: se corre antes de girar
 T_ASENTAR_S, T_MEDIR_S = 0.4, 0.9      # quieto: espera que se asiente y mide hasta aqui (antes 0,7 y 1,5 s: tardaba mucho en decidir)
+ETAPAS_RECUPERACION = ('pensar', 'atras', 'asentar_atras', 'despegar', 'asentar_despegue')   # el avance enderezando esta recuperandose
 NOMBRES = ('+x', '+y', '-x', '-y')
 
 
 class Recorrido:
-    def __init__(self, c, vel_dps=153.0, corr90=0.0, corr180=0.0, v=rl.V_LENTA_MS, frenada_m=0.03, imprimir=print, reloj=None):
+    def __init__(self, c, vel_dps=153.0, corr90=0.0, corr180=0.0, v=rl.V_LENTA_MS, frenada_m=0.03, escape_atras_m=0.10, escape_grados=45.0, imprimir=print,
+                 reloj=None):
         self.c, self.imprimir = c, imprimir
         self.vel_dps, self.corr90, self.corr180, self.v, self.frenada_m = vel_dps, corr90, corr180, v, frenada_m
+        self.escape_atras_m, self.escape_grados = escape_atras_m, escape_grados
         self.reloj = reloj or c.reloj
         self.mapa = Mapa(inicio=(0, 0))
         self.celda, self.rumbo, self.pos = (0, 0), 0, 0.0
@@ -73,10 +76,38 @@ class Recorrido:
 
     # ---- bucle (llamar despues de Controlador.tick)
     def tick(self):
+        if self.estado == 'avanzar_fin' and self._pide_escape():
+            return
         if self.estado in ('espera', 'fin', 'detenido') or self._ocupado():
             return
         ahora = self.reloj()
         getattr(self, '_' + self.estado)(ahora)
+
+    # ---- escape de pared (el avance enderezando NO se toca: si cae en su recuperacion, el recorrido toma el mando)
+    def _pide_escape(self):
+        """Si el avance enderezando entro en 'frenar y pensar' (se pego a una pared), lo corta y hace UN escape por celda: retrocede
+        escape_atras_m (solo si ya avanzo esa distancia desde que arranco: atras no hay sonar) y gira escape_grados al lado contrario
+        de la pared; despues vuelve a avanzar (el mismo avance corrige la inclinacion)."""
+        g = self.c.guiado
+        if g is None or g.get('etapa') not in ETAPAS_RECUPERACION or self.intentos.get(('e', self.celda), 0) >= 1:
+            return False
+        self.intentos[('e', self.celda)] = 1
+        hecho = self.c.odo.s - self._s_ini
+        self.pos += hecho
+        self.c.parar()
+        atras = self.escape_atras_m if hecho >= self.escape_atras_m else 0.0
+        self.imprimir('  ! pegado a una pared: escape (%s)' % ('retrocedo %.0f cm y giro %g°' % (100 * atras, self.escape_grados) if atras
+                                                           else 'solo giro %g°: atras no hay lugar' % self.escape_grados))
+        self._s_ini = self.c.odo.s
+        self.c.escape_de_pared(atras, self.escape_grados, 0.12, self.vel_dps)
+        self._ir('escape_fin')
+        return True
+
+    def _escape_fin(self, ahora):
+        self.pos += self.c.odo.s - self._s_ini
+        self._revisar_fin()
+        if self.estado != 'detenido':
+            self._ir('avanzar', 'escape hecho: sigo avanzando')
 
     # ---- 1. medir y decidir
     def _medir(self, ahora):
