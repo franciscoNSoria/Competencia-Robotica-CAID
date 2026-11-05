@@ -290,6 +290,15 @@ class Enderezar(Banco):
             self.assertGreater(self.robot.x, 0.9, (y, g))
         self.assertGreaterEqual(corrigio, 2)
 
+    def test_pegado_a_una_pared_paralelo_se_separa_y_sigue_sin_detenerse(self):
+        """Lo que pasaba: a 3 cm de la pared y paralelo, pivotar no cambia nada: se rendia y pedia reacomodar a mano."""
+        for y, g in ((-0.085, 0), (0.085, 0), (-0.085, 15), (0.085, -15)):
+            self.probar(y, g, cm=100, semilla=3 + abs(g))
+            self.assertFalse(self.robot.choco, (y, g, self.mensajes[-5:]))
+            self.assertFalse(any('ME DETENGO' in m for m in self.mensajes), (y, g))
+            self.assertGreater(self.robot.x, 0.9, (y, g))
+            self.assertLess(abs(self.robot.y), 0.04, (y, g))
+
     def test_el_retardo_de_red_y_una_rueda_floja_no_lo_hacen_chocar_inclinado(self):
         for y, g in ((0.05, 25), (-0.05, -35)):
             self.probar(y, g, cm=80, retardo=0.3, factor_der=0.85, semilla=7)

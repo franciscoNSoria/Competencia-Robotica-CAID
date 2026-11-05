@@ -197,7 +197,7 @@ MIN_CAMBIO_SUMA_M = 0.004              # cambio de (izq + der) que cuenta como '
 MAX_TANTEOS = 7
 PRIOR_PIVOTE_RAD = 0.17                # sin los dos laterales no hay suma: pivota ~10° para alejar el frente de la pared mas cercana
 ANCHO_MIN_GIRO_M = 0.34               # ancho minimo para girar 180 en el lugar: el cuerpo (27,8 x 16,3) barre un circulo de 32,2 cm
-MAX_RECUPERACIONES = 3                 # frenar-pensar-enderezar seguidas antes de rendirse
+MAX_RECUPERACIONES = 8                 # frenar-pensar-enderezar seguidas antes de rendirse
 LAT_DISPARO_M = 0.075                  # un costado a menos de esto Y acercandose (o a menos de LAT_CRITICO_M): correccion brusca EN MARCHA
 LAT_CRITICO_M = 0.055                  # ... a esta distancia corrige aunque no se vea que se acerca
 BAJA_DISPARO_M = 0.004                 # 'se acerca': el lateral bajo esto (m) en los ultimos ~0,5 s
@@ -207,6 +207,9 @@ BRUSCO_MAS_RAD = 0.15
 ANG_BRUSCO_TOPE_RAD = 0.75
 AVANCE_REPETIDO_M = 0.30               # si vuelve a necesitar corregir antes de avanzar esto, cuenta como 'sigue pasando lo mismo'
 MAX_BRUSCAS = 5                        # correcciones bruscas seguidas antes de frenar a pensar
+W_DESPEGUE_RAD_S = 1.2                 # separarse de una pared a ~3 cm: arco hacia adelante alejandose de ella
+ANG_DESPEGUE_RAD = 0.5                 # giro maximo del primer despegue (cada reintento suma 0,15)
+SEPARADO_M = 0.075                     # el despegue termina cuando el lateral cercano vuelve a medir esto
 RECTO_TRAS_BRUSCA_M = 0.09             # despues de la correccion brusca avanza derecho esto mientras se vuelve a medir el rumbo
 ESPERA_BRUSCA_M = 0.05                 # avance minimo despues de una correccion brusca antes de juzgar de nuevo (el sonar tarda en reflejarlo)
 W_ARCO_RAD_S = 2.2                     # giro de 180 con retroceso: velocidad angular maxima (el firmware acota cada rueda a 75 flancos/s)
@@ -732,8 +735,63 @@ class Controlador:
         else:
             self._empezar_tanteo(g, ahora, izq, der)
 
+    # ---- despegarse de una pared: arco hacia adelante alejandose de ella (no se rinde: reintenta cada vez mas fuerte)
+    def _empezar_despegue(self, g, ahora, es_izq, d):
+        n = g.get('n_despegues', 0)
+        g['n_despegues'] = n + 1
+        if n >= 10:
+            self._fin_guiado('ME DETENGO: no logro separarme de la pared despues de 10 intentos. Reacomodame a mano.')
+            return
+        ang = min(1.0, ANG_DESPEGUE_RAD + 0.15 * n)
+        g['despegue'] = {'signo': -1.0 if es_izq else 1.0, 'theta0': self.odo.theta, 't0': ahora, 'ang': ang, 'izq': es_izq}
+        self.imprimir(f'  Pegado a la pared {"izquierda" if es_izq else "derecha"} ({100 * d:.1f} cm): me separo avanzando en arco '
+                      f'hacia el otro lado (hasta {math.degrees(ang):.0f}°, intento {n + 1}).')
+        self._etapa(g, 'despegar', ahora)
+
+    def _paso_despegue(self, ahora, g, frente, izq, der):
+        b = g['despegue']
+        girado = (self.odo.theta - b['theta0']) * b['signo']
+        cerca = izq if b['izq'] else der
+        if frente is not None and frente <= STOP_FRENTE_M + 0.03:
+            self._parar_motores()                                # no hay lugar adelante: retrocede recto y reintenta
+            self.imprimir(f'  Frente a {100 * frente:.1f} cm: retrocedo antes de separarme.')
+            g['atras'] = {'dist': ATRAS_MAX_M, 's0': self.odo.s, 'siguiente': 'tantear'}
+            self._etapa(g, 'atras', ahora)
+            return
+        separado = cerca is not None and cerca >= SEPARADO_M and girado >= 0.12
+        if separado or girado >= b['ang'] - W_DESPEGUE_RAD_S * 0.2 or ahora - b['t0'] > 2.5:
+            self._parar_motores()
+            self.imprimir(f'  Separado: giré {math.degrees(girado):.0f}° | ' + self.texto_sonares((frente, izq, der)))
+            self._etapa(g, 'asentar_despegue', ahora)
+            return
+        v_min = VEL_MIN_FLANCOS / flancos_por_m(self.diametro) + MARGEN_RUEDA_MS
+        w = b['signo'] * W_DESPEGUE_RAD_S
+        self._vel_guiada(g, ahora, max(g['v'], min(0.30, v_min + abs(w) * self.trocha / 2.0)), w)
+
+    def _asentar_despegue(self, ahora, g, frente, izq, der):
+        if ahora - g['t_etapa'] < 0.5:
+            return
+        cerca = min([d for d in (izq, der) if d is not None], default=None)
+        if cerca is not None and cerca <= ALERTA_LATERAL_M and g['recuperaciones'] < MAX_RECUPERACIONES:
+            self._frenar_y_pensar(g, ahora, f'sigo pegado a una pared ({100 * cerca:.1f} cm): reintento')
+            return
+        g['recuperaciones'] = max(0, g['recuperaciones'] - 1)
+        self.imprimir('  Libre de la pared: sigo avanzando y vigilo.')
+        g['est'] = EstimadorPasillo()
+        g['hist'] = []
+        g['t_ant'] = ahora
+        g['s_brusca'] = self.odo.s
+        g['recto_hasta'] = self.odo.s
+        self._etapa(g, 'avanzar', ahora)
+
     # ---- enderezarse por tanteo: pivotar de a pasos hacia donde la suma de los dos laterales baja (es minima con el robot paralelo)
     def _empezar_tanteo(self, g, ahora, izq, der):
+        cerca = min([d for d in (izq, der) if d is not None], default=None)
+        tilt = inclinacion_por_suma(izq, der)
+        if cerca is not None and cerca <= ALERTA_LATERAL_M and (tilt is None or tilt < math.radians(10)):
+            # pegado a una pared y paralelo: lo que falta es separarse, no pivotar en el lugar
+            self._empezar_despegue(g, ahora, izq is not None and (der is None or izq <= der), cerca)
+            return
         # tipicamente esta inclinado hacia la pared cercana: el primer pivote es para alejar el frente de ella
         sentido = -1.0 if g.get('cerca_izq', True) else 1.0
         if izq is None or der is None or izq > 0.30 or der > 0.30:
@@ -811,6 +869,10 @@ class Controlador:
         if ahora - g['t_etapa'] < 0.4:
             return
         self.imprimir('  Enderezado: ' + self.texto_sonares((frente, izq, der)) + '. Sigo.')
+        cerca = min([d for d in (izq, der) if d is not None], default=None)
+        if g['tipo'] == 'enderezar' and cerca is not None and cerca <= ALERTA_LATERAL_M:
+            self._empezar_despegue(g, ahora, izq is not None and (der is None or izq <= der), cerca)   # derecho pero pegado: se separa
+            return
         if g['tipo'] == 'enderezar':
             g['est'] = EstimadorPasillo()
             g['t_ant'] = ahora
@@ -992,6 +1054,10 @@ class Controlador:
         e = g['etapa']
         if e == 'avanzar':
             self._paso_enderezar(ahora, g, frente, izq, der)
+        elif e == 'despegar':
+            self._paso_despegue(ahora, g, frente, izq, der)
+        elif e == 'asentar_despegue':
+            self._asentar_despegue(ahora, g, frente, izq, der)
         elif e == 'brusca':
             self._paso_brusca(ahora, g, frente, izq, der)
         elif e == 'girando':
