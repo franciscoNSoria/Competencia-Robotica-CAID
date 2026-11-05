@@ -45,7 +45,7 @@ import statistics
 from caid_interfaces.action import Cargar
 from caid_navigation import geometria
 from caid_navigation.camara import Camara, ubicar_flecha
-from caid_navigation.mapa import Mapa, PASOS, vecina
+from caid_navigation.mapa import girar, Mapa, PASOS, vecina
 from caid_navigation.marcadores import marcadores
 from geometry_msgs.msg import Point, TransformStamped, Twist
 from nav_msgs.msg import Odometry
@@ -115,6 +115,10 @@ class Explorador(Node):
             # De lejos la flecha solo se ve: dirección y tamaño se votan recién con la cámara a
             # esta distancia (m) o menos de la pared de la flecha.
             'distancia_decision_flecha': 0.50,
+            # Próximo giro que decidió la visión con la flecha FIJA a 30 cm (derecha / izquierda).
+            # Se usa como prioridad si no hay flecha anotada en el mapa para la celda.
+            'proximo_giro_topic': '/vision/proximo_giro',
+            'vigencia_giro_vision': 3.0,   # s: más viejo que esto no se usa
             'tam_celda': 0.45,          # m, lado de la celda del laberinto
             'sensor_frente_x': 0.1399,  # m, desde el centro del robot (dimensions.yaml)
             'sensor_lateral_y': 0.0815,
@@ -148,6 +152,8 @@ class Explorador(Node):
         self.create_subscription(Odometry, self.cfg['odom_topic'], self.on_odom, 10)
         self.create_subscription(Point, self.cfg['cubo_topic'], self.on_cubo, 10)
         self.create_subscription(String, self.cfg['detecciones_topic'], self.on_detecciones, 10)
+        self.create_subscription(String, self.cfg['proximo_giro_topic'], self.on_proximo_giro, 10)
+        self.giro_vision = None           # (hora, JSON de /vision/proximo_giro)
         self.lecturas = {lado: deque(maxlen=3) for lado in LADOS}
         for lado in LADOS:
             self.create_subscription(
@@ -244,6 +250,22 @@ class Explorador(Node):
 
     def rumbo(self):
         return round(self.pose()[2] / (math.pi / 2)) % 4
+
+    def on_proximo_giro(self, msg):
+        try:
+            self.giro_vision = (self.ahora(), json.loads(msg.data))
+        except ValueError:
+            pass
+
+    def preferida_vision(self, rumbo, col):
+        """Dirección absoluta del próximo giro que decidió la visión, o None."""
+        if self.giro_vision is None:
+            return None
+        t, g = self.giro_vision
+        if self.ahora() - t > self.cfg['vigencia_giro_vision'] or g.get('color') != col:
+            return None
+        rel = {'izquierda': 1, 'derecha': 3}.get(g.get('giro'))
+        return None if rel is None else girar(rumbo, rel)
 
     def on_detecciones(self, msg):
         if self.odom is None or self.estado in ('ESPERA', 'CARGAR'):
@@ -468,17 +490,22 @@ class Explorador(Node):
         destino = {'BUSCAR': self.cubos.get(col), 'VOLVER': self.mapa.inicio,
                    'SALIR': afuera, 'ENTRAR': self.mapa.inicio}[self.modo]
         preferida = self.flechas.get(self.celda, {}).get(col) if self.modo == 'BUSCAR' else None
+        de_vision = False
+        if preferida is None and self.modo == 'BUSCAR':
+            preferida = self.preferida_vision(rumbo, col)
+            de_vision = preferida is not None
         d = self.mapa.decidir(self.celda, rumbo, destino, preferida)
         if d is None and destino is not None \
                 and self.modo in ('BUSCAR', 'SALIR', 'VOLVER', 'ENTRAR'):
             # Sé dónde está el cubo (o el canasto) pero todavía no conozco un camino: exploro.
             d = self.mapa.decidir(self.celda, rumbo, preferida=preferida)
         if preferida is not None and d == preferida:
-            self.get_logger().info(f'Sigo la flecha {col} hacia {NOMBRE_DIR[d]}')
+            origen = ' (giro de la visión)' if de_vision else ''
+            self.get_logger().info(f'Sigo la flecha {col} hacia {NOMBRE_DIR[d]}{origen}')
         if d is None:
             motivo = 'nada'
         elif preferida is not None and d == preferida:
-            motivo = f'flecha {col}'
+            motivo = f'flecha {col}' + (' (visión)' if de_vision else '')
         elif destino is not None and self.mapa.camino(self.celda, lambda c: c == destino):
             motivo = 'camino al destino'
         else:

@@ -8,9 +8,9 @@ De lejos solo se avisa que hay una flecha: la medida no es confiable. Cuando la 
     (si está a menos de `radio` veces su tamaño); si no hay ninguna, empieza una nueva. Así dos
     flechas del mismo color a la vista no se mezclan;
   - PRESENCIA: con la primera lectura cercana la flecha queda anotada y no se borra nunca;
-  - DIRECCIÓN y TAMAÑO se siguen reevaluando: cada lectura cercana vota, y vale la mayoría de
-    las últimas `ventana` lecturas. Un cuadro malo no la traba y, si al principio se vio mal,
-    se corrige sola;
+  - DIRECCIÓN y TAMAÑO: cada lectura cercana vota, y vale la mayoría de las últimas `ventana`;
+  - FIJA: al llegar a `distancia_fija` (30 cm) la decisión se congela con esa mayoría y no se
+    cambia más (fijar());
   - una flecha que todavía no tuvo ninguna lectura cercana se olvida si no se ve en `olvido_s`.
 
 El tamaño sale de una proporción (cuerpo / base de la punta) y no depende de la calibración de
@@ -101,21 +101,36 @@ class ValidadorFlechas:
                 libres.discard(mejor)
             s = self.seguidas[mejor]
             s.update(centro=c, largo=largo, visto=t, flecha=f, cerca=cerca)
-            if cerca and direccion is not None:
-                s['dirs'].append(direccion)
-            if cerca and tamano is not None:
-                s['tams'].append(tamano)
+            if cerca and s.get('fija') is None:
+                if direccion is not None:
+                    s['dirs'].append(direccion)
+                if tamano is not None:
+                    s['tams'].append(tamano)
             asignado[i] = mejor
         for k in [k for k, s in self.seguidas.items()
                   if not s['dirs'] and t - s['visto'] > self.olvido_s]:
             del self.seguidas[k]        # las que ya tuvieron una lectura cercana quedan siempre
         return [asignado[i] for i in range(len(flechas))]
 
+    def fijar(self, k):
+        """Congela la decisión actual de la flecha k (a distancia_fija): ya no se cambia."""
+        s = self.seguidas.get(k)
+        if s and s.get('fija') is None and s['dirs']:
+            s['fija'] = mayoria(list(s['dirs'])) + mayoria(list(s['tams']))
+            return True
+        return False
+
+    def es_fija(self, k):
+        s = self.seguidas.get(k)
+        return bool(s and s.get('fija'))
+
     def decision(self, k):
-        """(dirección, votos, total, tamaño, votos, total) actual de una flecha, o None."""
+        """(dirección, votos, total, tamaño, votos, total) de una flecha (la fija si ya está)."""
         s = self.seguidas.get(k)
         if not s or not s['dirs']:
             return None
+        if s.get('fija'):
+            return s['fija']
         return mayoria(list(s['dirs'])) + mayoria(list(s['tams']))
 
     def presentes(self):
@@ -126,6 +141,10 @@ class ValidadorFlechas:
             if d:
                 out.append((k, s['color'], d[0], d[3], s['flecha']))
         return out
+
+    def visto(self, k):
+        s = self.seguidas.get(k)
+        return s['visto'] if s else None
 
     def cerca(self, k):
         s = self.seguidas.get(k)

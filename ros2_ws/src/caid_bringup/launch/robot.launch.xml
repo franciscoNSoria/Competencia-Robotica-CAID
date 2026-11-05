@@ -9,9 +9,13 @@
   <arg name="colores" default="$(find-pkg-share caid_vision)/config/colores.yaml"
        description="YAML de calibrar_colores: rangos de color y ajustes de la ESP32-CAM"/>
   <arg name="distancia_flecha" default="0.5"
-       description="m: a esta distancia o menos de la flecha se decide su dirección y tamaño"/>
+       description="m: desde esta distancia a la flecha se vota su dirección y tamaño"/>
+  <arg name="distancia_fija" default="0.3"
+       description="m: a esta distancia la flecha queda FIJA (no duda más) y sale en /vision/proximo_giro"/>
   <arg name="ventana_flecha" default="10"
        description="la dirección y el tamaño de una flecha son la mayoría de estas últimas lecturas cercanas"/>
+  <arg name="fx" default="0.0"
+       description="px: distancia focal para la distancia a las flechas. 0 = la de calibracion o FOV 60° (por defecto)"/>
   <arg name="visor" default="false"
        description="true abre la ventana del visor (detecciones, fps y retraso)"/>
   <arg name="esp32_falsa" default="true"
@@ -32,7 +36,9 @@
     <param name="colores" value="$(var colores)"/>
     <param name="calibracion" value="$(var calibracion)"/>
     <param name="distancia_decision" value="$(var distancia_flecha)"/>
+    <param name="distancia_fija" value="$(var distancia_fija)"/>
     <param name="ventana_flecha" value="$(var ventana_flecha)"/>
+    <param name="fx" value="$(var fx)"/>
   </node>
 
   <!-- Visor: ventana con las detecciones, fps y retraso. Solo si visor:=true (necesita pantalla) -->

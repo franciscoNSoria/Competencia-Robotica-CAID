@@ -11,6 +11,11 @@ Lee:
 Publica:
   /vision/detecciones (String)  JSON con 'stamp' (s, hora de la imagen) y las detecciones en
                                 píxeles (ver detector.py). Lo usa caid_navigation/navegador.
+  /vision/proximo_giro (String) JSON con el PRÓXIMO GIRO: {"giro": "derecha" | "izquierda",
+                                "color", "tamano", "distancia", "busca"}. Sale de la flecha FIJA
+                                (a distancia_fija, 30 cm) del color que busca el explorador
+                                (/nav/estado) o, si no se sabe, de la más cercana. Solo se
+                                publica cuando hay giro: sin flecha que seguir, no sale nada
   /vision/cubo/<color> (Point)  x,y = centro en px, z = area           (como antes)
   /vision/flecha       (String) "color,direccion,angulo,tamaño" de cada flecha anotada
                                 (validador.py): de lejos solo se ve; a distancia_decision o menos
@@ -64,7 +69,10 @@ class Vision(Node):
         self.declare_parameter('ventana_flecha', 10)    # lecturas cercanas que votan la dirección
         self.declare_parameter('olvido_flecha_s', 1.5)  # sin verla este tiempo, se olvida
         # Las flechas se deciden recién a esta distancia (m) o menos: de lejos la medida no sirve
-        self.declare_parameter('distancia_decision', 0.50)
+        self.declare_parameter('distancia_decision', 0.50)   # desde acá vota (m)
+        self.declare_parameter('distancia_fija', 0.30)       # acá queda FIJA y no duda más (m)
+        self.declare_parameter('color_buscado', '')          # si no llega /nav/estado
+        self.declare_parameter('vigencia_giro_s', 2.0)       # fija y sin verla: deja de mandar
         # fx para medir la distancia: 0 = el de la calibración de lente (si hay) o FOV de 60°
         self.declare_parameter('fx', 0.0)
         self.declare_parameter('calibracion', '')
@@ -86,6 +94,11 @@ class Vision(Node):
         self.pubs = {c: self.create_publisher(Point, f'/vision/cubo/{c}', 10)
                      for c in ('rojo', 'verde', 'azul')}
         self.pub_flecha = self.create_publisher(String, '/vision/flecha', 10)
+        self.pub_giro = self.create_publisher(String, '/vision/proximo_giro', 10)
+        self.busca = None                 # color que busca el explorador (de /nav/estado)
+        self.create_subscription(String, '/nav/estado', self.on_estado, 10)
+        self.dist_flecha = {}             # id -> última distancia medida (m)
+        self.proximo = None               # último giro decidido (None = no hay)
         self.debug = self.create_publisher(Image, '/vision/debug', qos_profile_sensor_data)
         self.debug_jpg = self.create_publisher(CompressedImage, '/vision/debug/compressed',
                                                qos_profile_sensor_data)
@@ -174,14 +187,15 @@ class Vision(Node):
             d_txt = f'{dist:.2f} m' if dist is not None else '?'
             if dec:         # anotada: dirección y tamaño = mayoría de las últimas lecturas
                 direccion, nd, td, tamano, nt, tt = dec
-                color_linea = verde_ok if self.validador.cerca(k) else amarillo
+                color_linea = verde_ok if self.validador.es_fija(k) else amarillo
                 cv2.arrowedLine(img, cola, punta, (0, 0, 0), 9, tipLength=0.3)
                 cv2.arrowedLine(img, cola, punta, color_linea, 5, tipLength=0.3)
                 arriba = min(f['punta'][1], f['cola'][1], *(h[1] for h in f.get('hombros', [])))
                 x = int(min(f['punta'][0], f['cola'][0]))
                 cartel(img, f'{direccion.upper()} {tamano or "?"}', (x, int(arriba) - 12), 1.0,
                        verde_ok)
-                cartel(img, f"{f['color']} {d_txt}  dir {nd}/{td}  tam {nt}/{tt}",
+                estado = 'FIJA' if self.validador.es_fija(k) else f'votando {nd}/{td}'
+                cartel(img, f"{f['color']} {d_txt}  {estado}",
                        (x, int(arriba) - 12 + 26), 0.5, verde_ok)
             else:           # lejos: solo se avisa que hay una flecha
                 cv2.arrowedLine(img, cola, punta, blanco, 1, tipLength=0.3)
@@ -191,6 +205,10 @@ class Vision(Node):
         for i, (k, color, direccion, tam, _) in enumerate(self.validador.presentes()[-4:]):
             cartel(img, f'{color.upper()}: {direccion.upper()} {tam}', (8, 34 + 36 * i),
                    0.85, verde_ok)
+        p = self.proximo
+        if p:
+            cartel(img, f"PROXIMO GIRO: {p['giro'].upper()}  (flecha {p['color']} {p['tamano']})",
+                   (8, img.shape[0] - 12), 0.8, (0, 255, 255))
         for clave in ('cubos', 'canastos'):
             for c in det[clave]:
                 x, y, w, h = c['caja']
@@ -214,6 +232,27 @@ class Vision(Node):
         self.fx_cache = (ancho_img, fx)
         return fx
 
+    def on_estado(self, msg):
+        try:
+            self.busca = json.loads(msg.data).get('busca')
+        except ValueError:
+            pass
+
+    def elegir_proximo(self, t):
+        """Próximo giro: la flecha FIJA, vista hace poco, del color buscado (o la más cercana)."""
+        busca = self.busca or self.get_parameter('color_buscado').value or None
+        vigencia = self.get_parameter('vigencia_giro_s').value
+        candidatas = []
+        for k, color, direccion, tam, _ in self.validador.presentes():
+            reciente = t - self.validador.visto(k) <= vigencia
+            if self.validador.es_fija(k) and reciente and busca in (None, color):
+                candidatas.append((self.dist_flecha.get(k, 9.9), k, color, direccion, tam))
+        if not candidatas:
+            return None
+        dist, _, color, direccion, tam = min(candidatas)
+        return {'giro': direccion, 'color': color, 'tamano': tam,
+                'distancia': round(dist, 3), 'busca': busca}
+
     def publicar_flecha(self, flechas, t, ancho_img):
         """Mide cada flecha, vota solo las que están cerca y publica las anotadas."""
         fx = self.fx(ancho_img)
@@ -224,6 +263,15 @@ class Vision(Node):
             cerca = dist is not None and dist <= lim
             entradas.append((clasificar_direccion(f['angulo']), tam, cerca, f))
         self.ids_flecha = self.validador.actualizar(t, entradas)
+        lim_fija = self.get_parameter('distancia_fija').value
+        for k, (dist, _, _) in zip(self.ids_flecha, self.medidas):
+            if dist is None:
+                continue
+            self.dist_flecha[k] = dist
+            if dist <= lim_fija and self.validador.fijar(k):
+                d = self.validador.decision(k)
+                self.get_logger().info(f'Flecha a {dist:.2f} m: FIJA {d[0]} {d[3]} '
+                                       f'({d[1]} de {d[2]} lecturas)')
         for k, color, direccion, tam, f in self.validador.presentes():
             antes = self.avisadas.get(k)
             if antes != (direccion, tam):
@@ -231,6 +279,14 @@ class Vision(Node):
                 que = 'anotada' if antes is None else f'cambia (antes {antes[0]} {antes[1]})'
                 self.get_logger().info(f'Flecha {color} -> {direccion}, {tam}: {que}')
             self.pub_flecha.publish(String(data=f"{color},{direccion},{f['angulo']:.1f},{tam}"))
+        proximo = self.elegir_proximo(t)
+        antes = self.proximo and (self.proximo['giro'], self.proximo['color'])
+        if proximo and (proximo['giro'], proximo['color']) != antes:
+            self.get_logger().info(f"PRÓXIMO GIRO: {proximo['giro'].upper()} "
+                                   f"(flecha {proximo['color']} {proximo['tamano']})")
+        self.proximo = proximo
+        if proximo:
+            self.pub_giro.publish(String(data=json.dumps(proximo)))
 
 
 def main():
