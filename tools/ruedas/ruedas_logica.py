@@ -557,10 +557,9 @@ class Controlador:
             izq, der = (son[1], son[2]) if son else (None, None)
             lado_pared = -1 if (der is not None and (izq is None or der < izq)) else 1
         giro = -lado_pared * abs(grados)                    # pared a la izquierda (+1): gira a la derecha (-)
-        self.imprimir(f'== escape: pared a la {"izquierda" if lado_pared > 0 else "derecha"}: retrocedo {100 * max(0.0, atras_m):.0f} cm y '
+        self.imprimir(f'== escape: pared a la {"izquierda" if lado_pared > 0 else "derecha"}: retrocedo {100 * atras_m:.0f} cm y '
                       f'giro {abs(grados):g}° a la {"derecha" if giro < 0 else "izquierda"} ==')
-        pasos = ([('distancia', -abs(atras_m))] if atras_m > 0 else []) + [('giro', giro)]      # atras_m = 0: solo gira (no hay lugar atras)
-        return self.secuenciar(pasos, vel_ms, vel_dps)
+        return self.secuenciar([('distancia', -abs(atras_m)), ('giro', giro)], vel_ms, vel_dps)
 
     def _siguiente_paso(self):
         tipo, valor = self.secuencia.popleft()
