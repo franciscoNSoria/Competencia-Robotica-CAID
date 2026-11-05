@@ -3,6 +3,8 @@
 Ventana de la PC para probar las 4 ruedas con sus encoders por Wi-Fi (micro-ROS), como el día de la competencia.
 Estados: **M** medido, **C** calculado, **P** propuesta sin comprobar, **S** simulado en la PC (modelo simple de motor, no es el robot).
 
+> **Laberinto con flechas hasta el cubo:** ver [FLECHAS_Y_CUBO.md](FLECHAS_Y_CUBO.md) (cómo se corre, qué mirar en el log).
+
 ## Qué hay
 
 | Archivo | Qué es |
