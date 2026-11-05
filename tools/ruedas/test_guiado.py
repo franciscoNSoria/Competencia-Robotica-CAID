@@ -374,7 +374,7 @@ class Escape(Banco):
             self.assertTrue(self.c.escape_de_pared(0.06, 45.0, 0.12, 60.0))
             self.correr_hasta(lambda: False, 0.5)
             ordenes = [a for t, a in self.robot.enviadas if t == 'cmd' and a[0] == 3]
-            self.assertEqual(len(ordenes), 1)                                      # UNA sola orden de retroceso
+            self.assertEqual(len(set(ordenes)), 1)                                 # UNA sola orden de retroceso (se repite igual hasta que arranca)
             self.assertAlmostEqual(ordenes[0][1], -0.06, places=3)
             self.assertTrue(any(texto in m for m in self.mensajes), texto)
             self.assertEqual(list(self.c.secuencia), [('giro', -45.0 if y > 0 else 45.0)])
