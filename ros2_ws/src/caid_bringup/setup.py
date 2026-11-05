@@ -30,6 +30,9 @@ setup(
         'console_scripts': [
             'scan_to_range = caid_bringup.scan_to_range:main',
             'odom_ruedas = caid_bringup.odom_ruedas:main',
+            'odom_ticks = caid_bringup.odom_ticks:main',
+            'sonar_bridge = caid_bringup.sonar_bridge:main',
+            'calibracion_robot = caid_bringup.calibracion_robot:main',
         ],
     },
 )
