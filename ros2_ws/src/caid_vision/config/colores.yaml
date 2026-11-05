@@ -1,0 +1,19 @@
+# Rangos de color del detector (HSV de OpenCV: H 0-180, S y V 0-255).
+# Escrito por `ros2 run caid_vision calibrar_colores`.
+# vision_node lo recarga solo cuando cambia.
+# camara: ajustes que camara_node le manda a la ESP32-CAM al conectarse.
+fecha: 2026-11-05 09:58
+muestras_px: {rojo: 1253, verde: 641, azul: 0}
+rangos:
+  rojo:   # ajustado a mano el 2026-11-05: H hasta 24 y S>=60 tomaba el MDF (H 21-29, S 36-65)
+  - - [0, 85, 90]
+    - [10, 255, 255]
+  - - [170, 85, 90]
+    - [180, 255, 255]
+  verde:
+  - - [64, 60, 87]
+    - [86, 255, 255]
+  azul:
+  - - [86, 60, 25]
+    - [124, 255, 255]
+camara: {brightness: 2, vflip: 0, hmirror: 1}   # cámara girada 180° (2026-11-05): se invierten los dos

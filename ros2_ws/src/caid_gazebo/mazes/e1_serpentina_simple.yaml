@@ -1,0 +1,261 @@
+# Generado con tools/sim/simplificar_laberintos.py a partir de e1_serpentina.yaml. No editar a mano.
+nombre: 'E1 Serpentina: curvas y largos de flecha (simple: sin flechas laterales ni zonas)'
+descripcion: Un solo camino sin bifurcaciones, con rectas de 1, 2 y 3 o mas pasos. Cubos en fila sobre el camino. Prueba giros,
+  el avance entre curvas y la lectura del largo de las flechas (hay una flecha por cubo en cada punto, del color de ese cubo).
+celda_m: 0.4
+alto_pared_m: 0.17
+inicio_dir: E
+canastos_pared: O
+altura_flechas_mm: 115
+altura_apoyo_cubo_mm: 128.5
+altura_borde_canasto_mm: 108.5
+significado_colores:
+  rojo:
+  - R
+  verde:
+  - G
+  azul:
+  - B
+  gris: []
+mapa: |
+  #####################
+  #####################
+  #####...#############
+  #####.#.#....########
+  #1.##.#.#.##.##...###
+  #2S...#.#.##.##.#.###
+  #3.####.#.##.#..#.###
+  #######.R.##.#.##.###
+  ############.G.##.###
+  #################..B#
+  #####################
+flechas:
+- celda:
+  - 2
+  - 5
+  pared: N
+  dir: E
+  largo: 2
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 2
+  - 5
+  pared: N
+  dir: E
+  largo: 2
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 2
+  - 5
+  pared: N
+  dir: E
+  largo: 2
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 2
+  - 7
+  pared: E
+  dir: S
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 2
+  - 7
+  pared: E
+  dir: S
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 2
+  - 7
+  pared: E
+  dir: S
+  largo: 3
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 3
+  - 9
+  pared: N
+  dir: E
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 3
+  - 9
+  pared: N
+  dir: E
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+- celda:
+  - 3
+  - 12
+  pared: E
+  dir: S
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 3
+  - 12
+  pared: E
+  dir: S
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+- celda:
+  - 4
+  - 15
+  pared: N
+  dir: E
+  largo: 2
+  color: azul
+  inclinacion: 12
+- celda:
+  - 4
+  - 17
+  pared: E
+  dir: S
+  largo: 3
+  color: azul
+  inclinacion: -9
+- celda:
+  - 5
+  - 5
+  pared: E
+  dir: N
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 5
+  - 5
+  pared: E
+  dir: N
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 5
+  - 5
+  pared: E
+  dir: N
+  largo: 3
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 6
+  - 14
+  pared: N
+  dir: E
+  largo: 1
+  color: azul
+- celda:
+  - 6
+  - 15
+  pared: E
+  dir: N
+  largo: 2
+  color: azul
+  inclinacion: 12
+- celda:
+  - 7
+  - 7
+  pared: S
+  dir: E
+  largo: 2
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 7
+  - 7
+  pared: S
+  dir: E
+  largo: 2
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 7
+  - 7
+  pared: S
+  dir: E
+  largo: 1
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 7
+  - 9
+  pared: E
+  dir: N
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 7
+  - 9
+  pared: E
+  dir: N
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+- celda:
+  - 8
+  - 12
+  pared: S
+  dir: E
+  largo: 2
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 8
+  - 12
+  pared: S
+  dir: E
+  largo: 1
+  color: verde
+  desplaza_mm: 80
+- celda:
+  - 8
+  - 14
+  pared: E
+  dir: N
+  largo: 2
+  color: azul
+- celda:
+  - 9
+  - 17
+  pared: S
+  dir: E
+  largo: 2
+  color: azul
+  inclinacion: 12
+pedestal_forma: cilindro
+pedestal_lado_mm: 80.0
+cubos:
+  R:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
+  G:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
+  B:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false

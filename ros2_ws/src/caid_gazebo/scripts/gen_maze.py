@@ -30,14 +30,16 @@ MARGEN_M = 0.015             # holgura lateral exigida a cada lado para consider
 CUBO_M = 0.020               # reglamento del desafio, anexo
 CUBO_MASA_KG = 0.0099        # dimensions.yaml: cubo.masa_g (PLA macizo, provisorio)
 
-FLECHA_PUNTA_ANCHO_M = 0.070  # reglamento, anexo (70 +-1 mm), medido perpendicular al eje
-FLECHA_PUNTA_ALTO_M = 0.050   # reglamento, anexo (50 +-1 mm), medido a lo largo del eje
-FLECHA_CUERPO_ANCHO_M = 0.030
-FLECHA_CUERPO_LARGO_M = {1: 0.030, 2: 0.060, 3: 0.100}   # "cerca", "normal", "lejos"
+# Flechas del reglamento (cambio de nov. 2026): cuerpo de 10 mm de ancho, punta de 29 mm de base
+# y 10 mm de alto; largo total 30 / 60 / 95 mm (P3 / P2 / P1), o sea cuerpo de 20 / 50 / 85 mm.
+FLECHA_PUNTA_ANCHO_M = 0.029  # base de la punta, medida perpendicular al eje
+FLECHA_PUNTA_ALTO_M = 0.010   # alto de la punta, medido a lo largo del eje
+FLECHA_CUERPO_ANCHO_M = 0.010
+FLECHA_CUERPO_LARGO_M = {1: 0.020, 2: 0.050, 3: 0.085}   # P3 30 mm, P2 60 mm, P1 95 mm en total
 FLECHA_GROSOR_M = 0.002       # espesor de las flechas del STL del equipo
 FLECHA_ALTURA_CENTRO_M = 0.115  # centro de la flecha sobre el piso (STL del equipo: z = 80..150 mm)
 FLECHA_TILT_MAX_GRADOS = 30.0   # reglamento: inclinacion maxima +-30 grados
-FLECHA_TIRAS_PUNTA = 25         # la punta triangular se arma con 25 tiras de 2 mm (SDF no tiene prismas)
+FLECHA_TIRAS_PUNTA = 10         # la punta triangular se arma con 10 tiras de 1 mm (SDF no tiene prismas)
 
 CANASTO_EXT_M = 0.044         # Canasto_Ficticio.stl: 44 x 44 x 20 mm
 CANASTO_PARED_M = 0.002
@@ -95,6 +97,8 @@ class Laberinto:
         self.altura_apoyo = float(datos.get('altura_apoyo_cubo_mm', ALTURA_APOYO_CUBO_M * 1000.0)) / 1000.0
         self.altura_borde_canasto = float(datos.get('altura_borde_canasto_mm', ALTURA_BORDE_CANASTO_M * 1000.0)) / 1000.0
         self.pedestal_lado = float(datos.get('pedestal_lado_mm', PEDESTAL_LADO_M * 1000.0)) / 1000.0
+        # 'cuadrado' (columna, por defecto) o 'cilindro' (pedestal_lado es el diametro)
+        self.pedestal_forma = str(datos.get('pedestal_forma', 'cuadrado'))
         self.cubos_cfg = {str(k): dict(v) for k, v in (datos.get('cubos') or {}).items()}
         significado = dict(SIGNIFICADO_COLOR_DEFECTO)
         significado.update({str(k): list(v or []) for k, v in (datos.get('significado_colores') or {}).items()})
@@ -194,8 +198,11 @@ def objetos_con_posicion(lab):
         cfg = lab.cubos_cfg.get(simb, {})
         if cfg.get('elevado', True):
             x, y, _ = posicion_cubo(lab, simb, pos[0])
+            # bloquea: false (opcional, por cubo) = el validador no lo cuenta como obstaculo (pilar al centro
+            # de la celda en un escenario de prueba donde no hace falta pasar por ahi)
             salida.append({'tipo': 'soporte', 'origen': 'cubo_' + COLORES_CUBO[simb][0], 'celda': pos[0], 'x': x, 'y': y,
-                           'lado': lab.pedestal_lado, 'alto': lab.altura_apoyo, 'bloquea': True, 'dinamico': False,
+                           'lado': lab.pedestal_lado, 'alto': lab.altura_apoyo,
+                           'bloquea': bool(lab.cubos_cfg.get(simb, {}).get('bloquea', True)), 'dinamico': False,
                            'color': COLOR_SOPORTE, 'z_base': 0.0, 'soporte': True})
     for i, o in enumerate(lab.objetos):
         lado, alto, bloquea, dinamico, color = TIPOS_OBJETO[o['tipo']]
@@ -701,7 +708,7 @@ def piezas_flecha(largo):
     paso = FLECHA_PUNTA_ALTO_M / FLECHA_TIRAS_PUNTA
     for i in range(FLECHA_TIRAS_PUNTA):
         um = u0 + Lc + (i + 0.5) * paso
-        alto = FLECHA_PUNTA_ANCHO_M * (1.0 - i / FLECHA_TIRAS_PUNTA)    # la primera tira mide los 70 mm de la punta
+        alto = FLECHA_PUNTA_ANCHO_M * (1.0 - i / FLECHA_TIRAS_PUNTA)    # la primera tira mide los 29 mm de la base
         piezas.append((um, paso, alto))
     return piezas
 
@@ -724,6 +731,18 @@ def caja_visual(nombre, pos, size, rgb, rpy=(0, 0, 0), indent=8):
     return ('%s<visual name="%s">\n%s  <pose>%s %s %s %s %s %s</pose>\n%s  <geometry><box><size>%s %s %s</size></box></geometry>\n%s%s'
             % (s, nombre, s, f(pos[0]), f(pos[1]), f(pos[2]), f(rpy[0]), f(rpy[1]), f(rpy[2]), s,
                f(size[0]), f(size[1]), f(size[2]), material(rgb, indent + 2), s + '</visual>\n'))
+
+
+def cilindro_visual(nombre, radio, alto, rgb, indent=8):
+    s = ' ' * indent
+    return ('%s<visual name="%s">\n%s  <geometry><cylinder><radius>%s</radius><length>%s</length></cylinder></geometry>\n%s%s</visual>\n'
+            % (s, nombre, s, f(radio), f(alto), material(rgb, indent + 2), s))
+
+
+def cilindro_colision(nombre, radio, alto, indent=8):
+    s = ' ' * indent
+    return ('%s<collision name="%s">\n%s  <geometry><cylinder><radius>%s</radius><length>%s</length></cylinder></geometry>\n%s</collision>\n'
+            % (s, nombre, s, f(radio), f(alto), s))
 
 
 def caja_colision(nombre, pos, size, indent=8, friccion=None):
@@ -962,9 +981,13 @@ def generar_sdf(lab, infoval):
         if ob['soporte']:
             w('    <model name="soporte_%s">\n      <static>true</static>\n      <pose>%s %s %s 0 0 0</pose>\n      <link name="link">\n'
               % (ob['origen'], f(ob['x']), f(ob['y']), f(ob['alto'] / 2.0)))
-            size = (ob['lado'], ob['lado'], ob['alto'])
-            w(caja_colision('colision', (0, 0, 0), size))
-            w(caja_visual('visual', (0, 0, 0), size, ob['color']))
+            if lab.pedestal_forma == 'cilindro':
+                w(cilindro_colision('colision', ob['lado'] / 2.0, ob['alto']))
+                w(cilindro_visual('visual', ob['lado'] / 2.0, ob['alto'], ob['color']))
+            else:
+                size = (ob['lado'], ob['lado'], ob['alto'])
+                w(caja_colision('colision', (0, 0, 0), size))
+                w(caja_visual('visual', (0, 0, 0), size, ob['color']))
             w('      </link>\n    </model>\n\n')
         elif ob['dinamico']:
             w(cubo_sdf('%s_%d' % (ob['tipo'], ob['indice']), ob['x'], ob['y'], ob['color'], ob['z_base']))

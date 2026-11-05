@@ -1,0 +1,128 @@
+# Generado con tools/sim/simplificar_laberintos.py a partir de e2_bifurcaciones.yaml. No editar a mano.
+nombre: 'E2 Bifurcaciones: el color de la flecha elige el camino (simple: sin flechas laterales ni zonas)'
+descripcion: Arbol con dos bifurcaciones en T y ramas ciegas. En cada T hay una flecha por cubo, del color de ese cubo, apuntando
+  al lado en que esta. Prueba la lectura del color y la decision por viaje.
+celda_m: 0.4
+alto_pared_m: 0.17
+inicio_dir: E
+canastos_pared: O
+altura_flechas_mm: 115
+altura_apoyo_cubo_mm: 128.5
+altura_borde_canasto_mm: 108.5
+significado_colores:
+  rojo:
+  - R
+  verde:
+  - G
+  azul:
+  - B
+  gris: []
+mapa: |
+  ###################
+  ###################
+  ######...R##.######
+  ######.#.###.######
+  #1.###.#.#....G####
+  #2S....###.########
+  #3.###.###.########
+  ######.###.########
+  ######.....########
+  ##########...B#####
+  ###################
+flechas:
+- celda:
+  - 2
+  - 6
+  pared: N
+  dir: E
+  largo: 3
+  color: rojo
+- celda:
+  - 4
+  - 10
+  pared: N
+  dir: E
+  largo: 3
+  color: verde
+  inclinacion: -9
+- celda:
+  - 5
+  - 6
+  pared: E
+  dir: N
+  largo: 3
+  color: rojo
+  desplaza_mm: -80
+- celda:
+  - 5
+  - 6
+  pared: E
+  dir: S
+  largo: 3
+  color: azul
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 5
+  - 6
+  pared: E
+  dir: S
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 8
+  - 6
+  pared: S
+  dir: E
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 8
+  - 6
+  pared: S
+  dir: E
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+- celda:
+  - 8
+  - 10
+  pared: E
+  dir: N
+  largo: 3
+  color: verde
+  desplaza_mm: -80
+- celda:
+  - 8
+  - 10
+  pared: E
+  dir: S
+  largo: 1
+  color: azul
+  desplaza_mm: 80
+- celda:
+  - 9
+  - 10
+  pared: S
+  dir: E
+  largo: 3
+  color: azul
+  inclinacion: 6
+pedestal_forma: cilindro
+pedestal_lado_mm: 80.0
+cubos:
+  R:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
+  G:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
+  B:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
