@@ -115,6 +115,9 @@ class Panel:
         self.cm_despues = tk.StringVar(value='20')
         self.f_del = tk.StringVar(value='1.15')              # giros: delanteras = factor x traseras
         self.k_del = tk.StringVar(value='0')                 # giros: nivel del empujon de arranque de FL y FR
+        self.esc_atras = tk.StringVar(value='6')             # escape de pared: cm que retrocede (una vez)
+        self.esc_giro = tk.StringVar(value='45')             # ... y grados que gira hacia el lado contrario de la pared
+        self.esc_lado = tk.IntVar(value=0)                   # 0 = la pared mas cercana (sonares), +1 pared a la izquierda, -1 a la derecha
         self.sec_d1 = tk.StringVar(value='40')
         self.sec_ang = tk.StringVar(value='90')
         self.sec_d2 = tk.StringVar(value='20')
@@ -132,6 +135,8 @@ class Panel:
         self._texto90()
         self.corr180.set(f"{float(self.c.cal.get('giro180_corr_deg', 0.0)):g}")
         self._texto180()
+        self.esc_atras.set(f"{self.c.cal.get('escape_atras_cm', 6.0):g}")
+        self.esc_giro.set(f"{self.c.cal.get('escape_giro_deg', 45.0):g}")
         self.f_del.set(f"{self.c.cal.get('giro_factor_del', 1.15):g}")
         self.k_del.set(str(int(self.c.cal.get('kick_del', 0))))
         self.real = tk.StringVar()
@@ -287,6 +292,18 @@ class Panel:
         self._etiqueta(f, 'las traseras; empujon de arranque delanteras (0-3, traseras = 2):').pack(side='left')
         self._entrada(f, self.k_del, 3).pack(side='left', padx=3)
         self._boton(f, 'APLICAR', self._aplicar_delanteras).pack(side='left', padx=6)
+
+        f = tk.Frame(t, bg=TARJETA, pady=3)
+        f.pack(fill='x')
+        self._etiqueta(f, 'ESCAPE de pared: retrocede').pack(side='left')
+        self._entrada(f, self.esc_atras, 4).pack(side='left', padx=3)
+        self._etiqueta(f, 'cm (una vez) y gira').pack(side='left')
+        self._entrada(f, self.esc_giro, 4).pack(side='left', padx=3)
+        self._etiqueta(f, '° al lado contrario de la pared:').pack(side='left')
+        self._opcion(f, 'la mas cercana', self.esc_lado, 0).pack(side='left')
+        self._opcion(f, 'izq', self.esc_lado, 1).pack(side='left')
+        self._opcion(f, 'der', self.esc_lado, -1).pack(side='left')
+        self._boton(f, 'ESCAPE', self._escape).pack(side='left', padx=6)
 
         f = tk.Frame(t, bg=TARJETA, pady=3)
         f.pack(fill='x')
@@ -540,6 +557,21 @@ class Panel:
         if None in (fac, niv):
             return
         self.c.config_delanteras(fac, int(round(niv)))
+
+    def _escape(self):
+        """Retrocede una vez y gira hacia el lado contrario de la pared (cm y grados ajustables; quedan en calibracion.json)."""
+        vel = self._numero(self.v_marcha, 'Velocidad de marcha', 0.05, 0.40)
+        vg = self._numero(self.v_giro, 'Velocidad de giro', 20.0, 400.0)
+        atras = self._numero(self.esc_atras, 'Escape: retroceso (cm)', 1.0, 30.0)
+        giro = self._numero(self.esc_giro, 'Escape: giro (grados)', 1.0, 180.0)
+        if None in (vel, vg, atras, giro):
+            return
+        self.c.cal['escape_atras_cm'], self.c.cal['escape_giro_deg'] = atras, giro
+        guardar = getattr(rl, 'guardar_cal', None)
+        if guardar:
+            guardar(self.c.cal, self.c.ruta_cal)
+        self._antes_de_maniobra()
+        self.c.escape_de_pared(atras / 100.0, giro, vel, vg, self.esc_lado.get())
 
     def _secuencia(self):
         """Recto d1 cm, giro (izquierda o derecha segun la opcion de arriba) y recto d2 cm, uno tras otro."""

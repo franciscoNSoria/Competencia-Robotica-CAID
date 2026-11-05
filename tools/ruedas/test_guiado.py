@@ -366,6 +366,26 @@ class Enderezar(Banco):
         self.assertEqual(self.robot.obj, [0.0, 0.0])
 
 
+class Escape(Banco):
+    def test_retrocede_una_vez_y_gira_al_lado_contrario_de_la_pared_mas_cercana(self):
+        """(El simulador no hace la orden 3 de distancia: se comprueba la orden que sale y el sentido del giro.)"""
+        for y, texto in ((0.05, 'pared a la izquierda'), (-0.05, 'pared a la derecha')):
+            self.montar(y=y, semilla=3)
+            self.assertTrue(self.c.escape_de_pared(0.06, 45.0, 0.12, 60.0))
+            self.correr_hasta(lambda: False, 0.5)
+            ordenes = [a for t, a in self.robot.enviadas if t == 'cmd' and a[0] == 3]
+            self.assertEqual(len(ordenes), 1)                                      # UNA sola orden de retroceso
+            self.assertAlmostEqual(ordenes[0][1], -0.06, places=3)
+            self.assertTrue(any(texto in m for m in self.mensajes), texto)
+            self.assertEqual(list(self.c.secuencia), [('giro', -45.0 if y > 0 else 45.0)])
+            self.c.parar()
+
+    def test_lado_forzado(self):
+        self.montar(y=0.0)
+        self.c.escape_de_pared(0.05, 30.0, 0.12, 60.0, lado_pared=-1)             # pared a la derecha: gira a la izquierda
+        self.assertTrue(any('giro 30° a la izquierda' in m for m in self.mensajes))
+
+
 class Giro180(Banco):
     """El 180 son dos giros de 90 seguidos (orden 7) hacia la pared lateral mas cercana; solo retrocede un poco si el frente esta muy cerca."""
 
