@@ -26,6 +26,10 @@ import torneo as to  # noqa: E402
 import torneo_logica as tl  # noqa: E402
 import tremaux_logica as tx  # noqa: E402
 
+def limitar_escala(x):
+    return max(0.8, min(1.3, x))
+
+
 AYUDA = "  g arrancar    ESPACIO detener    q salir    ? ayuda"
 
 
@@ -40,6 +44,8 @@ class Tremaux(to.Torneo):
                 c = json.load(f)
             if 'giro_factor_del' in c:
                 self.giro_del = (float(c['giro_factor_del']), int(c.get('kick_del', 0)))
+            corr90 = float(c.get('giro90_corr_deg', 0.0))        # el sumador del Giro 90° del panel de ruedas
+            params.giro_escala = limitar_escala((90.0 + corr90) / 90.0)
         except (OSError, ValueError):
             pass
         self._f.close()
@@ -114,6 +120,7 @@ def main():
         tty.setcbreak(sys.stdin.fileno())
     print('Trémaux sin cámara: recorre todo y vuelve a la partida. Teclas: g arrancar, ESPACIO detener, q salir.')
     print('Registro: %s' % tor.ruta_csv)
+    print('Giros de 90: se piden x%.3f (sumador del panel de ruedas %+g°).' % (params.giro_escala, 90.0 * (params.giro_escala - 1.0)))
     if tor.giro_del is not None:
         print('Giros: delanteras x%g, empujon de arranque nivel %d (del panel de ruedas).' % tor.giro_del)
     print('El robot va en el CENTRO de la celda de entrada, derecho, mirando hacia adentro. Esperá a que diga "guardia 1" y apretá g.')

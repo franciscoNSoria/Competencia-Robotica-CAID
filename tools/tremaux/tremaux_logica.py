@@ -64,6 +64,7 @@ class Parametros(tl.Parametros):
     d_kalman_nuevo: float = 0.145  # m: ... y si el mapa no sabe, solo si lee esto o menos (una pared real, bien cerca)
     v_giro_flancos: float = 75.0   # flancos/s por rueda en los giros grandes (orden 7): el máximo del firmware, 0,40 m/s por lado
     giro_chico: float = 0.5        # rad: por debajo de esto el giro va a la velocidad por defecto del firmware (30 flancos/s)
+    giro_escala: float = 1.0       # (90 + sumador del panel) / 90: lo que hay que pedirle a la ESP32 para que el robot gire lo pedido (giros grandes)
     compensar_max: float = 0.12    # rad: el rumbo del Kalman no es confiable más allá de esto para descontarlo del giro
 
 
@@ -112,7 +113,7 @@ class PilotoTremaux(tl.Piloto):
         sobre lo que sale, porque torneo_logica manda siempre vel = 0 (y la repite así si hay que reenviar la orden)."""
         v, w, orden = res
         if orden is not None and orden[0] == 7 and abs(orden[1]) >= self.p.giro_chico:
-            orden = (orden[0], orden[1], self.p.v_giro_flancos)
+            orden = (orden[0], orden[1] * self.p.giro_escala, self.p.v_giro_flancos)
         return v, w, orden
 
     # ------------------------------------------------------------------ utilidades
