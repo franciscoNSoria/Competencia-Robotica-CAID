@@ -25,6 +25,7 @@ import math
 from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 from std_msgs.msg import Int32MultiArray
 
 
@@ -53,7 +54,10 @@ class OdomTicks(Node):
         self.x = self.y = self.th = 0.0
         self.previo = None               # (flancos izq promedio, flancos der promedio)
         self.pub = self.create_publisher(Odometry, self.cfg['odom_topic'], 10)
-        self.create_subscription(Int32MultiArray, self.cfg['ticks_topic'], self.on_ticks, 10)
+        # La ESP32 (firmware/banco/robot_4ruedas/main.c) publica /wheel_ticks en best effort:
+        # con el QoS por defecto (reliable) son incompatibles y no llega un solo mensaje.
+        qos_ticks = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT)
+        self.create_subscription(Int32MultiArray, self.cfg['ticks_topic'], self.on_ticks, qos_ticks)
         self.get_logger().info(
             f'Escucho {self.cfg["ticks_topic"]}, publico {self.cfg["odom_topic"]} '
             f'({self.m_por_flanco * 1000:.3f} mm/flanco, separación {self.separacion * 1000:.0f} mm'

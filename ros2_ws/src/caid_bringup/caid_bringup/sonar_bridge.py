@@ -16,6 +16,7 @@ from std_msgs.msg import Float32MultiArray
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 
 IDX = {'frente': 26, 'izquierda': 27, 'derecha': 28}
 
@@ -39,8 +40,11 @@ class SonarBridge(Node):
 
         self.pubs = {lado: self.create_publisher(Range, self.cfg[lado + '_topic'], 10)
                      for lado in IDX}
+        # La ESP32 (firmware/banco/robot_4ruedas/main.c) publica /wheel_state en best effort:
+        # con el QoS por defecto (reliable) son incompatibles y no llega un solo mensaje.
+        qos_wheel_state = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT)
         self.create_subscription(Float32MultiArray, self.cfg['wheel_state_topic'],
-                                 self.on_estado, 10)
+                                 self.on_estado, qos_wheel_state)
 
     def on_estado(self, msg):
         if len(msg.data) < 29:

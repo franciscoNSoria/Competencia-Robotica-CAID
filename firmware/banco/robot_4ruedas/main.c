@@ -225,9 +225,11 @@ enum { FASE_LIBRE = 0, FASE_ESPERANDO = 1, FASE_GIRANDO = 2 };
  * Objetivo inicial: el reposo seguro para el hombro y el codo, el centro (95) para la base. */
 static servo_t servos[N_SERVOS] = {
 	{.nombre = "base", .pin = GPIO_NUM_18, .canal = LEDC_CHANNEL_0, .tope_max_deg = 180.0f, .min_deg = 0.0f, .max_deg = 180.0f, .objetivo_deg = 95.0f, .actual_deg = 95.0f},
-	{.nombre = "hombro", .pin = GPIO_NUM_19, .canal = LEDC_CHANNEL_1, .tope_max_deg = 180.0f, .min_deg = 10.0f, .max_deg = 125.0f, .objetivo_deg = 60.0f, .actual_deg = 60.0f},
+	/* hombro y pinza con los pines intercambiados respecto al cableado de brazo_sliders original: en este robot el
+	 * servo del hombro quedo enchufado en el conector de la pinza (GPIO22) y el de la pinza en el del hombro (GPIO19). */
+	{.nombre = "hombro", .pin = GPIO_NUM_22, .canal = LEDC_CHANNEL_1, .tope_max_deg = 180.0f, .min_deg = 10.0f, .max_deg = 125.0f, .objetivo_deg = 60.0f, .actual_deg = 60.0f},
 	{.nombre = "codo", .pin = GPIO_NUM_21, .canal = LEDC_CHANNEL_2, .tope_max_deg = 200.0f, .min_deg = 80.0f, .max_deg = 200.0f, .objetivo_deg = 180.0f, .actual_deg = 180.0f},
-	{.nombre = "pinza", .pin = GPIO_NUM_22, .canal = LEDC_CHANNEL_3, .tope_max_deg = 180.0f, .min_deg = 100.0f, .max_deg = 180.0f, .objetivo_deg = 150.0f, .actual_deg = 150.0f},
+	{.nombre = "pinza", .pin = GPIO_NUM_19, .canal = LEDC_CHANNEL_3, .tope_max_deg = 180.0f, .min_deg = 100.0f, .max_deg = 180.0f, .objetivo_deg = 150.0f, .actual_deg = 150.0f},
 };
 
 static volatile float velocidad_brazo_dps = VELOCIDAD_INICIAL_DPS;
