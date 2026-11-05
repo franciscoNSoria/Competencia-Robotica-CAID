@@ -31,9 +31,12 @@
 #include "sonar.h"
 #pragma GCC diagnostic pop
 #include "guardia.h"
+#include "servos_brazo.h"
 
-/* Robot de 4 ruedas con micro-ROS y comandos desde la PC (robot_teclado.py). Un PI de velocidad por rueda (el de
- * main_motor_v8_pi.c, una instancia por rueda).
+/* Robot de 4 ruedas + brazo de 4 servos, los dos en la misma ESP32 (fusion de robot_4ruedas + brazo_sliders: antes eran
+ * dos firmwares separados y la prueba de banco sin camara necesitaba reflashear entre mover el robot y mover el brazo,
+ * lo que no tiene sentido para una prueba de punta a punta. Un PI de velocidad por rueda (el de main_motor_v8_pi.c, una
+ * instancia por rueda) y el control de los 4 servos del brazo (servos_brazo.h, igual que brazo_sliders/main.c).
  * Entra:   /cmd_vel      geometry_msgs/Twist, linear.x en m/s y angular.z en rad/s (cinematica diferencial)
  *          /robot_cmd    std_msgs/Float32MultiArray [id, args...]:
  *                          1 d0 d1 d2 d3      duty directo por rueda, lazo abierto (calibracion); 0 = esa rueda libre
@@ -51,6 +54,12 @@
  *                                             d >= d_lento (m) libre; entre d_stop y d_lento 0,13 m/s; a d <= d_stop, 0.
  *                                             Girar en el lugar y retroceder siguen permitidos. Sin medicion fresca del
  *                                             frontal, o sin ningun eco hace mas de ciego_s (por defecto 5 s), tampoco avanza.
+ *          /brazo/cmd    std_msgs/Float32MultiArray, se repite 10 veces por segundo (protocolo igual al de brazo_sliders):
+ *                          [0..3]   angulo objetivo en grados de: base, hombro, codo, pinza
+ *                          [4]      mascara de servos activos (bit 0 = base, 1 = hombro, 2 = codo, 3 = pinza); bit en 0 = suelto
+ *                          [5]      velocidad maxima en grados por segundo (0 = salto directo)
+ *                          [6..13]  (opcional) limites minimo y maximo de cada servo (base, hombro, codo, pinza)
+ *                          [14..15] (opcional) reposo seguro: angulo del hombro y del codo antes de girar la base
  * Sale:    /wheel_ticks   std_msgs/Int32MultiArray, 4 flancos acumulados con signo [FL, FR, RL, RR], 20 Hz
  *          /wheel_state   std_msgs/Float32MultiArray, 34 valores, 10 Hz:
  *                          [0..3] velocidad medida (flancos/s con signo)  [4..7] velocidad pedida (flancos/s)
@@ -63,10 +72,19 @@
  *                          [26] sonar frontal  [27] sonar izquierdo  [28] sonar derecho (m; -1 = sin eco)
  *                          [29] guardia: 0 apagada, 1 libre, 2 lenta, 3 frenada, 4 falla (sin medicion fresca o ciego)
  *                          [30] d_stop (m)  [31] d_lento (m)  [32] mediciones terminadas del frontal  [33] ciego_s
+ *          /brazo/estado  std_msgs/Float32MultiArray, 10 veces por segundo (igual a brazo_sliders):
+ *                          [0..3]   angulo actual de cada servo      [4] mascara de activos     [5] velocidad en uso
+ *                          [6]      contador de mensajes (si baja, la ESP32 se reinicio)       [7] ms desde la ultima orden de la PC
+ *                          [8..15]  limites minimo y maximo de cada servo (base, hombro, codo, pinza)
+ *                          [16..19] tope absoluto de cada servo         [20] fase de la base: 0 libre, 1 esperando el reposo, 2 girando
+ *                          [21..22] reposo seguro en uso (hombro, codo), ya acotado a sus limites
  * linear.x es m/s de verdad (en v8d, 0,5 equivalia a 75 flancos/s = 0,395 m/s).
  * Pines: hardware/electronica/propuesta-v0.2.md, mapa B-rueda (RR_IB en el 32).
  * Sonares (firmware/pruebas/comun/sonar.h): frontal TRIG 5 / ECHO 13, derecho 15 / 4, izquierdo 14 / 12. Un disparo cada 60 ms
- * en la secuencia frontal, derecho, frontal, izquierdo: el frontal se mide cada 120 ms y los laterales cada 240 ms. */
+ * en la secuencia frontal, derecho, frontal, izquierdo: el frontal se mide cada 120 ms y los laterales cada 240 ms.
+ * Servos del brazo (servos_brazo.h, pines libres con el cableado actual): base 18, hombro 19, codo 21, pinza 22. Los canales
+ * LEDC de las ruedas (LEDC_HIGH_SPEED_MODE) y los del brazo (LEDC_LOW_SPEED_MODE) son dos perifericos aparte del ESP32
+ * clasico: no compiten entre si aunque los dos usen el canal 0 y el LEDC_TIMER_0 de su propio grupo. */
 
 #define N_RUEDAS 4
 #define PIN_LED GPIO_NUM_2
@@ -101,7 +119,7 @@
 #define MAX_INTENTOS_KICK 6
 
 #define PERIODO_TICKS_US 50000      /* /wheel_ticks a 20 Hz */
-#define PERIODO_ESTADO_US 100000    /* /wheel_state a 10 Hz */
+#define PERIODO_ESTADO_US 100000    /* /wheel_state y /brazo/estado a 10 Hz */
 #define N_ESTADO 34                 /* valores de /wheel_state */
 #define ZONA_MUERTA_FLANCOS (VEL_MIN_FLANCOS * 0.5f)   /* bajo esto una rueda no se pide (ver ms_a_flancos) */
 #define GUARDIA_VEL_LENTA VEL_MIN_FLANCOS              /* tope de la zona lenta: lo menos que sostienen los 4 motores */
@@ -172,7 +190,179 @@ static rueda_t W[N_RUEDAS] = {
 	 .nivel_kick_ini = 2},
 };
 
-#define TIMEOUT_CREAR_MS 5000       /* espera por entidad al crear (el default es 1000: una rafaga de Wi-Fi la vence) */
+/* ---- Brazo (4 servos, servos_brazo.h): mismo protocolo y misma logica que firmware/brazo_sliders/main.c ---- */
+#define N_SERVOS 4
+#define IDX_BASE 0
+#define IDX_HOMBRO 1
+#define IDX_CODO 2
+#define IDX_PINZA 3
+#define PERIODO_BRAZO_MS 10
+#define VELOCIDAD_INICIAL_DPS 90.0f
+#define VELOCIDAD_MAX_DPS 1000.0f
+
+/* Reposo seguro: la base solo gira con el brazo recogido y alto, para no chocar con la camara.
+ * Cuando la PC pide mover la base, el hombro y el codo van primero a esta pose, la base espera, gira, y al llegar el brazo
+ * vuelve a lo que pida la PC. Sin realimentacion no se sabe cuando LLEGA el brazo de verdad: se espera ESPERA_REPOSO_MS
+ * despues de que el brazo llegue a la pose (P: hay que probarlo en el robot, sobre todo con el hombro cargado). */
+#define BLOQUEO_BASE_ACTIVO 1            /* 0 = sin bloqueo (solo para probar la base suelta, sin brazo) */
+#define POSE_SEGURA_HOMBRO_DEG 60.0f     /* valores de arranque; la PC manda los suyos en [14..15] */
+#define POSE_SEGURA_CODO_DEG 180.0f
+#define TOL_REPOSO_DEG 1.0f              /* cuanto puede faltar para dar por llegado al hombro y al codo */
+#define ESPERA_REPOSO_MS 1000
+#define BASE_UMBRAL_DEG 0.5f             /* una base que pide moverse mas que esto activa el reposo seguro */
+#define BASE_LLEGO_DEG 0.05f             /* ... y se la da por llegada cuando falta menos que esto */
+
+enum { FASE_LIBRE = 0, FASE_ESPERANDO = 1, FASE_GIRANDO = 2 };
+
+/* Pines: los que quedan libres en la ESP32 con el cableado actual del robot (no chocan con los de las ruedas/sonares/LED
+ * de arriba). Si dejas el servo del hombro enchufado en el conector de la pinza (GPIO22) y la pinza en el del hombro
+ * (GPIO19), intercambia los dos numeros de .pin entre las filas "hombro" y "pinza".
+ *
+ * .tope_max_deg: lo maximo que la ESP32 deja pedir a cada servo (grados nominales: 500 us = 0, 2500 us = 180). El codo llega a
+ *   200 (2722 us): pasa de los 2500 us del manual de los MG90S, asi que hay que subirlo de a poco y mirando (P).
+ * Limites de arranque: valen solo hasta que la PC mande los suyos (los que guarda en ~/caid/config/brazo_calibracion.json):
+ *   los que elegiste en el banco: base 0-180, hombro 10-125, codo 80-200, pinza 100-180 (la pinza cierra apretada en 114).
+ * Objetivo inicial: el reposo seguro para el hombro y el codo, el centro (95) para la base. */
+static servo_t servos[N_SERVOS] = {
+	{.nombre = "base", .pin = GPIO_NUM_18, .canal = LEDC_CHANNEL_0, .tope_max_deg = 180.0f, .min_deg = 0.0f, .max_deg = 180.0f, .objetivo_deg = 95.0f, .actual_deg = 95.0f},
+	{.nombre = "hombro", .pin = GPIO_NUM_19, .canal = LEDC_CHANNEL_1, .tope_max_deg = 180.0f, .min_deg = 10.0f, .max_deg = 125.0f, .objetivo_deg = 60.0f, .actual_deg = 60.0f},
+	{.nombre = "codo", .pin = GPIO_NUM_21, .canal = LEDC_CHANNEL_2, .tope_max_deg = 200.0f, .min_deg = 80.0f, .max_deg = 200.0f, .objetivo_deg = 180.0f, .actual_deg = 180.0f},
+	{.nombre = "pinza", .pin = GPIO_NUM_22, .canal = LEDC_CHANNEL_3, .tope_max_deg = 180.0f, .min_deg = 100.0f, .max_deg = 180.0f, .objetivo_deg = 150.0f, .actual_deg = 150.0f},
+};
+
+static volatile float velocidad_brazo_dps = VELOCIDAD_INICIAL_DPS;
+static volatile uint32_t t_ultima_orden_brazo_ms = 0;
+static uint32_t contador_estado_brazo = 0;
+static volatile float pose_segura_hombro = POSE_SEGURA_HOMBRO_DEG;
+static volatile float pose_segura_codo = POSE_SEGURA_CODO_DEG;
+static volatile int fase_base = FASE_LIBRE;        /* lo escribe solo la tarea de control del brazo */
+
+static uint32_t ms_ahora(void)
+{
+	return (uint32_t)(esp_timer_get_time() / 1000);
+}
+
+/* El reposo seguro de un servo, acotado a sus limites (si la PC pide un reposo fuera de lo que el servo puede, va al limite) */
+static float pose_segura_de(int idx)
+{
+	float pedido = (idx == IDX_HOMBRO) ? pose_segura_hombro : pose_segura_codo;
+
+	return limitar_deg(pedido, servos[idx].min_deg, servos[idx].max_deg);
+}
+
+/* Llega una orden de /brazo/cmd (la llama el callback de micro-ROS). No confia en la PC: los limites se dejan dentro del
+ * tope de cada servo en servo_poner_limites(), cada angulo se limita en servo_ir_a() y un NaN descarta la orden. */
+static void al_recibir_orden_brazo(const float *datos, int n)
+{
+	if (n < 6 || isnan(datos[4]) || isnan(datos[5])) {
+		return;                                   /* orden incompleta o con un NaN: se ignora */
+	}
+	int mascara = (int)lroundf(datos[4]);
+	for (int i = 0; i < N_SERVOS; i++) {
+		if (n >= 14) {
+			servo_poner_limites(&servos[i], datos[6 + 2 * i], datos[7 + 2 * i]);   /* primero los limites ... */
+		}
+		servo_ir_a(&servos[i], datos[i]);                                           /* ... y despues el angulo */
+		servos[i].activo = (mascara >> i) & 1;
+	}
+	if (n >= 16 && !isnan(datos[14]) && !isnan(datos[15])) {
+		pose_segura_hombro = datos[14];
+		pose_segura_codo = datos[15];
+	}
+	float v = datos[5];
+	velocidad_brazo_dps = (v < 0.0f) ? 0.0f : (v > VELOCIDAD_MAX_DPS ? VELOCIDAD_MAX_DPS : v);
+	t_ultima_orden_brazo_ms = ms_ahora();
+}
+
+/* Llena buf con el estado del brazo para /brazo/estado y devuelve cuantos numeros puso */
+static int armar_estado_brazo(float *buf)
+{
+	int mascara = 0;
+	for (int i = 0; i < N_SERVOS; i++) {
+		buf[i] = servos[i].actual_deg;
+		mascara |= servos[i].activo ? (1 << i) : 0;
+		buf[8 + 2 * i] = servos[i].min_deg;
+		buf[9 + 2 * i] = servos[i].max_deg;
+		buf[16 + i] = servos[i].tope_max_deg;
+	}
+	buf[4] = (float)mascara;
+	buf[5] = velocidad_brazo_dps;
+	buf[6] = (float)(contador_estado_brazo++);
+	buf[7] = (float)(ms_ahora() - t_ultima_orden_brazo_ms);
+	buf[20] = (float)fase_base;
+	buf[21] = pose_segura_de(IDX_HOMBRO);
+	buf[22] = pose_segura_de(IDX_CODO);
+	return 23;
+}
+
+/* Decide la META de cada servo en esta pasada: lo que pide la PC, salvo que la base quiera girar. Entonces:
+ *   FASE_ESPERANDO: el hombro y el codo van al reposo seguro y la base se queda quieta hasta que llegan (y pasa ESPERA_REPOSO_MS)
+ *   FASE_GIRANDO:   el brazo se queda en el reposo seguro y la base gira hacia lo que pide la PC
+ * Al llegar la base, el brazo vuelve a seguir a la PC. Si el hombro o el codo estan sueltos, la base no gira: un brazo suelto
+ * no esta en ningun lugar seguro. */
+static void aplicar_reposo_seguro(void)
+{
+	servo_t *base = &servos[IDX_BASE];
+	servo_t *hombro = &servos[IDX_HOMBRO];
+	servo_t *codo = &servos[IDX_CODO];
+	static int pasadas_en_reposo = 0;
+
+	for (int i = 0; i < N_SERVOS; i++) {
+		servos[i].meta_deg = servos[i].objetivo_deg;
+	}
+	if (!BLOQUEO_BASE_ACTIVO || !base->activo) {
+		fase_base = FASE_LIBRE;
+		return;
+	}
+
+	float falta_base = fabsf(base->objetivo_deg - base->actual_deg);
+
+	if (fase_base == FASE_LIBRE) {
+		if (falta_base <= BASE_UMBRAL_DEG) {
+			return;                               /* la base no quiere girar: todo sigue a la PC */
+		}
+		fase_base = FASE_ESPERANDO;
+		pasadas_en_reposo = 0;
+	}
+	if (falta_base <= BASE_LLEGO_DEG) {
+		fase_base = FASE_LIBRE;                   /* la base llego (o la PC se arrepintio): el brazo vuelve a seguir a la PC */
+		return;
+	}
+
+	float hs = pose_segura_de(IDX_HOMBRO);
+	float cs = pose_segura_de(IDX_CODO);
+	bool en_reposo = hombro->activo && codo->activo && fabsf(hombro->actual_deg - hs) <= TOL_REPOSO_DEG &&
+	                 fabsf(codo->actual_deg - cs) <= TOL_REPOSO_DEG;
+
+	hombro->meta_deg = hs;
+	codo->meta_deg = cs;
+	if (fase_base == FASE_ESPERANDO) {
+		base->meta_deg = base->actual_deg;        /* la base espera */
+		pasadas_en_reposo = en_reposo ? pasadas_en_reposo + 1 : 0;
+		if (pasadas_en_reposo * PERIODO_BRAZO_MS >= ESPERA_REPOSO_MS) {
+			fase_base = FASE_GIRANDO;
+		}
+	} else if (!en_reposo) {                      /* FASE_GIRANDO y el brazo se solto o se movio: la base frena y espera */
+		fase_base = FASE_ESPERANDO;
+		pasadas_en_reposo = 0;
+		base->meta_deg = base->actual_deg;
+	}
+}
+
+/* Tarea de control del brazo: cada 10 ms decide las metas y mueve los servos hacia ellas. Corre aunque no haya Wi-Fi ni
+ * agente, igual que la tarea de control de las ruedas (control_task, mas abajo), e independiente de ella. */
+static void tarea_control_brazo(void *arg)
+{
+	(void)arg;
+	TickType_t t = xTaskGetTickCount();
+	while (1) {
+		aplicar_reposo_seguro();
+		servos_ciclo(servos, N_SERVOS, velocidad_brazo_dps, PERIODO_BRAZO_MS / 1000.0f);
+		vTaskDelayUntil(&t, pdMS_TO_TICKS(PERIODO_BRAZO_MS));
+	}
+}
+
+#define TIMEOUT_CREAR_MS 5000       /* espera por entidad al crear (el default es 1000: una rafaga de Wi-Fi dura 1,5-3,5 s) */
 #define PING_ESPERA_MS 200
 #define PING_CONECTADO_MS 300
 #define PING_FALLOS_MAX 6
@@ -181,15 +371,21 @@ static rueda_t W[N_RUEDAS] = {
 
 static rcl_subscription_t sub_cmd_vel;
 static rcl_subscription_t sub_robot_cmd;
+static rcl_subscription_t sub_brazo_cmd;
 static rcl_publisher_t pub_ticks;
 static rcl_publisher_t pub_estado;
+static rcl_publisher_t pub_brazo_estado;
 static geometry_msgs__msg__Twist recv_twist;
 static std_msgs__msg__Float32MultiArray recv_robot;
+static std_msgs__msg__Float32MultiArray recv_brazo;
 static std_msgs__msg__Int32MultiArray msg_ticks;
 static std_msgs__msg__Float32MultiArray msg_estado;
+static std_msgs__msg__Float32MultiArray msg_brazo_estado;
 static float recv_robot_buf[24];
+static float recv_brazo_buf[24];
 static int32_t ticks_buf[N_RUEDAS];
 static float estado_buf[N_ESTADO];
+static float estado_brazo_buf[23];
 
 static volatile uint32_t ultimo_cmd_ms = 0;
 static volatile bool agente_conectado = false;
@@ -797,6 +993,14 @@ static void callback_robot_cmd(const void *msgin)
 	}
 }
 
+/* Llega una orden de /brazo/cmd (la escucha el executor junto con cmd_vel y robot_cmd) */
+static void callback_brazo_cmd(const void *msgin)
+{
+	const std_msgs__msg__Float32MultiArray *msg = (const std_msgs__msg__Float32MultiArray *)msgin;
+
+	al_recibir_orden_brazo(msg->data.data, (int)msg->data.size);
+}
+
 static rclc_support_t support;
 static rcl_node_t node;
 static rclc_executor_t executor;
@@ -828,6 +1032,13 @@ static bool crear_entidades(void)
 	                                       "robot_cmd") != RCL_RET_OK) {
 		return false;
 	}
+	/* best effort, igual que las demas: sin reenvios. Si se pierde un mensaje, el siguiente (100 ms despues) trae lo mismo
+	 * actualizado, igual que en firmware/brazo_sliders/enlace_uros.h */
+	if (rclc_subscription_init_best_effort(&sub_brazo_cmd, &node,
+	                                       ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32MultiArray),
+	                                       "brazo/cmd") != RCL_RET_OK) {
+		return false;
+	}
 	if (rclc_publisher_init_best_effort(&pub_ticks, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32MultiArray),
 	                                    "wheel_ticks") != RCL_RET_OK) {
 		return false;
@@ -837,14 +1048,22 @@ static bool crear_entidades(void)
 	                                    "wheel_state") != RCL_RET_OK) {
 		return false;
 	}
+	if (rclc_publisher_init_best_effort(&pub_brazo_estado, &node,
+	                                    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32MultiArray),
+	                                    "brazo/estado") != RCL_RET_OK) {
+		return false;
+	}
 	executor = rclc_executor_get_zero_initialized_executor();
-	if (rclc_executor_init(&executor, &support.context, 2, &allocator) != RCL_RET_OK) {
+	if (rclc_executor_init(&executor, &support.context, 3, &allocator) != RCL_RET_OK) {
 		return false;
 	}
 	if (rclc_executor_add_subscription(&executor, &sub_cmd_vel, &recv_twist, &callback_cmd_vel, ON_NEW_DATA) != RCL_RET_OK) {
 		return false;
 	}
 	if (rclc_executor_add_subscription(&executor, &sub_robot_cmd, &recv_robot, &callback_robot_cmd, ON_NEW_DATA) != RCL_RET_OK) {
+		return false;
+	}
+	if (rclc_executor_add_subscription(&executor, &sub_brazo_cmd, &recv_brazo, &callback_brazo_cmd, ON_NEW_DATA) != RCL_RET_OK) {
 		return false;
 	}
 	return true;
@@ -859,8 +1078,10 @@ static void destruir_entidades(void)
 	}
 	(void)rcl_publisher_fini(&pub_ticks, &node);
 	(void)rcl_publisher_fini(&pub_estado, &node);
+	(void)rcl_publisher_fini(&pub_brazo_estado, &node);
 	(void)rcl_subscription_fini(&sub_cmd_vel, &node);
 	(void)rcl_subscription_fini(&sub_robot_cmd, &node);
+	(void)rcl_subscription_fini(&sub_brazo_cmd, &node);
 	(void)rclc_executor_fini(&executor);
 	(void)rcl_node_fini(&node);
 	(void)rclc_support_fini(&support);
@@ -901,6 +1122,14 @@ static void publicar_estado(void)
 	estado_buf[32] = (float)son_n[SON_F];
 	estado_buf[33] = guardia.ciego_s;
 	(void)rcl_publish(&pub_estado, &msg_estado, NULL);
+}
+
+static void publicar_estado_brazo(void)
+{
+	int n = armar_estado_brazo(estado_brazo_buf);
+
+	msg_brazo_estado.data.size = (size_t)n;
+	(void)rcl_publish(&pub_brazo_estado, &msg_brazo_estado, NULL);
 }
 
 /* Esperando agente -> conectado -> (agente perdido) -> esperando agente. Nunca se rinde. */
@@ -946,7 +1175,8 @@ void micro_ros_task(void *arg)
 					fallos_ping = 0;
 					ultimo_ping_us = esp_timer_get_time();
 					gpio_set_level(PIN_LED, 0);
-					printf("uros: conectado. Escucha /cmd_vel y /robot_cmd; publica /wheel_ticks y /wheel_state\n");
+					printf("uros: conectado. Escucha /cmd_vel, /robot_cmd y /brazo/cmd; publica /wheel_ticks, /wheel_state y "
+					       "/brazo/estado\n");
 				} else {
 					printf("uros: fallo al crear entidades, reintento\n");
 					destruir_entidades();
@@ -964,6 +1194,7 @@ void micro_ros_task(void *arg)
 			if (ahora_us - ultimo_estado_us >= PERIODO_ESTADO_US) {
 				ultimo_estado_us = ahora_us;
 				publicar_estado();
+				publicar_estado_brazo();
 			}
 			if (ahora_us - ultimo_ping_us > 1000000) {
 				ultimo_ping_us = ahora_us;
@@ -1000,6 +1231,9 @@ void app_main(void)
 		sonar_init(&S[i]);
 	}
 
+	/* Brazo: igual que brazo_sliders/main.c, los servos quedan SIN pulso hasta que la PC los active */
+	servos_init(servos, N_SERVOS);
+
 	/* Mensajes con memoria estatica: los arreglos de los multiarray apuntan a buffers propios */
 	std_msgs__msg__Int32MultiArray__init(&msg_ticks);
 	msg_ticks.data.data = ticks_buf;
@@ -1013,6 +1247,14 @@ void app_main(void)
 	recv_robot.data.data = recv_robot_buf;
 	recv_robot.data.size = 0;
 	recv_robot.data.capacity = sizeof(recv_robot_buf) / sizeof(recv_robot_buf[0]);
+	std_msgs__msg__Float32MultiArray__init(&recv_brazo);
+	recv_brazo.data.data = recv_brazo_buf;
+	recv_brazo.data.size = 0;
+	recv_brazo.data.capacity = sizeof(recv_brazo_buf) / sizeof(recv_brazo_buf[0]);
+	std_msgs__msg__Float32MultiArray__init(&msg_brazo_estado);
+	msg_brazo_estado.data.data = estado_brazo_buf;
+	msg_brazo_estado.data.size = 0;
+	msg_brazo_estado.data.capacity = sizeof(estado_brazo_buf) / sizeof(estado_brazo_buf[0]);
 
 #if defined(CONFIG_MICRO_ROS_ESP_NETIF_WLAN) || defined(CONFIG_MICRO_ROS_ESP_NETIF_ENET)
 	ESP_ERROR_CHECK(uros_network_interface_initialize());
@@ -1023,6 +1265,7 @@ void app_main(void)
 #endif
 
 	xTaskCreatePinnedToCore(control_task, "control", 4096, NULL, 6, NULL, 1);
+	xTaskCreatePinnedToCore(tarea_control_brazo, "brazo", 4096, NULL, 6, NULL, 1);
 	xTaskCreate(micro_ros_task,
 			"uros_task",
 			CONFIG_MICRO_ROS_APP_STACK,
