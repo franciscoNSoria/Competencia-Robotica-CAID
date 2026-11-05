@@ -1008,11 +1008,22 @@ static rcl_allocator_t allocator;
 static rcl_init_options_t init_options;
 static rmw_init_options_t *rmw_options;
 
+/* Cada paso de crear_entidades() avisa su nombre y el codigo de rcl_ret_t si falla: con 3 suscripciones y 3
+ * publicadores (antes 2 y 2) no sabiamos CUAL de todos estos pasos era el que fallaba. */
+static bool paso_ok(rcl_ret_t rc, const char *nombre)
+{
+	if (rc != RCL_RET_OK) {
+		printf("uros: crear_entidades: fallo en %s (rcl_ret_t %d)\n", nombre, (int)rc);
+		return false;
+	}
+	return true;
+}
+
 static bool crear_entidades(void)
 {
 	allocator = rcl_get_default_allocator();
 
-	if (rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator) != RCL_RET_OK) {
+	if (!paso_ok(rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator), "support_init")) {
 		return false;
 	}
 	/* Esperar mas que el default de 1 s por entidad: una rafaga de Wi-Fi dura 1,5-3,5 s */
@@ -1020,50 +1031,53 @@ static bool crear_entidades(void)
 	if (rmw_context != NULL) {
 		(void)rmw_uros_set_context_entity_creation_session_timeout(rmw_context, TIMEOUT_CREAR_MS);
 	}
-	if (rclc_node_init_default(&node, "esp32_motion", "", &support) != RCL_RET_OK) {
+	if (!paso_ok(rclc_node_init_default(&node, "esp32_motion", "", &support), "node_init")) {
 		return false;
 	}
-	if (rclc_subscription_init_best_effort(&sub_cmd_vel, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
-	                                       "cmd_vel") != RCL_RET_OK) {
+	if (!paso_ok(rclc_subscription_init_best_effort(&sub_cmd_vel, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
+	                                       "cmd_vel"), "sub cmd_vel")) {
 		return false;
 	}
-	if (rclc_subscription_init_best_effort(&sub_robot_cmd, &node,
+	if (!paso_ok(rclc_subscription_init_best_effort(&sub_robot_cmd, &node,
 	                                       ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32MultiArray),
-	                                       "robot_cmd") != RCL_RET_OK) {
+	                                       "robot_cmd"), "sub robot_cmd")) {
 		return false;
 	}
 	/* best effort, igual que las demas: sin reenvios. Si se pierde un mensaje, el siguiente (100 ms despues) trae lo mismo
 	 * actualizado, igual que en firmware/brazo_sliders/enlace_uros.h */
-	if (rclc_subscription_init_best_effort(&sub_brazo_cmd, &node,
+	if (!paso_ok(rclc_subscription_init_best_effort(&sub_brazo_cmd, &node,
 	                                       ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32MultiArray),
-	                                       "brazo/cmd") != RCL_RET_OK) {
+	                                       "brazo/cmd"), "sub brazo_cmd")) {
 		return false;
 	}
-	if (rclc_publisher_init_best_effort(&pub_ticks, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32MultiArray),
-	                                    "wheel_ticks") != RCL_RET_OK) {
+	if (!paso_ok(rclc_publisher_init_best_effort(&pub_ticks, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32MultiArray),
+	                                    "wheel_ticks"), "pub wheel_ticks")) {
 		return false;
 	}
-	if (rclc_publisher_init_best_effort(&pub_estado, &node,
+	if (!paso_ok(rclc_publisher_init_best_effort(&pub_estado, &node,
 	                                    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32MultiArray),
-	                                    "wheel_state") != RCL_RET_OK) {
+	                                    "wheel_state"), "pub wheel_state")) {
 		return false;
 	}
-	if (rclc_publisher_init_best_effort(&pub_brazo_estado, &node,
+	if (!paso_ok(rclc_publisher_init_best_effort(&pub_brazo_estado, &node,
 	                                    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32MultiArray),
-	                                    "brazo/estado") != RCL_RET_OK) {
+	                                    "brazo/estado"), "pub brazo_estado")) {
 		return false;
 	}
 	executor = rclc_executor_get_zero_initialized_executor();
-	if (rclc_executor_init(&executor, &support.context, 3, &allocator) != RCL_RET_OK) {
+	if (!paso_ok(rclc_executor_init(&executor, &support.context, 3, &allocator), "executor_init")) {
 		return false;
 	}
-	if (rclc_executor_add_subscription(&executor, &sub_cmd_vel, &recv_twist, &callback_cmd_vel, ON_NEW_DATA) != RCL_RET_OK) {
+	if (!paso_ok(rclc_executor_add_subscription(&executor, &sub_cmd_vel, &recv_twist, &callback_cmd_vel, ON_NEW_DATA),
+	             "executor add cmd_vel")) {
 		return false;
 	}
-	if (rclc_executor_add_subscription(&executor, &sub_robot_cmd, &recv_robot, &callback_robot_cmd, ON_NEW_DATA) != RCL_RET_OK) {
+	if (!paso_ok(rclc_executor_add_subscription(&executor, &sub_robot_cmd, &recv_robot, &callback_robot_cmd, ON_NEW_DATA),
+	             "executor add robot_cmd")) {
 		return false;
 	}
-	if (rclc_executor_add_subscription(&executor, &sub_brazo_cmd, &recv_brazo, &callback_brazo_cmd, ON_NEW_DATA) != RCL_RET_OK) {
+	if (!paso_ok(rclc_executor_add_subscription(&executor, &sub_brazo_cmd, &recv_brazo, &callback_brazo_cmd, ON_NEW_DATA),
+	             "executor add brazo_cmd")) {
 		return false;
 	}
 	return true;
