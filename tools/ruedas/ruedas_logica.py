@@ -213,6 +213,7 @@ SEPARADO_M = 0.075                     # el despegue termina cuando el lateral c
 RECTO_TRAS_BRUSCA_M = 0.09             # despues de la correccion brusca avanza derecho esto mientras se vuelve a medir el rumbo
 ESPERA_BRUSCA_M = 0.05                 # avance minimo despues de una correccion brusca antes de juzgar de nuevo (el sonar tarda en reflejarlo)
 RADIO_BARRIDO_M = 0.161                # radio que barre el cuerpo al girar en el lugar (27,8 x 16,3 cm)
+SALTO_SONAR_M = 0.04                   # un lateral que cambia mas que esto entre dos lecturas no es una pared continua
 W_ARCO_RAD_S = 2.2                     # giro de 180 con retroceso: velocidad angular maxima (el firmware acota cada rueda a 75 flancos/s)
 Q_ATRAS_TOPE_M = 0.09                  # ... y lo maximo que retrocede por radian girado (v = q w): desplaza el centro 1,3 y0 (ver abajo)
 V_RUEDA_TOPE_MS = VEL_MAX_FLANCOS / (FLANCOS_POR_VUELTA / (math.pi * 0.065))   # 0,383 m/s por rueda con rueda de 65 mm
@@ -249,6 +250,8 @@ class EstimadorPasillo:
             if d is None or d > self.d_pared:
                 serie.clear()
                 continue
+            if serie and abs(self.y_de(lado, d) - serie[-1][1]) > SALTO_SONAR_M:     # salto: un hueco en la pared o un rincon, no una pendiente
+                serie.clear()
             serie.append((s, self.y_de(lado, d)))
             while serie and abs(s - serie[0][0]) > self.ventana_m:
                 serie.pop(0)
@@ -319,6 +322,7 @@ class Controlador:
         self.aplicado = [0.0] * 4           # lo que sale de verdad, despues de la rampa de aceleracion
         self.maniobra = None
         self.marcha = None
+        self.ultimo_fin = ''
         self.guiado = None                  # avance que endereza o giro de 180 con retroceso (por sonares), mientras dura
         self.secuencia = deque()            # pasos pendientes de una secuencia: ('distancia', m) o ('giro', grados)
         self._paso_ok = True                # el ultimo paso de la secuencia termino bien (si no, se corta)
@@ -587,6 +591,7 @@ class Controlador:
             g['proximo_envio'] = ahora + PERIODO_ORDEN_S
 
     def _fin_guiado(self, texto):
+        self.ultimo_fin = texto
         self.guiado = None
         self._parar_motores()
         self.imprimir('  ' + texto)
@@ -981,7 +986,7 @@ class Controlador:
                 sube = (d - min(antes)) if antes else 0.0
                 if sube >= 0.003 and d > STOP_LATERAL_M + 0.01:      # ya se esta alejando de esa pared: no corrige de mas
                     continue
-                se_acerca_por_rumbo = psi is not None and d - ANTICIPO_M * max(0.0, math.tan(psi) * hacia) <= STOP_LATERAL_M + 0.005
+                se_acerca_por_rumbo = psi is not None and d <= 0.16 and d - ANTICIPO_M * max(0.0, math.tan(psi) * hacia) <= STOP_LATERAL_M + 0.005
                 if (d <= LAT_DISPARO_M and baja >= BAJA_DISPARO_M) or d <= LAT_CRITICO_M or se_acerca_por_rumbo:
                     self._empezar_brusca(g, ahora, d, hacia, psi)
                     return
