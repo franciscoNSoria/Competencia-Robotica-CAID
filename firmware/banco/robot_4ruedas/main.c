@@ -48,6 +48,8 @@
  *                          6 rueda dmin n v1 d1 v2 d2 ...   curva de prealimentacion de una rueda (n <= 10 puntos)
  *                          7 ang_rad vel      girar EN EL LUGAR ang_rad (con signo: + izquierda, antihorario) con rampas; vel en
  *                                             flancos/s por rueda (0 = por defecto). Usa la trocha efectiva: arco = ang x trocha / 2
+ *                          9 factor [nivel]   giros: las delanteras van factor x la velocidad de las traseras (0,5 a 2) y, opcional,
+ *                                             el nivel del empujon de arranque de FL y FR (0 a 3; las traseras usan 2)
  *                          8 act d_stop d_lento [ciego_s]   freno local por sonar (guardia.h). act 1 = activo (0 = apagado,
  *                                             es el estado al arrancar). Sin orden en 1 s las ruedas igual se frenan.
  *                                             Con la guardia activa, el sonar frontal topa la velocidad HACIA ADELANTE:
@@ -122,6 +124,7 @@
 #define PERIODO_ESTADO_US 100000    /* /wheel_state y /brazo/estado a 10 Hz */
 #define N_ESTADO 34                 /* valores de /wheel_state */
 #define ZONA_MUERTA_FLANCOS (VEL_MIN_FLANCOS * 0.5f)   /* bajo esto una rueda no se pide (ver ms_a_flancos) */
+#define GIRO_FACTOR_DELANTERAS 1.15f                   /* en los giros en el lugar las delanteras (poco peso, arrancan peor) van un 15 % mas rapido que las traseras */
 #define GUARDIA_VEL_LENTA VEL_MIN_FLANCOS              /* tope de la zona lenta: lo menos que sostienen los 4 motores */
 #define SONAR_RANURA_US 60000       /* un disparo cada 60 ms */
 
@@ -142,6 +145,10 @@ static const punto_t CURVA_RR[] = {                  /* promedio de RR1 y RR2 de
 static const float KICK_DUTY_NIVEL[] = {0.70f, 0.85f, 1.00f, 1.00f};
 static const int KICK_CICLOS_NIVEL[] = {10, 15, 25, 40};     /* x 10 ms */
 #define N_NIVELES_KICK 4
+
+/* 1 mientras corre un giro en el lugar: sin rampa. Velocidad maxima de entrada, sin limite al cambio de duty del PI y con el empujon
+ * de arranque al menos en el nivel 2 en las 4 ruedas (que no quede una sin arrancar). */
+static volatile int giro_directo = 0;
 
 typedef struct {
 	const char *nombre;
@@ -174,13 +181,13 @@ typedef struct {
 	int ventana[VENTANA_VEL_CICLOS], idx, suma, cuenta_ant;
 } rueda_t;
 
-/* Polaridad: dejala en +1 hasta tener el sentido real de cada rueda */
+/* Polaridad: +1 salvo FR (-1: el motor delantero derecho gira al reves con IA; invertida el 5/11) */
 static rueda_t W[N_RUEDAS] = {
 	{.nombre = "FL", .pin_ia = GPIO_NUM_25, .pin_ib = GPIO_NUM_26, .pin_enc = GPIO_NUM_34, .canal_ia = LEDC_CHANNEL_0,
 	 .canal_ib = LEDC_CHANNEL_1, .polaridad = +1, .curva = CURVA_DEL, .n_curva = N_CURVA(CURVA_DEL), .d_min = 0.36f,
 	 .nivel_kick_ini = 0},
 	{.nombre = "FR", .pin_ia = GPIO_NUM_17, .pin_ib = GPIO_NUM_33, .pin_enc = GPIO_NUM_36, .canal_ia = LEDC_CHANNEL_2,
-	 .canal_ib = LEDC_CHANNEL_3, .polaridad = +1, .curva = CURVA_DEL, .n_curva = N_CURVA(CURVA_DEL), .d_min = 0.36f,
+	 .canal_ib = LEDC_CHANNEL_3, .polaridad = -1, .curva = CURVA_DEL, .n_curva = N_CURVA(CURVA_DEL), .d_min = 0.36f,
 	 .nivel_kick_ini = 0},
 	{.nombre = "RL", .pin_ia = GPIO_NUM_27, .pin_ib = GPIO_NUM_16, .pin_enc = GPIO_NUM_35, .canal_ia = LEDC_CHANNEL_4,
 	 .canal_ib = LEDC_CHANNEL_5, .polaridad = +1, .curva = CURVA_RL, .n_curva = N_CURVA(CURVA_RL), .d_min = 0.40f,
@@ -555,7 +562,7 @@ static void reiniciar_estado(rueda_t *w)
 	w->duty = 0.0f;
 	w->integral = 0.0f;
 	w->kick = 0;
-	w->nivel_kick = w->nivel_kick_ini;
+	w->nivel_kick = (giro_directo && w->nivel_kick_ini < 2) ? 2 : w->nivel_kick_ini;
 	w->intentos = 0;
 	w->bloqueado = false;
 	w->sin_giro = 0;
@@ -648,7 +655,11 @@ static void rueda_ciclo(rueda_t *w)
 				d = ff + KP * err + w->integral;
 			}
 			d = fminf(1.0f, fmaxf(w->d_min, d));
-			d = fminf(mag + PASO_DUTY_PI, fmaxf(mag - PASO_DUTY_PI, d));
+			{
+				const float paso_duty = giro_directo ? 1.0f : PASO_DUTY_PI;
+
+				d = fminf(mag + paso_duty, fmaxf(mag - paso_duty, d));
+			}
 			w->duty = signo * d;
 		}
 	}
@@ -682,6 +693,19 @@ static void ordenar_lados(float izq, float der)
 {
 	W[0].objetivo_cmd = W[2].objetivo_cmd = izq;
 	W[1].objetivo_cmd = W[3].objetivo_cmd = der;
+}
+
+/* Giro en el lugar: izquierda y derecha por separado, con las delanteras algo mas rapido (GIRO_FACTOR_DELANTERAS, tope de velocidad) */
+static volatile float giro_factor_del = GIRO_FACTOR_DELANTERAS;   /* se cambia con la orden 9 */
+
+static void ordenar_giro(float izq, float der)
+{
+	const float f = giro_factor_del;
+
+	W[0].objetivo_cmd = fmaxf(-VEL_MAX_FLANCOS, fminf(VEL_MAX_FLANCOS, izq * f));
+	W[1].objetivo_cmd = fmaxf(-VEL_MAX_FLANCOS, fminf(VEL_MAX_FLANCOS, der * f));
+	W[2].objetivo_cmd = izq;
+	W[3].objetivo_cmd = der;
 }
 
 /* Un ciclo de 10 ms de todo el control: movimiento de distancia o de giro, ordenes y las 4 ruedas */
@@ -756,10 +780,11 @@ static void control_paso(void)
 			} else {
 				float v_acc = VEL_MIN_FLANCOS + ACEL_FLANCOS_S2 * mov_ciclos * 0.010f;
 				float v_dec = sqrtf(2.0f * ACEL_FLANCOS_S2 * resta);
-				float v = fmaxf(VEL_MIN_FLANCOS, fminf(mov_vel, fminf(v_acc, v_dec)));
+				float v = mov_giro ? mov_vel                       /* giro: de una a la velocidad pedida, sin rampa de subida ni de bajada */
+				                   : fmaxf(VEL_MIN_FLANCOS, fminf(mov_vel, fminf(v_acc, v_dec)));
 
 				if (mov_giro) {
-					ordenar_lados(-mov_dir * v, mov_dir * v);   /* izquierda para atras y derecha para adelante = giro antihorario */
+					ordenar_giro(-mov_dir * v, mov_dir * v);   /* izquierda para atras y derecha para adelante = giro antihorario */
 				} else {
 					ordenar_todas(mov_dir * v);
 				}
@@ -781,6 +806,8 @@ static void control_paso(void)
 				}
 			}
 		}
+
+		giro_directo = (mov_fase == 1 && mov_giro);
 
 		bool vencido = (uint32_t)(ahora_ms - ultimo_cmd_ms) > TIMEOUT_CMD_MS;
 		float cmd_v[N_RUEDAS];
@@ -988,6 +1015,16 @@ static void callback_robot_cmd(const void *msgin)
 				printf("guardia: %s (frena a %.2f m, lenta desde %.2f m, ciego %.0f s)\n", activa ? "ACTIVA" : "apagada",
 					   (double)guardia.d_stop_m, (double)guardia.d_lento_m, (double)guardia.ciego_s);
 			}
+		}
+		break;
+	case 9:                                        /* delanteras en los giros: factor [nivel_kick_ini de FL y FR] */
+		if (n >= 2 && d[1] >= 0.5f && d[1] <= 2.0f) {
+			giro_factor_del = d[1];
+			if (n >= 3 && d[2] >= 0.0f && d[2] < (float)N_NIVELES_KICK - 0.5f) {
+				W[0].nivel_kick_ini = W[1].nivel_kick_ini = (int)(d[2] + 0.5f);
+			}
+			cfg_seq++;
+			printf("giro: delanteras x%.2f, empujon inicial nivel %d\n", (double)giro_factor_del, W[0].nivel_kick_ini);
 		}
 		break;
 	default:
