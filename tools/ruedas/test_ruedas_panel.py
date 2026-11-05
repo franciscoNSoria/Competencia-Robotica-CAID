@@ -157,9 +157,9 @@ class Ventana(unittest.TestCase):
         self.panel._parar()
         self.assertIsNone(self.panel.c.guiado)
         self.panel._giro180_pared()
-        self.assertEqual(self.panel.c.guiado['tipo'], 'arco')
+        self.assertEqual(self.panel.c.guiado['tipo'], 'giro2')
         g = self.panel.c.guiado
-        self.assertAlmostEqual(g['objetivo'], math.radians(181) - abs(g['w']) * rl.TAU_ARCO_S, delta=0.002)
+        self.assertEqual(g['adicional'], 1.0)
         self.assertAlmostEqual(self.panel.c.guiado['despues'], 0.20)                 # viene tildado: despues avanza 20 cm
         self.panel._parar()
 

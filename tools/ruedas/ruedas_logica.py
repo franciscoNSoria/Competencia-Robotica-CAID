@@ -185,13 +185,12 @@ MARGEN_RUEDA_MS = 0.012                # m/s sobre el minimo de rueda que se dej
 STOP_FRENTE_M, STOP_LATERAL_M = 0.14, 0.03   # frena si el frente llega a 14 cm (el robot sigue unos cm: queda a ~10 cm o mas de la pared) o un costado a 3
 ALERTA_LATERAL_M = 0.055               # un costado a menos de esto (o que lo va a estar en 10 cm): frena, piensa, se endereza y sigue
 ANTICIPO_M = 0.15                      # ... se mira lo que va a medir el lateral dentro de este avance (el robot sigue ~8 cm despues de la orden de frenar)
-F_RETROCESO_M = 0.12                   # antes de girar 180, si el frente esta a menos de esto retrocede (el giro en el lugar 'avanza un poco')
-ATRAS_MAX_M = 0.10                     # lo maximo que retrocede de una vez (atras no hay sonar)
+F_RETROCESO_M = 0.10                   # antes de girar 180, si el frente esta a menos de esto retrocede (el giro en el lugar 'avanza un poco')
+ATRAS_MAX_M = 0.06                     # lo maximo que retrocede de una vez (atras no hay sonar)
 V_ATRAS_RECTO_MS = 0.14                # retroceso en recto: las ruedas por encima del minimo del firmware
 W_PIVOTE_RAD_S = 1.2                   # pivote en el lugar para enderezarse (cada rueda a 0,18 m/s: por encima del minimo)
 ADELANTO_PIVOTE_RAD = 0.08             # el robot sigue girando un poco despues de cortar
 PIVOTE_FLANCOS = 40.0                  # velocidad del pivote (orden 7 del firmware: lo cierra la ESP32 con los encoders, sin retardo de red)
-ANCHO_MIN_GIRO_M = 0.34               # ancho minimo para girar 180 en el lugar: el cuerpo (27,8 x 16,3) barre un circulo de 32,2 cm
 LAT_DISPARO_M = 0.075                  # un costado a menos de esto Y acercandose (o a menos de LAT_CRITICO_M): correccion brusca EN MARCHA
 LAT_CRITICO_M = 0.055                  # ... a esta distancia corrige aunque no se vea que se acerca
 BAJA_DISPARO_M = 0.004                 # 'se acerca': el lateral bajo esto (m) en los ultimos ~0,5 s
@@ -205,13 +204,7 @@ ANG_DESPEGUE_RAD = 0.35                # giro maximo del primer despegue (cada r
 SEPARADO_M = 0.075                     # el despegue termina cuando el lateral cercano vuelve a medir esto
 RECTO_TRAS_BRUSCA_M = 0.09             # despues de la correccion brusca avanza derecho esto mientras se vuelve a medir el rumbo
 ESPERA_BRUSCA_M = 0.05                 # avance minimo despues de una correccion brusca antes de juzgar de nuevo (el sonar tarda en reflejarlo)
-RADIO_BARRIDO_M = 0.161                # radio que barre el cuerpo al girar en el lugar (27,8 x 16,3 cm)
 SALTO_SONAR_M = 0.04                   # un lateral que cambia mas que esto entre dos lecturas no es una pared continua
-W_ARCO_RAD_S = 2.2                     # giro de 180 con retroceso: velocidad angular maxima (el firmware acota cada rueda a 75 flancos/s)
-Q_ATRAS_TOPE_M = 0.09                  # ... y lo maximo que retrocede por radian girado (v = q w): desplaza el centro 1,3 y0 (ver abajo)
-V_RUEDA_TOPE_MS = VEL_MAX_FLANCOS / (FLANCOS_POR_VUELTA / (math.pi * 0.065))   # 0,383 m/s por rueda con rueda de 65 mm
-Q_FACTOR_ARCO = 1.15                   # retroceso por radian girado = Q_FACTOR_ARCO x (centro respecto del eje)
-TAU_ARCO_S = 0.25                      # retardo de las ordenes + lo que tardan las ruedas: se corta (y se deja de retroceder) w x TAU antes (se afina con el sumador)
 
 
 class EstimadorPasillo:
@@ -629,73 +622,30 @@ class Controlador:
         return True
 
     def giro_180_hacia_la_pared(self, vel_dps, adicional_deg=0.0, despues_m=None, adicional90_deg=0.0):
-        """Giro de 180 grados HACIA la pared lateral mas cercana, retrocediendo mientras gira.
-
-        Antes de girar, si el frente esta a menos de F_RETROCESO_M retrocede en recto hasta F_RETROCESO_M (o ATRAS_MAX_M): el giro en
-        el lugar 'avanza un poco' y en el fondo de un pasillo la esquina toca la pared de enfrente. Despues, girando hacia la pared
-        lateral cercana y retrocediendo los primeros 90°, el centro recorre un arco que se aleja de ella (con el centro a y del eje,
-        v = q w con q = 1,3 y lo deja cerca del eje al pasar por los 60°, donde la esquina apunta de costado). Si algo llega a
-        STOP_LATERAL_M durante el giro: frena, piensa y se endereza hacia la orientacion segura mas cercana (0° o 180°) antes de
-        seguir (reintenta una vez). `adicional_deg` se suma a los 180 (a mano, hasta que gire 180 reales). Con `despues_m`, al
-        terminar avanza esa distancia enderezandose."""
+        """Giro de 180 grados = DOS giros de 90 seguidos (la orden 7 de la ESP32, la del boton Giro 90), hacia el lado de la pared
+        lateral mas cercana. Cada uno es 90 + `adicional90_deg` (el sumador del Giro 90 del panel); el segundo suma ademas
+        `adicional_deg` (el del 180). Solo retrocede un poco si el frente esta muy cerca (F_RETROCESO_M). Con `despues_m`, al terminar
+        avanza esa distancia enderezandose."""
         if not self._libre():
             return False
         son = self.sonares()
         if son is None:
             self.imprimir('La ESP32 no informa los sonares (hace falta el firmware con sonares: /wheel_state de 34 valores).')
             return False
-        y0 = EstimadorPasillo().posicion(son[1], son[2])
-        if y0 is None:
-            self.imprimir('Ningun lateral ve una pared a menos de 30 cm: giro a la izquierda sin retroceder de costado.')
-            y0 = 0.0
-        if son[1] is not None and son[2] is not None and son[1] < 0.30 and son[2] < 0.30:
-            ancho = son[1] + son[2] + 2.0 * SON_LY
-            if ancho < ANCHO_MIN_GIRO_M:
-                self.imprimir(f'El pasillo mide ~{100 * ancho:.0f} cm de ancho: girando en el lugar el robot barre un circulo de 32 cm, '
-                              f'hace falta al menos {100 * ANCHO_MIN_GIRO_M:.0f} cm. No giro.')
-                return False
-        if abs(y0) > 0.062:
-            self.imprimir(f'El centro esta a {100 * abs(y0):.1f} cm del eje: con tan poco margen lateral no hay giro seguro de 180. '
-                          'Centralo primero (LINEA RECTA enderezando) y probamos.')
-            return False
+        frente, izq, der = son
+        lado = 1.0 if (izq is not None and (der is None or izq <= der)) else (-1.0 if der is not None else 1.0)   # + izquierda
         ahora = self.reloj()
-        # Centrado: dos pivotes de 90° en el lugar (la orden 7 que ya anda). El cuerpo barre un circulo de 16,1 cm de radio: solo cabe
-        # si el centro esta a menos de (ancho/2 - 16,1 cm) del eje; mas corrido, el arco con retroceso de antes.
-        if son[1] is not None and son[2] is not None and son[1] < 0.30 and son[2] < 0.30:
-            ancho_med = son[1] + son[2] + 2.0 * SON_LY
-        else:
-            ancho_med = PASILLO_M
-        dos90 = abs(y0) <= max(0.0, ancho_med / 2.0 - RADIO_BARRIDO_M - 0.005)
-        g = {'tipo': 'arco', 'etapa': 'girando', 't_etapa': ahora, 'theta0': self.odo.theta, 'y0': y0, 't0': ahora,
-             'proximo_envio': ahora, 'proximo_log': ahora, 'despues': despues_m, 'adicional': adicional_deg,
-             'vel_dps': vel_dps, 'dos90': dos90, 'adicional90': adicional90_deg}
+        g = {'tipo': 'giro2', 'etapa': 'girando', 't_etapa': ahora, 't0': ahora, 'proximo_envio': ahora, 'proximo_log': ahora,
+             'theta0': self.odo.theta, 'lado': lado, 'vel_dps': vel_dps, 'adicional': adicional_deg, 'adicional90': adicional90_deg,
+             'despues': despues_m}
         self.guiado = g
-        self._planear_arco(g)
-        if dos90:
-            self.imprimir(f'== giro de 180° en DOS giros de 90° hacia la pared {"izquierda" if g["lado"] > 0 else "derecha"} '
-                          f'(centro {100 * y0:+.1f} cm del eje): cada uno {90 + adicional90_deg:g}° (el segundo +{adicional_deg:g}°) ==')
-        else:
-            self.imprimir(f'== giro de 180° hacia la pared {"izquierda" if g["lado"] > 0 else "derecha"} en arco con retroceso (el centro esta '
-                          f'a {100 * abs(y0):.1f} cm del eje: dos pivotes en el lugar rozarian la pared): retrocedo {100 * abs(g["v"]):.0f} '
-                          f'cm/s durante los primeros 90° y giro a {math.degrees(abs(g["w"])):.0f} °/s ==')
+        self.imprimir(f'== giro de 180° = dos giros de 90° hacia la {"izquierda" if lado > 0 else "derecha"} (pared mas cercana) ==')
         self.imprimir('  Antes del giro: ' + self.texto_sonares(son))
-        frente = son[0]
         if frente is not None and frente < F_RETROCESO_M:
             g['atras'] = {'dist': min(ATRAS_MAX_M, F_RETROCESO_M - frente + 0.01), 's0': self.odo.s, 'siguiente': 'girando'}
             self._etapa(g, 'atras', ahora)
             self.imprimir(f'  Frente a {100 * frente:.1f} cm: retrocedo {100 * g["atras"]["dist"]:.0f} cm antes de girar.')
         return True
-
-    def _planear_arco(self, g):
-        y0 = g['y0']
-        g['lado'] = 1.0 if y0 >= 0 else -1.0                    # + izquierda: gira hacia donde esta la pared cercana
-        w = g['lado'] * limitar(math.radians(abs(g['vel_dps'])), math.radians(20.0), W_ARCO_RAD_S)
-        v = -min(Q_ATRAS_TOPE_M, Q_FACTOR_ARCO * abs(y0)) * abs(w)
-        escala = min(1.0, V_RUEDA_TOPE_MS / (abs(v) + abs(w) * self.trocha / 2.0))      # que ninguna rueda pase el tope y se conserve v/w
-        g['v'], g['w'] = v * escala, w * escala
-        lead = abs(g['w']) * TAU_ARCO_S
-        g['objetivo'] = math.radians(180.0 + g['adicional']) - lead          # donde se manda frenar
-        g['corte_atras'] = math.pi / 2 - lead                               # y donde se deja de retroceder (el robot sigue ~w TAU mas)
 
     # ---- frenar y pensar: quieto un instante, mide, y se separa de la pared (nunca se rinde)
     def _frenar_y_pensar(self, g, ahora, motivo):
@@ -916,59 +866,6 @@ class Controlador:
         self.imprimir(f'  Giro {n}/2: {grados:g}° a la {"izquierda" if g["lado"] > 0 else "derecha"} ({fl:.0f} flancos/s).')
         self._iniciar_pivote(g, ahora, g['lado'] * math.radians(grados), f'pivotar_d{n}', clave=f'pivote_d{n}', flancos=fl)
 
-    # ---- el giro de 180
-    def _paso_arco(self, ahora, g, frente, izq, der):
-        girado = (self.odo.theta - g['theta0']) * g['lado']
-        g['pos_giro'] = girado * g['lado']
-        lateral = min([d for d in (izq, der) if d is not None], default=None)
-        cercano = min([d for d in (frente, izq, der) if d is not None], default=None)
-        if ahora - g['t0'] > 40.0:
-            self._fin_guiado(f'ABORTADO: el giro tardo mas de 40 s ({math.degrees(girado):.0f}°).')
-            return
-        if girado >= g['objetivo']:
-            self._parar_motores()
-            self.imprimir(f'  El arco llego a {math.degrees(girado):.0f}° (se corta antes por inercia): lo termino con un pivote exacto.')
-            self._etapa(g, 'asentar_arco', ahora)
-            return
-        if cercano is not None and cercano <= STOP_LATERAL_M:
-            self._frenar_y_pensar_giro(g, ahora, girado, frente, izq, der, cercano)
-            return
-        v = g['v'] if girado < g['corte_atras'] else 0.0    # retrocede hasta ~90° (menos lo que sigue por inercia); despues gira en el lugar
-        self._vel_guiada(g, ahora, v, g['w'])
-        if ahora >= g['proximo_log']:
-            g['proximo_log'] = ahora + 0.3
-            self.imprimir(f'  giro {math.degrees(girado):4.0f}° | ' + self.texto_sonares((frente, izq, der)) + f' | v {v:+.3f}')
-
-    def _frenar_y_pensar_giro(self, g, ahora, girado, frente, izq, der, cercano):
-        self._parar_motores()
-        quien = 'el frente' if cercano == frente else ('la izquierda' if cercano == izq else 'la derecha')
-        self.imprimir(f'  FRENO a {math.degrees(girado):.0f}°: algo a {100 * cercano:.1f} cm por {quien} '
-                      f'. Pienso...')
-        # orientacion segura mas cercana: a 0° (se deshace el giro) o a 180° (se termina): ahi el cuerpo barre lo minimo
-        objetivo = 0.0 if girado < math.pi / 2 else math.pi
-        delta_pivote = (objetivo - girado) * g['lado']
-        self.imprimir(f'  Me enderezo {"hacia atras (deshago el giro)" if objetivo == 0.0 else "hasta los 180°"}: pivoto '
-                      f'{math.degrees(abs(objetivo - girado)):.0f}° y vuelvo a medir.')
-        g['rehacer'] = (objetivo == 0.0)
-        self._iniciar_pivote(g, ahora, delta_pivote, 'pivotar_giro', clave='pivote_giro')
-
-    def _asentar_giro(self, g, ahora, frente, izq, der):
-        if ahora - g['t_etapa'] < 0.7:
-            return
-        self.imprimir('  Medi: ' + self.texto_sonares((frente, izq, der)))
-        if g.pop('rehacer', False):                              # volvio a 0°: replanea con lo que ve ahora y gira de nuevo
-            y0 = EstimadorPasillo().posicion(izq, der)
-            g['y0'] = 0.0 if y0 is None else y0
-            g['y0'] = max(-0.062, min(0.062, g['y0']))
-            self._planear_arco(g)
-            g['theta0'] = self.odo.theta
-            self.imprimir('  Reintento el giro.')
-            g['atras'] = {'dist': 0.05, 's0': self.odo.s, 'siguiente': 'girando'}
-            self._etapa(g, 'atras', ahora)
-        else:                                                    # llego a los 180°: termina
-            g['girado'] = math.pi
-            self._etapa(g, 'asentando', ahora)
-
     def _procesar_guiado(self, ahora):
         g = self.guiado
         son = self.sonares()
@@ -985,40 +882,25 @@ class Controlador:
             self._asentar_despegue(ahora, g, frente, izq, der)
         elif e == 'brusca':
             self._paso_brusca(ahora, g, frente, izq, der)
-        elif e == 'girando' and g.get('dos90'):
+        elif e == 'girando':
             self._empezar_giro_d(g, ahora, 1)
         elif e == 'pivotar_d1':
             self._pivotar(g, ahora, frente, izq, der, clave='pivote_d1', siguiente='pausa_d')
         elif e == 'pausa_d':
-            if ahora - g['t_etapa'] >= 0.8:
-                self.imprimir('  Mitad del giro: ' + self.texto_sonares((frente, izq, der)))
-                self._empezar_giro_d(g, ahora, 2)
+            self._empezar_giro_d(g, ahora, 2)
         elif e == 'pivotar_d2':
             self._pivotar(g, ahora, frente, izq, der, clave='pivote_d2', siguiente='asentando')
-        elif e == 'girando':
-            self._paso_arco(ahora, g, frente, izq, der)
         elif e == 'pensar':
             self._pensar(g, ahora, frente, izq, der)
         elif e == 'atras':
             self._atras(g, ahora, frente, izq, der)
         elif e == 'asentar_atras':
             self._asentar_atras(g, ahora, frente, izq, der)
-        elif e == 'pivotar_giro':
-            self._pivotar(g, ahora, frente, izq, der, clave='pivote_giro', siguiente='asentar_giro')
-        elif e == 'asentar_giro':
-            self._asentar_giro(g, ahora, frente, izq, der)
-        elif e == 'asentar_arco':
-            if ahora - g['t_etapa'] >= 0.8:
-                girado = (self.odo.theta - g['theta0']) * g['lado']
-                resto = math.radians(180.0 + g['adicional']) - girado
-                self._iniciar_pivote(g, ahora, resto * g['lado'], 'pivotar_fin', clave='pivote_fin')
-        elif e == 'pivotar_fin':
-            self._pivotar(g, ahora, frente, izq, der, clave='pivote_fin', siguiente='asentando')
         elif e == 'asentando':
             if ahora - g['t_etapa'] >= 0.6:
                 g['girado'] = (self.odo.theta - g['theta0']) * g['lado']
                 self.guiado = None
-                self.imprimir(f'  Giro hecho: {math.degrees(g["girado"]):.1f}° segun los encoders (pedido {180 + g["adicional"]:g}°).')
+                self.imprimir(f'  Giro hecho: {math.degrees(g["girado"]):.1f}° segun los encoders (pedido {180 + 2 * g["adicional90"] + g["adicional"]:g}°).')
                 self.imprimir('  Despues del giro: ' + self.texto_sonares((frente, izq, der)))
                 if g['despues']:
                     self.enderezar_avanzando(g['despues'])

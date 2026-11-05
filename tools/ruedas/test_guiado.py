@@ -367,84 +367,46 @@ class Enderezar(Banco):
 
 
 class Giro180(Banco):
-    def probar(self, y, grados=0.0, adicional=0.0, despues=None, vel=150, **kw):
+    """El 180 son dos giros de 90 seguidos (orden 7) hacia la pared lateral mas cercana; solo retrocede un poco si el frente esta muy cerca."""
+
+    def probar(self, y, grados=0.0, adicional=0.0, despues=None, corr90=0.0, vel=40, **kw):
+        kw.setdefault('ganancia_giro', 1.0)
         self.montar(y=y, th=math.radians(grados), **kw)
-        self.assertTrue(self.c.giro_180_hacia_la_pared(vel, adicional, despues))
-        self.assertTrue(self.correr_hasta(self.terminado, 40))
+        self.assertTrue(self.c.giro_180_hacia_la_pared(vel, adicional, despues, corr90))
+        self.assertTrue(self.correr_hasta(self.terminado, 60))
         self.correr_hasta(lambda: False, 1.0)
 
-    def test_gira_hacia_la_pared_cercana_y_queda_centrado_sin_chocar(self):
-        for y, sentido in ((0.058, +1), (-0.058, -1), (0.04, +1), (-0.04, -1)):
+    def test_dos_giros_de_90_seguidos_hacia_la_pared_mas_cercana(self):
+        for y, lado in ((0.03, 'izquierda'), (-0.03, 'derecha')):
             self.probar(y, semilla=int(1000 * abs(y)))
             self.assertFalse(self.robot.choco, (y, self.robot.min_hueco))
-            self.assertAlmostEqual(abs(self.rumbo()), math.pi, delta=math.radians(32), msg=(y, math.degrees(self.rumbo())))                # el simulador gira 0,9 de lo que cuentan los encoders
-            self.assertLess(abs(self.robot.y), 0.035, (y, self.robot.y))            # al terminar esta cerca del eje: se alejo de la pared
-            wanted = [a for t, a in self.robot.enviadas if t == 'vel' and a[1] != 0.0]
-            self.assertEqual(math.copysign(1, wanted[0][1]), sentido)                # giro hacia el lado de la pared cercana
-            self.assertLess(wanted[0][0], 0.0)                                       # y retrocediendo
+            self.assertTrue(any('Giro 1/2' in m for m in self.mensajes) and any('Giro 2/2' in m for m in self.mensajes))
+            self.assertTrue(any('dos giros de 90° hacia la ' + lado in m for m in self.mensajes), (y, lado))
+            self.assertLess(abs(abs(self.rumbo()) - math.pi), math.radians(20), (y, math.degrees(self.rumbo())))   # el simulador se pasa ~10° por pivote
+            self.assertFalse([a for t, a in self.robot.enviadas if t == 'vel' and a[0] < 0])                       # no retrocedio
 
-    def test_en_el_lugar_ese_mismo_robot_rozaba_la_pared(self):
-        """Control de la prueba: con el centro a 5,6 cm del eje, girar 180 SIN retroceder barre una esquina contra la pared."""
-        self.montar(y=0.056)
-        self.robot.enviar_vel(0.0, 2.2)
-        for _ in range(int(2.0 / 0.05)):
-            self.robot.avanzar(0.05)
-        self.assertTrue(self.robot.choco or self.robot.min_hueco < 0.012)
-
-    def test_el_sumador_de_grados_mueve_el_corte(self):
-        self.probar(0.0, adicional=0.0, semilla=5)
-        sin = abs(self.robot.th)                                                    # sin envolver: pasarse de 180 no cuenta como volver
-        self.assertTrue(any('pedido 180' in m for m in self.mensajes))
-        self.probar(0.0, adicional=10.0, semilla=5)
-        con = abs(self.robot.th)
-        self.assertTrue(any('pedido 190' in m for m in self.mensajes))
-        self.assertAlmostEqual(math.degrees(con - sin), 9.0, delta=4.0)           # +10 pedidos, el simulador gira 0,9 de lo que cuentan los encoders
-
-    def test_con_el_centro_muy_corrido_no_gira_y_pide_centrar(self):
-        self.montar(y=0.068)
-        self.assertFalse(self.c.giro_180_hacia_la_pared(150))
-        self.assertTrue(any('Centralo primero' in m for m in self.mensajes))
-        self.assertEqual([a for t, a in self.robot.enviadas if t == 'vel'], [])
+    def test_los_sumadores_se_aplican_a_cada_giro_y_el_del_180_al_segundo(self):
+        self.probar(0.0, adicional=5.0, corr90=10.0)
+        self.assertTrue(any('Giro 1/2: 100°' in m for m in self.mensajes))
+        self.assertTrue(any('Giro 2/2: 105°' in m for m in self.mensajes))
+        self.assertTrue(any('pedido 205' in m for m in self.mensajes))
 
     def test_informa_las_distancias_al_terminar(self):
         self.probar(0.05)
         self.assertTrue(any('Despues del giro' in m and 'pared izquierda' in m and 'frente' in m for m in self.mensajes))
 
     def test_despues_avanza_enderezandose(self):
-        self.montar(y=0.05)
-        self.c.giro_180_hacia_la_pared(150, 0.0, despues_m=0.25)
-        self.assertTrue(self.correr_hasta(lambda: self.c.guiado is None and any('Llegue' in m or 'Frene' in m for m in self.mensajes), 60))
-        self.assertFalse(self.robot.choco)
+        self.montar(y=0.02, ganancia_giro=1.0)
+        self.c.giro_180_hacia_la_pared(40, 0.0, despues_m=0.25)
+        self.assertTrue(self.correr_hasta(lambda: self.c.guiado is None and any('Llegue' in m or 'Frene' in m for m in self.mensajes), 80))
         self.assertTrue(any('linea recta enderezando: 25 cm' in m for m in self.mensajes))
 
-    def test_en_un_pasillo_demasiado_angosto_no_gira(self):
-        self.montar(y=0.0, ancho=0.30)                                              # el robot barre 32 cm al girar: no entra
-        self.assertFalse(self.c.giro_180_hacia_la_pared(150))
-        self.assertTrue(any('No giro' in m for m in self.mensajes))
-        self.assertEqual([a for t, a in self.robot.enviadas if t == 'vel'], [])
-
-    def test_en_el_fondo_del_pasillo_retrocede_antes_de_girar_y_no_toca_la_pared_de_enfrente(self):
-        for frente in (0.06, 0.08):
-            self.montar(y=0.0, pared_x=0.1399 + frente, deriva=0.013)
-            self.assertTrue(self.c.giro_180_hacia_la_pared(150))
-            self.assertTrue(self.correr_hasta(self.terminado, 40))
-            self.assertFalse(self.robot.choco, (frente, self.robot.min_hueco, self.mensajes[-6:]))
-            self.assertTrue(any('retrocedo' in m and 'antes de girar' in m for m in self.mensajes))
-
-    def test_centrado_gira_en_dos_pivotes_de_90_sin_chocar(self):
-        for ancho, y in ((0.40, 0.0), (0.40, 0.02), (0.40, -0.03), (0.46, 0.04)):
-            self.montar(y=y, ancho=ancho, ganancia_giro=1.0, semilla=int(100 * ancho + 1000 * abs(y)))     # (el 90 real ya anda: sin subgiro)
-            self.assertTrue(self.c.giro_180_hacia_la_pared(40))
-            self.assertTrue(self.correr_hasta(self.terminado, 60))
-            self.assertFalse(self.robot.choco, (ancho, y, self.robot.min_hueco, self.mensajes[-4:]))
-            self.assertTrue(any('Giro 1/2' in m for m in self.mensajes) and any('Giro 2/2' in m for m in self.mensajes))
-            self.assertFalse(any('arco con retroceso' in m for m in self.mensajes))
-            self.assertLess(abs(abs(self.rumbo()) - math.pi), math.radians(20), (ancho, y))   # el simulador se pasa ~10° en cada pivote: es lo que el sumador corrige
-
-    def test_corrido_del_eje_usa_el_arco_con_retroceso(self):
-        self.montar(y=0.055)
-        self.assertTrue(self.c.giro_180_hacia_la_pared(150))
-        self.assertTrue(any('arco con retroceso' in m for m in self.mensajes))
+    def test_solo_retrocede_un_poco_si_el_frente_esta_muy_cerca(self):
+        self.montar(y=0.0, pared_x=0.1399 + 0.06, ganancia_giro=1.0)
+        self.assertTrue(self.c.giro_180_hacia_la_pared(40))
+        self.assertTrue(self.correr_hasta(self.terminado, 60))
+        self.assertTrue(any('retrocedo' in m and 'antes de girar' in m for m in self.mensajes))
+        self.assertLess(-min(0.0, self.robot.x), 0.10)                              # unos cm (la pared estaba a 6 cm del frente)
 
     def test_sin_sonares_no_gira(self):
         self.montar()

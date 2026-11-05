@@ -9,7 +9,6 @@ Si algo sale mal (no logra separarse de una pared, el pivote no arranca, una par
 preferible a chocar. Se sigue la posicion a lo largo del pasillo (`pos`, m respecto del centro de la celda) con la odometria y
 se la corrige con la pared de enfrente cuando se la ve.
 """
-import math
 import os
 import statistics
 import sys
@@ -26,9 +25,7 @@ F_CENTRO = CELDA / 2 - F_X            # lo que lee el frontal en el centro de la
 FRENTE_PARED_M = 0.16                 # el frontal lee menos que esto: hay pared de enfrente (abierto lee 40 cm o mas)
 FRENTE_REFERENCIA_M = 1.2             # el frontal sirve de referencia hasta esta distancia (el HC-SR04 es poco confiable mas lejos)
 LATERAL_PARED_M = 0.25                # un lateral lee menos que esto: hay pared (a 8,15 cm del eje, centrado lee ~12 cm)
-LATERAL_GIRO_MIN_M = 0.09             # el cuerpo barre 16,1 cm: con un lateral a menos de esto no se gira en el lugar
 POS_TOLERANCIA_M = 0.03               # pasado o corto del centro mas que esto: se corre antes de girar
-Y_CENTRO_180_M = 0.025               # antes de una media vuelta el centro tiene que estar a menos de esto del eje del pasillo
 T_ASENTAR_S, T_MEDIR_S = 0.4, 0.9      # quieto: espera que se asiente y mide hasta aqui (antes 0,7 y 1,5 s: tardaba mucho en decidir)
 NOMBRES = ('+x', '+y', '-x', '-y')
 
@@ -46,7 +43,6 @@ class Recorrido:
         self.s0 = 0.0
         self.intentos = {}
         self.pasos = 0
-        self.plan = []
         self.cuenta_celdas = 0
         c.ajustar_frenado = False
 
@@ -103,7 +99,6 @@ class Recorrido:
         self.imprimir('  celda %s mirando %s: frente %s | izq %s | der %s | pos %+.1f cm  (f=%s i=%s d=%s)' % (
             self.celda, NOMBRES[self.rumbo], 'paso' if frente else 'PARED', 'paso' if izq else 'PARED', 'paso' if der else 'PARED',
             100 * self.pos, self._cm(f), self._cm(i), self._cm(d)))
-        self.lat = (i, d)
         dire = self.mapa.decidir(self.celda, self.rumbo)
         if dire is None:
             self.estado = 'fin'
@@ -119,64 +114,19 @@ class Recorrido:
         if rel == 0:
             self._ir('avanzar', 'sigo derecho hacia %s' % (vecina(self.celda, dire),))
             return
+        # corto del centro del cruce: avanza (nunca retrocede); si frenó a 10 cm de la pared de enfrente fue a proposito
         k = (self.celda, self.rumbo)
-        # antes de girar en el lugar: centrado a lo largo del pasillo y con lugar a los costados
-        cerca = min([x for x in (i, d) if x is not None], default=None)
-        corto_con_pared = self.pos < 0 and f is not None and f < 0.2        # frenó a 10 cm de la pared de enfrente a proposito: no se acerca mas
-        if abs(self.pos) > POS_TOLERANCIA_M and not corto_con_pared and self.intentos.get(('c', k), 0) < 1:
-            self.intentos[('c', k)] = 1
-            self._corrida(-self.pos, 'estoy %.0f cm %s del centro: me corro antes de girar' % (
-                abs(100 * self.pos), 'pasado' if self.pos > 0 else 'corto'))
+        if self.pos < -POS_TOLERANCIA_M and not (f is not None and f < 0.2) and self.intentos.get(k, 0) < 1:
+            self.intentos[k] = 1
+            self._corrida(-self.pos, 'estoy %.0f cm corto del centro: avanzo antes de girar' % abs(100 * self.pos))
             return
-        if cerca is not None and cerca < LATERAL_GIRO_MIN_M and self.intentos.get(('l', k), 0) < 2:
-            self.intentos[('l', k)] = self.intentos.get(('l', k), 0) + 1
-            self.imprimir('  pared lateral a %.1f cm: me separo antes de girar' % (100 * cerca))
-            self._s_ini = self.c.odo.s
-            self.c.enderezar_avanzando(0.05, self.v)
-            self.siguiente = 'medir'
-            self._ir('corrida_fin')
-            return
-        # media vuelta con el centro corrido de los dos costados: retrocede y vuelve a entrar enderezandose (centra en el pasillo)
-        if rel == 2 and i is not None and d is not None and abs((d - i) / 2.0) > Y_CENTRO_180_M and self.intentos.get(('y', k), 0) < 2:
-            self.intentos[('y', k)] = self.intentos.get(('y', k), 0) + 1
-            self.imprimir('  estoy %.1f cm corrido del eje del pasillo: retrocedo y vuelvo a entrar para centrarme' % (100 * (d - i) / 2.0))
-            atras = 0.10 if (f is None or f < 0.30) else 0.0
-            self.plan = ([('atras', atras)] if atras else []) + [('adelante', 0.14 if atras else 0.10)]
-            self._ir('plan')
-            return
-        if rel in (1, 3):
-            self._ir('girar', 'giro 90° a la %s' % ('izquierda' if rel == 1 else 'derecha'))
-        else:
-            self._ir('girar', 'callejon: media vuelta')
-
-    def _plan(self, ahora):
-        if self.plan:
-            paso, m = self.plan.pop(0)
-            self._s_ini = self.c.odo.s
-            self.paso_plan = paso
-            if paso == 'atras':
-                self.c.distancia(-m, 0.12)
-            else:
-                self.c.enderezar_avanzando(m, self.v)
-            self._ir('plan_fin')
-        else:
-            self._ir('medir')
-
-    def _plan_fin(self, ahora):
-        self.pos += self.c.odo.s - self._s_ini
-        self._revisar_fin()
-        if self.estado != 'detenido':
-            self._ir('plan')
+        self._ir('girar', 'giro 90° a la %s' % ('izquierda' if rel == 1 else 'derecha') if rel in (1, 3) else 'callejon: dos giros de 90°')
 
     def _corrida(self, metros, texto):
-        """Se corre `metros` a lo largo del pasillo (+ adelante, - atras) y vuelve a medir."""
+        """Avanza `metros` enderezandose y vuelve a medir."""
         self.imprimir('  ' + texto)
         self._s_ini = self.c.odo.s
-        if metros > 0:
-            self.c.enderezar_avanzando(metros, self.v)
-        else:
-            self.c.distancia(metros, 0.12)
-        self.siguiente = 'medir'
+        self.c.enderezar_avanzando(metros, self.v)
         self._ir('corrida_fin')
 
     def _corrida_fin(self, ahora):
@@ -196,15 +146,7 @@ class Recorrido:
         rel = (self.dire - self.rumbo) % 4
         self._s_ini = self.c.odo.s
         if rel == 2:
-            ok = self.c.giro_180_hacia_la_pared(self.vel_dps, self.corr180, None, self.corr90)
-            if not ok:                                   # ancho/centrado no alcanzan: retrocede, se centra y vuelve a intentar
-                k = ('r', self.celda, self.rumbo)
-                if self.intentos.get(k, 0) >= 1:
-                    self.detener('no logro girar 180: no hay lugar o no puedo centrarme')
-                    return
-                self.intentos[k] = 1
-                self._corrida(-0.07, 'no puedo girar 180 asi: retrocedo y me centro')
-                return
+            self.c.giro_180_hacia_la_pared(self.vel_dps, self.corr180, None, self.corr90)
             self.nuevo_rumbo = self.dire
             self._ir('girar_fin')
             return
@@ -236,7 +178,6 @@ class Recorrido:
         self._ir('avanzar_fin')
 
     def _avanzar_fin(self, ahora):
-        t = getattr(self.c, 'ultimo_fin', '') or ''
         self._revisar_fin()
         if self.estado == 'detenido':
             return
