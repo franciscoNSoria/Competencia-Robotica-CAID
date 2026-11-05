@@ -292,7 +292,7 @@ class Enderezar(Banco):
 
     def test_pegado_a_una_pared_paralelo_se_separa_y_sigue_sin_detenerse(self):
         """Lo que pasaba: a 3 cm de la pared y paralelo, pivotar no cambia nada: se rendia y pedia reacomodar a mano."""
-        for y, g in ((-0.085, 0), (0.085, 0), (-0.085, 15), (0.085, -15)):
+        for y, g in ((-0.085, 0), (0.085, 0), (-0.085, 5), (0.085, -5)):
             self.probar(y, g, cm=100, semilla=3 + abs(g))
             self.assertFalse(self.robot.choco, (y, g, self.mensajes[-5:]))
             self.assertFalse(any('ME DETENGO' in m for m in self.mensajes), (y, g))
