@@ -5,8 +5,11 @@
  *   http://<ip>/            página de prueba con el video
  *   http://<ip>/status      JSON: versión, hash, ajustes, fps, señal WiFi
  *   http://<ip>/control?var=<ajuste>&val=<n>   cambia un ajuste de la cámara
+ *                                     (fps_max: tope de cuadros por segundo del stream)
  *   http://<ip>/capture     una sola foto JPEG
  *   http://<ip>:81/stream   video MJPEG (lo que lee ROS)
+ *   http://<ip>/servo       página con sliders para mover y calibrar el servo del GPIO13
+ *   http://<ip>/servo?ang=<0-180> | ?us=<400-2600> | ?min=<us>&med=<us>&max=<us>  mover / calibrar
  *
  * Las claves WiFi van en main/secrets.h (no se sube a git).
  */
@@ -28,6 +31,7 @@
 #include "driver/gpio.h"
 #include "esp_http_server.h"
 #include "esp_camera.h"
+#include "servo.h"
 #if CONFIG_SPIRAM
 #include "esp_psram.h"
 #endif
@@ -57,7 +61,7 @@ static const char *TAG = "cam";
 #define CAM_PIN_VSYNC   25
 #define CAM_PIN_HREF    23
 #define CAM_PIN_PCLK    22
-#define FLASH_LED_GPIO  4
+// Servo en GPIO13 y LED flash (GPIO4) apagado: ver servo.c
 
 static camera_config_t camera_config = {
     .pin_pwdn = CAM_PIN_PWDN,
@@ -89,17 +93,22 @@ static camera_config_t camera_config = {
 
 /* ================= ESTADO PARA /status ================= */
 static volatile float s_fps = 0.0f;
+/* Tope de fps del stream. Sin tope la ESP32 manda todo lo que puede y satura el WiFi: cuando la
+ * señal tiene un bajón, los cuadros se acumulan en el buffer TCP y llegan a los tirones. Con
+ * margen, un bajón se absorbe sin que caigan los fps. ROS usa 15. */
+static volatile int s_fps_max = 15;
 static bool s_psram = false;
 
 /* ================= STREAM MJPEG (puerto 81) ================= */
 #define PART_BOUNDARY "123456789000000000000987654321"
 static const char *STREAM_CONTENT_TYPE = "multipart/x-mixed-replace;boundary=" PART_BOUNDARY;
-static const char *STREAM_BOUNDARY     = "\r\n--" PART_BOUNDARY "\r\n";
-static const char *STREAM_PART         = "Content-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n";
+/* Separador + encabezado de cada cuadro, en un solo envío (antes eran dos paquetes chicos) */
+static const char *STREAM_PART = "\r\n--" PART_BOUNDARY "\r\n"
+                                 "Content-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n";
 
 static esp_err_t stream_handler(httpd_req_t *req)
 {
-    char part_buf[64];
+    char part_buf[128];
     esp_err_t res = httpd_resp_set_type(req, STREAM_CONTENT_TYPE);
     if (res != ESP_OK) return res;
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
@@ -109,7 +118,19 @@ static esp_err_t stream_handler(httpd_req_t *req)
     int frames = 0;
     int64_t t0 = esp_timer_get_time();
 
+    int64_t proximo = esp_timer_get_time();
+
     while (true) {
+        // Respetar el tope de fps: esperar hasta el turno del próximo cuadro
+        int fmax = s_fps_max;
+        if (fmax > 0) {
+            int64_t falta = proximo - esp_timer_get_time();
+            if (falta > 1000) vTaskDelay(pdMS_TO_TICKS(falta / 1000));
+            int64_t ahora = esp_timer_get_time();
+            proximo += 1000000 / fmax;
+            if (proximo < ahora) proximo = ahora;   // venía atrasado: no recuperar de golpe
+        }
+
         camera_fb_t *fb = esp_camera_fb_get();
         if (!fb) {
             ESP_LOGE(TAG, "Fallo la captura");
@@ -118,8 +139,7 @@ static esp_err_t stream_handler(httpd_req_t *req)
         }
         size_t hlen = snprintf(part_buf, sizeof(part_buf), STREAM_PART, (unsigned)fb->len);
 
-        res = httpd_resp_send_chunk(req, STREAM_BOUNDARY, strlen(STREAM_BOUNDARY));
-        if (res == ESP_OK) res = httpd_resp_send_chunk(req, part_buf, hlen);
+        res = httpd_resp_send_chunk(req, part_buf, hlen);
         if (res == ESP_OK) res = httpd_resp_send_chunk(req, (const char *)fb->buf, fb->len);
         esp_camera_fb_return(fb);
         if (res != ESP_OK) break;   // el cliente cerró la conexión
@@ -184,7 +204,9 @@ static esp_err_t control_handler(httpd_req_t *req)
     else if (!strcmp(var, "gain"))       r = s->set_agc_gain(s, v);         // 0-30 (con agc=0)
     else if (!strcmp(var, "vflip"))      r = s->set_vflip(s, v);            // 0/1
     else if (!strcmp(var, "hmirror"))    r = s->set_hmirror(s, v);          // 0/1
-    else if (!strcmp(var, "led"))        r = gpio_set_level(FLASH_LED_GPIO, v ? 1 : 0); // flash, 0/1
+    else if (!strcmp(var, "fps_max"))    { s_fps_max = (v < 0) ? 0 : (v > 60 ? 60 : v); r = 0; } // 0 = sin tope
+    else if (!strcmp(var, "servo"))      { servo_grados((float)v); r = 0; } // grados 0-180 (calibrado)
+    else if (!strcmp(var, "servo_us"))   { servo_us(v); r = 0; }             // pulso en us, sin calibrar
     else conocido = false;
 
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
@@ -203,7 +225,7 @@ static esp_err_t control_handler(httpd_req_t *req)
 /* ================= /status ================= */
 static esp_err_t status_handler(httpd_req_t *req)
 {
-    char json[640];
+    char json[768];
     char sha[17] = {0};
     esp_app_get_elf_sha256(sha, sizeof(sha));
 
@@ -213,19 +235,23 @@ static esp_err_t status_handler(httpd_req_t *req)
 
     snprintf(json, sizeof(json),
              "{\"firmware\":\"esp32_cam\",\"version\":\"%s\",\"elf_sha256\":\"%s\","
-             "\"uptime_s\":%lld,\"psram\":%s,\"rssi_dbm\":%d,\"fps\":%.1f,"
+             "\"uptime_s\":%lld,\"psram\":%s,\"rssi_dbm\":%d,\"fps\":%.1f,\"fps_max\":%d,"
              "\"framesize\":%d,\"quality\":%d,\"brightness\":%d,\"contrast\":%d,"
              "\"saturation\":%d,\"awb\":%d,\"awb_gain\":%d,\"wb_mode\":%d,"
              "\"aec\":%d,\"aec_value\":%d,\"agc\":%d,\"gain\":%d,"
-             "\"vflip\":%d,\"hmirror\":%d}",
+             "\"vflip\":%d,\"hmirror\":%d,"
+             "\"servo_us\":%d,\"servo_grados\":%.1f,\"servo_min_us\":%d,\"servo_med_us\":%d,"
+             "\"servo_max_us\":%d}",
              esp_app_get_description()->version, sha,
              (long long)(esp_timer_get_time() / 1000000), s_psram ? "true" : "false",
-             rssi, s_fps,
+             rssi, s_fps, s_fps_max,
              (int)s->status.framesize, (int)s->status.quality, (int)s->status.brightness,
              (int)s->status.contrast, (int)s->status.saturation, (int)s->status.awb,
              (int)s->status.awb_gain, (int)s->status.wb_mode, (int)s->status.aec,
              (int)s->status.aec_value, (int)s->status.agc, (int)s->status.agc_gain,
-             (int)s->status.vflip, (int)s->status.hmirror);
+             (int)s->status.vflip, (int)s->status.hmirror,
+             servo_us_actual(), servo_grados_actual(), servo_cal_min(), servo_cal_med(),
+             servo_cal_max());
 
     httpd_resp_set_type(req, "application/json");
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
@@ -239,7 +265,8 @@ static const char INDEX_HTML[] =
     "<body style='margin:0;background:#111;color:#eee;font-family:sans-serif'>"
     "<p style='padding:8px;margin:0'>ESP32-CAM CAID &middot; "
     "<a style='color:#8cf' href='/status'>/status</a> &middot; "
-    "<a style='color:#8cf' href='/capture'>/capture</a></p>"
+    "<a style='color:#8cf' href='/capture'>/capture</a> &middot; "
+    "<a style='color:#8cf' href='/servo'>/servo</a></p>"
     "<img id=s style='width:100%;max-width:640px;display:block'>"
     "<script>document.getElementById('s').src='http://'+location.hostname+':81/stream'</script>"
     "</body></html>";
@@ -248,6 +275,77 @@ static esp_err_t index_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, "text/html");
     return httpd_resp_sendstr(req, INDEX_HTML);
+}
+
+/* ================= /servo (calibración con sliders) ================= */
+static const char SERVO_HTML[] =
+    "<!doctype html><html><head><meta charset=utf-8>"
+    "<meta name=viewport content='width=device-width'><title>Servo CAID</title>"
+    "<style>body{margin:0;padding:12px;background:#111;color:#eee;font-family:sans-serif}"
+    "input[type=range]{width:100%;height:36px}button{font-size:16px;padding:8px 12px;margin:4px}"
+    "h2{margin:16px 0 4px}.v{font-size:28px;color:#7f7}</style></head><body>"
+    "<p><a style='color:#8cf' href='/'>&larr; cámara</a></p>"
+    "<h2>1. Pulso (microsegundos)</h2>"
+    "<p>Mové despacio hasta el tope de cada lado: donde el servo deja de girar o zumba, "
+    "volvé un poco. Ese es el límite.</p>"
+    "<div class=v><span id=us>-</span> us</div>"
+    "<input type=range id=rus min=400 max=2600 step=5>"
+    "<p><button onclick=\"marca('min')\">Este es 0&deg;</button>"
+    "<button onclick=\"marca('med')\">Este es 90&deg;</button>"
+    "<button onclick=\"marca('max')\">Este es 180&deg;</button></p>"
+    "<p>0&deg; = <b id=cmin>-</b> us &middot; 90&deg; = <b id=cmed>-</b> us &middot; "
+    "180&deg; = <b id=cmax>-</b> us "
+    "<button onclick=guardar()>Guardar calibración</button> <span id=ok></span></p>"
+    "<h2>2. Ángulo (con la calibración)</h2>"
+    "<div class=v><span id=ang>-</span>&deg;</div>"
+    "<input type=range id=rang min=0 max=180 step=1>"
+    "<p><button onclick=ir(0)>0&deg;</button><button onclick=ir(45)>45&deg;</button>"
+    "<button onclick=ir(90)>90&deg;</button><button onclick=ir(135)>135&deg;</button>"
+    "<button onclick=ir(180)>180&deg;</button></p>"
+    "<script>"
+    "var cal={min:0,med:0,max:0},t=0,pend=null;"
+    "function q(u){return fetch(u).then(r=>r.json()).then(mostrar)}"
+    "function mostrar(d){us.textContent=d.us;ang.textContent=d.grados.toFixed(0);"
+    "rus.value=d.us;rang.value=d.grados;if(!cal.min){cal.min=d.min;cal.med=d.med;cal.max=d.max}"
+    "pinta()}"
+    "function pinta(){cmin.textContent=cal.min;cmed.textContent=cal.med;"
+    "cmax.textContent=cal.max}"
+    /* manda como mucho cada 60 ms mientras se arrastra */
+    "function enviar(u){pend=u;if(t)return;t=setTimeout(function(){t=0;var x=pend;pend=null;"
+    "q(x)},60)}"
+    "rus.oninput=function(){us.textContent=rus.value;enviar('/servo?us='+rus.value)};"
+    "rang.oninput=function(){ang.textContent=rang.value;enviar('/servo?ang='+rang.value)};"
+    "function ir(a){q('/servo?ang='+a)}"
+    "function marca(k){cal[k]=+rus.value;pinta();ok.textContent='(sin guardar)'}"
+    "function guardar(){q('/servo?min='+cal.min+'&med='+cal.med+'&max='+cal.max).then(function(){"
+    "ok.textContent='guardado'})}"
+    "q('/servo?estado=1');"
+    "</script></body></html>";
+
+static esp_err_t servo_handler(httpd_req_t *req)
+{
+    char query[96], val[16];
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) != ESP_OK) {
+        httpd_resp_set_type(req, "text/html");
+        return httpd_resp_sendstr(req, SERVO_HTML);
+    }
+    char vmin[16], vmed[16], vmax[16];
+    if (httpd_query_key_value(query, "min", vmin, sizeof(vmin)) == ESP_OK &&
+        httpd_query_key_value(query, "max", vmax, sizeof(vmax)) == ESP_OK) {
+        int med = (httpd_query_key_value(query, "med", vmed, sizeof(vmed)) == ESP_OK) ? atoi(vmed) : 0;
+        servo_calibrar(atoi(vmin), med, atoi(vmax));
+    } else if (httpd_query_key_value(query, "us", val, sizeof(val)) == ESP_OK) {
+        servo_us(atoi(val));
+    } else if (httpd_query_key_value(query, "ang", val, sizeof(val)) == ESP_OK) {
+        servo_grados((float)atof(val));
+    }
+    char json[160];
+    snprintf(json, sizeof(json), "{\"us\":%d,\"grados\":%.1f,\"min\":%d,\"med\":%d,\"max\":%d}",
+             servo_us_actual(), servo_grados_actual(), servo_cal_min(), servo_cal_med(),
+             servo_cal_max());
+    httpd_resp_set_type(req, "application/json");
+    return httpd_resp_sendstr(req, json);
 }
 
 /* ================= SERVIDORES HTTP ================= */
@@ -267,6 +365,8 @@ static void start_webservers(void)
         httpd_register_uri_handler(web, &u_status);
         httpd_register_uri_handler(web, &u_control);
         httpd_register_uri_handler(web, &u_capture);
+        httpd_uri_t u_servo   = { .uri = "/servo",   .method = HTTP_GET, .handler = servo_handler };
+        httpd_register_uri_handler(web, &u_servo);
     } else {
         ESP_LOGE(TAG, "No arranco el servidor del puerto 80");
     }
@@ -337,6 +437,8 @@ static void wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
     esp_wifi_set_ps(WIFI_PS_NONE);   // sin ahorro de energía: mucha menos latencia
+    esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT20);  // 20 MHz: aguanta mejor la interferencia que 40
+    esp_wifi_set_max_tx_power(80);   // 20 dBm, el máximo (unidades de 0,25 dBm)
     ESP_LOGI(TAG, "Conectando a la red \"%s\"...", WIFI_SSID);
 }
 
@@ -360,8 +462,10 @@ static esp_err_t init_camera(void)
         return err;
     }
     sensor_t *s = esp_camera_sensor_get();
-    s->set_vflip(s, 1);      // cambiar a 1 si la imagen sale dada vuelta
-    s->set_hmirror(s, 0);    // cambiar a 1 si sale espejada
+    // Cámara montada girada 180° (2026-11-05): se invierten los dos. Lo hace el sensor, no
+    // cuesta fps. Si se vuelve a montar derecha: vflip 1, hmirror 0.
+    s->set_vflip(s, 0);
+    s->set_hmirror(s, 1);
     ESP_LOGI(TAG, "Camara lista (PSRAM: %s)", s_psram ? "si" : "no");
     return ESP_OK;
 }
@@ -373,17 +477,14 @@ void app_main(void)
     esp_app_get_elf_sha256(sha, sizeof(sha));
     ESP_LOGI(TAG, "Firmware esp32_cam v%s (sha %s)", esp_app_get_description()->version, sha);
 
-    // LED flash apagado (GPIO4 se prende solo al arrancar en algunas placas)
-    gpio_reset_pin(FLASH_LED_GPIO);
-    gpio_set_direction(FLASH_LED_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(FLASH_LED_GPIO, 0);
-
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+    servo_init();   // GPIO13 (y LED flash apagado); lee la calibración de NVS
 
     if (init_camera() != ESP_OK) {
         ESP_LOGE(TAG, "Reinicio en 2 s...");

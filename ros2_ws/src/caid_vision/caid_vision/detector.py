@@ -5,7 +5,8 @@ Entrega píxeles, no posiciones: la ubicación en el laberinto la calcula la nav
 del robot y el ángulo de la cámara (caid_navigation/camara.py). Formato (el mismo que publica
 vision_node en /vision/detecciones, como JSON):
 
-    {'flechas':  [{'color', 'punta': (u, v), 'cuello': (u, v), 'cola': (u, v), 'area'}],
+    {'flechas':  [{'color', 'punta': (u, v), 'cuello': (u, v), 'cola': (u, v), 'area',
+                   'angulo', 'hombros': [(u, v), (u, v)]}],   # hombros: base de la punta
      'cubos':    [{'color', 'caja': (x, y, w, h), 'area'}],
      'canastos': [{'color', 'caja': (x, y, w, h), 'area'}],
      'zonas':    [(u, v), ...]}          # píxeles rojos del piso (líneas de zona prohibida)
@@ -21,20 +22,42 @@ import numpy as np
 RANGOS = {  # HSV de OpenCV (H 0-180). Ajustar con la luz real.
     'rojo': [((0, 110, 40), (8, 255, 255)), ((172, 110, 40), (180, 255, 255))],
     'verde': [((40, 90, 40), (85, 255, 255))],
-    'azul': [((95, 110, 40), (130, 255, 255))],
+    'azul': [((88, 110, 40), (130, 255, 255))],   # el cubo azul real da H 89-109
 }
-AREA_MIN_CUBO = 60
-AREA_MIN_FLECHA = 150   # el mismo piso que analizar_flecha; con menos no hay forma que medir
-AREA_MIN_CANASTO = 120
-# Lado del kernel de la apertura morfológica que limpia ruido. El vástago de la flecha mide
-# 10 mm: con la cámara de 554 px de foco son 7 px a 0,8 m, así que una apertura grande se lo come
-# y el análisis de forma deja de reconocerla.
-KERNEL_APERTURA = 3
+# Brillo (V) y saturación (S) mínimos para todos los colores, además de los de RANGOS. Con la
+# ESP32-CAM, las zonas oscuras (monitor, sombras) tienen un tinte verde/azul con V bajo y salían
+# cubos y flechas falsos por toda la imagen. vision_node los cambia en vivo (parámetros v_min,
+# s_min, area_min_*).
+S_MIN = 0
+AREA_MIN_CUBO = 150       # px² (antes 60: una manchita de 8x8 ya era un cubo)
+AREA_MIN_FLECHA = 150     # px²; flecha chica nueva (30 mm, 3,45 cm²) a ~70 cm: ~200 px²
+AREA_MIN_CANASTO = 250    # antes 120
+# Una flecha nunca es maciza: los "hombros" entre punta y cuerpo le bajan la solidez (área /
+# envolvente convexa). Flechas del reglamento (nov. 2026: cuerpo 10 mm de ancho, punta 29 mm de
+# base y 10 mm de alto, largo total 30 / 60 / 95 mm): 0,64 / 0,58 / 0,55. Un cubo es ~1,0; girado
+# se ve como un rombo y antes salía como flecha diagonal.
+SOLIDEZ_MAX_FLECHA = 0.88
+# Una flecha tiene exactamente 2 entradas profundas (los hombros, ~0,3 de la raíz del área) y el
+# resto del borde casi liso. Las manchas de ruido de las zonas oscuras tienen hombros flojos
+# (0,13-0,16) o varias entradas (la 3ª de 0,09 a 0,29). Probado con flechas chicas y oscuras
+# (JPEG, ruido): con estos dos cortes se pierde 1 de 324 y no queda ninguna falsa en las fotos.
+HOMBRO_MIN = 0.13    # el más profundo (flecha larga nueva de lejos, cuerpo de ~9 px: 0,13-0,20)
+HOMBRO2_MIN = 0.10   # el otro: en una flecha chica (~50 px) uno sale flojo por los píxeles (0,13)
+TERCERA_ENTRADA_MAX = 0.15   # 0,11 rechazaba la flecha azul real (punta serruchada: 0,14)
+# Los hombros son esquinas agudas: el desenfoque, el JPEG y el filtro de la máscara los redondean
+# y la base de la punta se mide ~8-12 px más corta, sin importar el tamaño (probado de 8 a 30
+# px/cm). Se corre cada hombro esto hacia afuera para que caid_navigation/camara.py mida bien
+# los 29 mm.
+HOMBRO_CORRECCION_PX = 5.0
+V_MIN = 55        # rojo y verde
+V_MIN_AZUL = 40   # el azul es oscuro por naturaleza: el cubo azul real da V 47-92 (mediana 61)
 
 
 def mascara(hsv, color):
     m = np.zeros(hsv.shape[:2], np.uint8)
     for a, b in RANGOS[color]:
+        v_min = V_MIN_AZUL if color == 'azul' else V_MIN
+        a = (a[0], max(a[1], S_MIN), max(a[2], v_min))
         m |= cv2.inRange(hsv, np.array(a), np.array(b))
     return m
 
@@ -43,31 +66,24 @@ def es_cubo(c):
     """Cuadrado visto de frente: macizo (sin entradas), 4 lados y largo ~ ancho."""
     hull = cv2.convexHull(c)
     solidez = cv2.contourArea(c) / max(cv2.contourArea(hull), 1)
-    if solidez < 0.9:
+    if solidez < 0.85:      # con poca luz y JPEG los bordes salen serruchados (real: 0,90-0,91)
         return False
     (_, _), (w, h), _ = cv2.minAreaRect(c)
-    if min(w, h) == 0 or max(w, h) / min(w, h) > 1.33:
+    # Girado 45° sobre su eje vertical se ve sqrt(2) = 1,41 veces más ancho que alto
+    if min(w, h) == 0 or max(w, h) / min(w, h) > 1.5:
         return False
-    if cv2.contourArea(c) / (w * h) < 0.85:
+    if cv2.contourArea(c) / (w * h) < 0.75:   # real: 0,83-0,85; una flecha da 0,47-0,62
         return False
     aprox = cv2.approxPolyDP(hull, 0.06 * cv2.arcLength(hull, True), True)
     return 4 <= len(aprox) <= 6
 
 
 def es_canasto(c):
-    """
-    Canasto visto de costado y un poco desde arriba: entre 1,4 y 3,5 veces más ancho que alto, y
-    macizo.
-
-    El canasto mide 44 x 20 mm de frente (2,2 veces) y en diagonal se ven dos caras (unos 62 mm de
-    ancho, 3,1 veces). El tope de 3,5 deja afuera los pedazos alargados del mismo color, como el
-    vástago de una flecha (85 x 10 mm, 8,5 veces), que en E2 se tomó por un canasto.
-    """
+    """Canasto visto de costado y un poco desde arriba: ancho >= 1,4 veces el alto y macizo."""
     x, y, w, h = cv2.boundingRect(c)
     hull = cv2.convexHull(c)
     solidez = cv2.contourArea(c) / max(cv2.contourArea(hull), 1)
-    return 1.4 * h <= w <= 3.5 * h and solidez > 0.85 \
-        and cv2.contourArea(c) / max(w * h, 1) > 0.7
+    return w >= 1.4 * h and solidez > 0.85 and cv2.contourArea(c) / max(w * h, 1) > 0.7
 
 
 def analizar_flecha(c):
@@ -75,6 +91,8 @@ def analizar_flecha(c):
     area = cv2.contourArea(c)
     if area < 150:
         return None
+    if area / max(cv2.contourArea(cv2.convexHull(c)), 1) > SOLIDEZ_MAX_FLECHA:
+        return None     # demasiado maciza para ser flecha (cubo, canasto, mancha)
     hull_idx = cv2.convexHull(c, returnPoints=False)
     if hull_idx is None or len(hull_idx) < 4:
         return None
@@ -87,8 +105,10 @@ def analizar_flecha(c):
     defectos = sorted(defectos.reshape(-1, 4), key=lambda d: d[3], reverse=True)
     escala = math.sqrt(area)
     d1, d2 = defectos[0], defectos[1]
-    if d2[3] / 256.0 < 0.06 * escala:
+    if d1[3] / 256.0 < HOMBRO_MIN * escala or d2[3] / 256.0 < HOMBRO2_MIN * escala:
         return None
+    if len(defectos) > 2 and defectos[2][3] / 256.0 > TERCERA_ENTRADA_MAX * escala:
+        return None     # borde irregular: mancha de ruido, no flecha
     n1 = c[d1[2]][0].astype(float)
     n2 = c[d2[2]][0].astype(float)
     cuello = (n1 + n2) / 2
@@ -102,45 +122,43 @@ def analizar_flecha(c):
     if a0.max() <= 0 or a0.min() >= 0:
         return None
 
-    def evaluar(lado):
-        tip = P[np.argmax(a0 * lado)]
-        eje = tip - cuello
-        if np.linalg.norm(eje) < 1e-6:
-            return None
-        eje /= np.linalg.norm(eje)
-        perp = np.array([-eje[1], eje[0]])
-        a = (P - cuello) @ eje
-        lat_s = (P - cuello) @ perp
-        lat = np.abs(lat_s)
-        simetria = min(lat_s.max(), -lat_s.min()) / max(lat_s.max(), -lat_s.min(), 1e-6)
-        if a.min() >= 0:
-            return None
-        ancho_tip = lat[a > 0.8 * a.max()].max()
-        ancho_cola = lat[a < 0.8 * a.min()].max()
-        i_ancho = np.argmax(lat)
-        if abs(a[i_ancho]) > 0.35 * a.max():
-            return None
-        if ancho_cola / lat.max() > 0.75:
-            return None
-        return dict(score=ancho_cola / max(ancho_tip, 1e-6) * simetria ** 2, eje=eje, a=a,
-                    lat=lat, ancho_cola=ancho_cola, tip=tip)
-    hip = [h for h in (evaluar(1), evaluar(-1)) if h]
-    if not hip:
+    # ¿De qué lado del cuello está la cabeza? Cada entrada (esquina cuerpo-cabeza) queda entre dos
+    # puntos de la envolvente: el hombro de la cabeza, pegado al cuello, y la esquina de la cola,
+    # al final del cuerpo. La cola está del lado del punto lejano y la punta del otro. No mide
+    # anchos (la cabeza nueva mide 1 cm de alto: pocos píxeles) y sirve para cualquier largo.
+    lados, hombros = [], []
+    for d in (d1, d2):
+        q0, q1 = c[d[0]][0].astype(float), c[d[1]][0].astype(float)
+        e0, e1 = (q0 - cuello) @ eje0, (q1 - cuello) @ eje0
+        lejos, cerca = (e0, e1) if abs(e0) > abs(e1) else (e1, e0)
+        if abs(cerca) > 0.6 * abs(lejos):
+            return None     # la entrada no está entre hombro y cola: no es una flecha
+        lados.append(-1 if lejos > 0 else 1)
+        hombros.append(q1 if abs(e0) > abs(e1) else q0)   # el punto cercano es el hombro
+    if lados[0] != lados[1]:
+        return None         # las dos entradas no coinciden: mejor no adivinar la dirección
+    lado = lados[0]
+    # Eje: de la cola al cuello (el cuerpo es largo y recto). Desde el cuello hacia el punto más
+    # adelantado fallaba: con la cabeza corta y ancha, a veces ese punto era un hombro.
+    s0 = a0 * lado                       # + hacia la cabeza, - hacia la cola
+    extremo_cola = P[s0 <= 0.85 * s0.min()]
+    eje = cuello - extremo_cola.mean(axis=0)
+    if np.linalg.norm(eje) < 1e-6:
         return None
-    h = max(hip, key=lambda x: x['score'])
-    if h['score'] < 0.9:
-        return None
-    eje, a, lat = h['eje'], h['a'], h['lat']
-    ancho_punta = 2 * lat.max()
-    ancho_cuerpo = 2 * h['ancho_cola']
-    if ancho_punta <= 0 or ancho_cuerpo / ancho_punta > 0.75:
+    eje /= np.linalg.norm(eje)
+    a = (P - cuello) @ eje
+    tip = P[np.argmax(a)]
+    if a.min() >= 0:
         return None
     # Cola: punto medio del extremo del cuerpo (los puntos con a cerca del mínimo).
     extremo = P[a < a.min() + 0.15 * (a.max() - a.min()) * 0.3]
     cola = extremo.mean(axis=0) if len(extremo) else cuello + eje * a.min()
     cola = cuello + eje * float((cola - cuello) @ eje)
-    return {'punta': tuple(map(float, h['tip'])), 'cuello': tuple(map(float, cuello)),
-            'cola': tuple(map(float, cola)), 'angulo': math.degrees(math.atan2(-eje[1], eje[0]))}
+    perp = np.array([-eje[1], eje[0]])
+    hombros = [h + perp * np.sign((h - cuello) @ perp) * HOMBRO_CORRECCION_PX for h in hombros]
+    return {'punta': tuple(map(float, tip)), 'cuello': tuple(map(float, cuello)),
+            'cola': tuple(map(float, cola)), 'angulo': math.degrees(math.atan2(-eje[1], eje[0])),
+            'hombros': [tuple(map(float, h)) for h in hombros]}
 
 
 def detectar(img, horizonte=None, max_puntos_zona=400):
@@ -148,45 +166,33 @@ def detectar(img, horizonte=None, max_puntos_zona=400):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     alto = img.shape[0]
     horizonte = alto / 2 if horizonte is None else horizonte
-    kernel = np.ones((KERNEL_APERTURA, KERNEL_APERTURA), np.uint8)
+    kernel = np.ones((3, 3), np.uint8)
     salida = {'flechas': [], 'cubos': [], 'canastos': [], 'zonas': []}
     for color in RANGOS:
-        cruda = mascara(hsv, color)
-        m = cv2.morphologyEx(cruda, cv2.MORPH_OPEN, kernel)
+        m = mascara(hsv, color)
+        m = cv2.morphologyEx(m, cv2.MORPH_OPEN, kernel)
+        cnts, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         usados = np.zeros_like(m)
-        # Las flechas se analizan sobre la máscara SIN abrir y los cubos y canastos sobre la
-        # abierta. El vástago mide 10 mm (7 px a 0,8 m) y la apertura lo adelgaza hasta romper el
-        # análisis de forma: medido con las flechas de los STL, el alcance con el que la flecha se
-        # lee bien de punta a punta pasa de 0,55 / 0,45 / 0,30 m (apertura 3x3) a 0,80 / 0,70 /
-        # 0,45 m (sin apertura) para las clases 1 / 2 / 3. Los cubos y canastos son macizos y no
-        # pierden nada con la apertura, que ahí sigue limpiando ruido.
-        for c in cv2.findContours(cruda, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]:
-            area = cv2.contourArea(c)
-            if area < AREA_MIN_FLECHA:
-                continue
-            x, y, w, h = cv2.boundingRect(c)
-            if x <= 1 or x + w >= img.shape[1] - 1:
-                continue        # cortado por el borde: la caja no sirve para medir
-            f = analizar_flecha(c)
-            if f:
-                f.update(color=color, area=float(area))
-                salida['flechas'].append(f)
-                cv2.drawContours(usados, [c], -1, 255, -1)
-        for c in cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]:
+        for c in cnts:
             area = cv2.contourArea(c)
             if area < AREA_MIN_CUBO:
                 continue
             x, y, w, h = cv2.boundingRect(c)
             if x <= 1 or x + w >= img.shape[1] - 1:
                 continue        # cortado por el borde: la caja no sirve para medir
-            mom = cv2.moments(c)
-            if mom['m00'] > 0 and usados[min(int(mom['m01'] / mom['m00']), usados.shape[0] - 1),
-                                         min(int(mom['m10'] / mom['m00']), usados.shape[1] - 1)]:
-                continue        # ese contorno ya se contó como flecha
+            # Primero cubo (prueba estricta: macizo y cuadrado), después flecha
             if es_cubo(c):
                 salida['cubos'].append({'color': color, 'caja': (x, y, w, h), 'area': float(area)})
                 cv2.drawContours(usados, [c], -1, 255, -1)
-            elif area >= AREA_MIN_CANASTO and es_canasto(c) and y + h > horizonte:
+                continue
+            if area >= AREA_MIN_FLECHA:
+                f = analizar_flecha(c)
+                if f:
+                    f.update(color=color, area=float(area))
+                    salida['flechas'].append(f)
+                    cv2.drawContours(usados, [c], -1, 255, -1)
+                    continue
+            if area >= AREA_MIN_CANASTO and es_canasto(c) and y + h > horizonte:
                 salida['canastos'].append({'color': color, 'caja': (x, y, w, h),
                                            'area': float(area)})
                 cv2.drawContours(usados, [c], -1, 255, -1)
