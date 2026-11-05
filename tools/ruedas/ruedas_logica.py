@@ -198,6 +198,17 @@ MAX_TANTEOS = 7
 PRIOR_PIVOTE_RAD = 0.17                # sin los dos laterales no hay suma: pivota ~10° para alejar el frente de la pared mas cercana
 ANCHO_MIN_GIRO_M = 0.34               # ancho minimo para girar 180 en el lugar: el cuerpo (27,8 x 16,3) barre un circulo de 32,2 cm
 MAX_RECUPERACIONES = 3                 # frenar-pensar-enderezar seguidas antes de rendirse
+LAT_DISPARO_M = 0.075                  # un costado a menos de esto Y acercandose (o a menos de LAT_CRITICO_M): correccion brusca EN MARCHA
+LAT_CRITICO_M = 0.055                  # ... a esta distancia corrige aunque no se vea que se acerca
+BAJA_DISPARO_M = 0.004                 # 'se acerca': el lateral bajo esto (m) en los ultimos ~0,5 s
+W_BRUSCO_RAD_S = 1.3                   # correccion brusca: giro hacia el lado contrario mientras sigue avanzando
+ANG_BRUSCO_RAD = 0.32                  # ... hasta cambiar el rumbo ~23° (cada repeticion seguida suma BRUSCO_MAS_RAD)
+BRUSCO_MAS_RAD = 0.15
+ANG_BRUSCO_TOPE_RAD = 0.75
+AVANCE_REPETIDO_M = 0.30               # si vuelve a necesitar corregir antes de avanzar esto, cuenta como 'sigue pasando lo mismo'
+MAX_BRUSCAS = 5                        # correcciones bruscas seguidas antes de frenar a pensar
+RECTO_TRAS_BRUSCA_M = 0.09             # despues de la correccion brusca avanza derecho esto mientras se vuelve a medir el rumbo
+ESPERA_BRUSCA_M = 0.05                 # avance minimo despues de una correccion brusca antes de juzgar de nuevo (el sonar tarda en reflejarlo)
 W_ARCO_RAD_S = 2.2                     # giro de 180 con retroceso: velocidad angular maxima (el firmware acota cada rueda a 75 flancos/s)
 Q_ATRAS_TOPE_M = 0.09                  # ... y lo maximo que retrocede por radian girado (v = q w): desplaza el centro 1,3 y0 (ver abajo)
 V_RUEDA_TOPE_MS = VEL_MAX_FLANCOS / (FLANCOS_POR_VUELTA / (math.pi * 0.065))   # 0,383 m/s por rueda con rueda de 65 mm
@@ -605,13 +616,15 @@ class Controlador:
         self.imprimir(f'== linea recta enderezando: {donde} a {v_ms:.2f} m/s ==')
         self.imprimir('  Al arrancar: ' + self.texto_sonares(son))
         lat = min([d for d in (izq, der) if d is not None], default=None)
-        if lat is not None and lat <= ALERTA_LATERAL_M:
+        if lat is not None and lat <= STOP_LATERAL_M + 0.01:        # pegado a una pared: quieto, primero se endereza
             self._frenar_y_pensar(self.guiado, ahora, f'una pared lateral a {100 * lat:.1f} cm')
         else:
             tilt = inclinacion_por_suma(izq, der)
-            if tilt is not None and tilt > math.radians(15):         # muy torcido: no avanza a ciegas, primero mide y se endereza
+            if tilt is not None and (tilt > math.radians(40) or (tilt > math.radians(15) and lat is not None and lat < 0.10)):
+                # muy torcido (o torcido y ya cerca de una pared): no arranca a ciegas, primero mide y se endereza
                 self._frenar_y_pensar(self.guiado, ahora, f'parece muy inclinado (~{math.degrees(tilt):.0f}° por la suma de los laterales)',
                                       contar=False)
+            # el resto (un costado cerca, algo inclinado) lo corrige en marcha _paso_enderezar con correcciones bruscas
         return True
 
     def giro_180_hacia_la_pared(self, vel_dps, adicional_deg=0.0, despues_m=None):
@@ -806,6 +819,58 @@ class Controlador:
             g['theta0'] = self.odo.theta - g['pos_giro']          # el giro sigue desde donde quedo
             self._etapa(g, 'girando', ahora)
 
+    # ---- correccion brusca en marcha: giro rapido alejandose de la pared sin frenar
+    def _empezar_brusca(self, g, ahora, d, hacia, psi):
+        """`hacia` +1: la pared cercana esta a la izquierda (hay que girar a la derecha), -1: al reves."""
+        if self.odo.s - g.get('s_ult_brusca', -9.0) > AVANCE_REPETIDO_M:
+            g['n_bruscas'] = 0
+        g['n_bruscas'] = g.get('n_bruscas', 0) + 1
+        if g['n_bruscas'] > MAX_BRUSCAS:
+            g['n_bruscas'] = 0
+            g['recuperaciones'] += 1
+            if g['recuperaciones'] > MAX_RECUPERACIONES:
+                self._fin_guiado('ME DETENGO: corregi varias veces y sigue acercandose a la pared '
+                                 f'({self.texto_sonares(self.sonares() or (None, None, None))}). Reacomodame a mano.')
+            else:
+                self._frenar_y_pensar(g, ahora, 'corregi varias veces y sigue acercandose', contar=False)
+            return
+        extra = BRUSCO_MAS_RAD * (g['n_bruscas'] - 1)
+        if psi is not None:                                      # sabe hacia donde apunta: gira lo justo para quedar ~11° alejandose de la pared
+            ang = max(0.12, psi * hacia + 0.14)
+        else:
+            ang = ANG_BRUSCO_RAD
+        ang = min(ANG_BRUSCO_TOPE_RAD, ang + extra)
+        lado = 'izquierda' if hacia > 0 else 'derecha'
+        self.imprimir(f'  CORRIJO ({g["n_bruscas"]}): pared {lado} a {100 * d:.1f} cm y se acerca -> giro {math.degrees(ang):.0f}° '
+                      f'hacia el otro lado sin frenar.')
+        g['brusca'] = {'signo': -hacia, 'ang': ang, 'theta0': self.odo.theta, 't0': ahora, 'd0': d}
+        g['s_ult_brusca'] = g['s_brusca'] = self.odo.s
+        self._etapa(g, 'brusca', ahora)
+
+    def _paso_brusca(self, ahora, g, frente, izq, der):
+        b = g['brusca']
+        girado = (self.odo.theta - b['theta0']) * b['signo']
+        lateral = min([d for d in (izq, der) if d is not None], default=None)
+        if frente is not None and frente <= STOP_FRENTE_M:
+            self._fin_guiado(f'Frene: pared de frente a {100 * frente:.1f} cm (avance {100 * (self.odo.s - g["s0"]):.0f} cm).')
+            return
+        if lateral is not None and lateral <= STOP_LATERAL_M + 0.005:
+            self._frenar_y_pensar(g, ahora, f'una pared lateral a {100 * lateral:.1f} cm')
+            return
+        if girado >= b['ang'] - W_BRUSCO_RAD_S * 0.22 or ahora - b['t0'] > 1.6:      # el robot sigue girando un poco al cortar
+            self.imprimir(f'  Corregido: giré {math.degrees(girado):.0f}° | ' + self.texto_sonares((frente, izq, der)) + '. Sigo y vigilo.')
+            g['est'] = EstimadorPasillo()
+            g['hist'] = []
+            g['t_ant'] = ahora
+            g['s_brusca'] = self.odo.s
+            g['recto_hasta'] = self.odo.s + RECTO_TRAS_BRUSCA_M
+            self._etapa(g, 'avanzar', ahora)
+            return
+        v_min = VEL_MIN_FLANCOS / flancos_por_m(self.diametro) + MARGEN_RUEDA_MS
+        w = b['signo'] * W_BRUSCO_RAD_S
+        v = max(g['v'], min(0.30, v_min + abs(w) * self.trocha / 2.0))
+        self._vel_guiada(g, ahora, v, w)
+
     # ---- el avance recto
     def _paso_enderezar(self, ahora, g, frente, izq, der):
         recorrido = self.odo.s - g['s0']
@@ -822,20 +887,35 @@ class Controlador:
             self.imprimir('  Al terminar: ' + self.texto_sonares(self.sonares() or (frente, izq, der)))
             return
         y, psi = g['est'].actualizar(self.odo.s, izq, der)
-        # Frenar y pensar: un costado muy cerca, o que lo va a estar en ANTICIPO_M segun el rumbo estimado (hacia ese lado)
-        if lateral is not None and lateral <= ALERTA_LATERAL_M:
+        # Muy pegado a una pared: ahora si, frena y piensa (lo normal es corregir en marcha, ver abajo)
+        if lateral is not None and lateral <= STOP_LATERAL_M + 0.005:
             self._frenar_y_pensar(g, ahora, f'una pared lateral a {100 * lateral:.1f} cm')
             return
-        if psi is not None:
-            for d, hacia in ((izq, +1.0), (der, -1.0)):
-                if d is not None and d - ANTICIPO_M * max(0.0, math.tan(psi) * hacia) <= STOP_LATERAL_M + 0.005:
-                    lado = 'izquierda' if hacia > 0 else 'derecha'
-                    self._frenar_y_pensar(g, ahora, f'voy a tocar la pared {lado} (a {100 * d:.1f} cm, inclinado {math.degrees(psi):+.0f}°)')
+        # Correccion brusca en marcha: un costado que baja de ~7,5 cm y se sigue acercando (o ya esta a 5,5 cm) -> gira rapido hacia
+        # el otro lado SIN frenar y sigue avanzando; despues vuelve al control normal, que vigila que no se siga acercando.
+        h = g.setdefault('hist', [])
+        h.append((ahora, izq, der))
+        while h and ahora - h[0][0] > 0.5:
+            h.pop(0)
+        if self.odo.s - g.get('s_brusca', -9.0) >= ESPERA_BRUSCA_M:
+            for i, (d, hacia) in enumerate(((izq, +1.0), (der, -1.0))):
+                if d is None:
+                    continue
+                antes = [x[1 + i] for x in h if x[1 + i] is not None]
+                baja = (max(antes) - d) if antes else 0.0
+                sube = (d - min(antes)) if antes else 0.0
+                if sube >= 0.003 and d > STOP_LATERAL_M + 0.01:      # ya se esta alejando de esa pared: no corrige de mas
+                    continue
+                se_acerca_por_rumbo = psi is not None and d - ANTICIPO_M * max(0.0, math.tan(psi) * hacia) <= STOP_LATERAL_M + 0.005
+                if (d <= LAT_DISPARO_M and baja >= BAJA_DISPARO_M) or d <= LAT_CRITICO_M or se_acerca_por_rumbo:
+                    self._empezar_brusca(g, ahora, d, hacia, psi)
                     return
         dt, g['t_ant'] = max(0.0, min(0.2, ahora - g['t_ant'])), ahora
         if psi is not None and y is not None:               # el termino integral solo aprende cuando se sabe donde esta y hacia donde apunta
             g['sesgo'] = limitar(g['sesgo'] + K_I * error_de_rumbo(y, psi) * dt, -SESGO_TOPE, SESGO_TOPE)
         v, w = timon_pasillo(g['v'], y, psi, self.trocha, self.diametro, g['sesgo'])
+        if self.odo.s < g.get('recto_hasta', -1.0):          # recien corregido: derecho unos cm hasta medir el rumbo nuevo
+            v, w = g['v'], 0.0
         self._vel_guiada(g, ahora, v, w)
         if ahora >= g['proximo_log']:
             g['proximo_log'] = ahora + 0.5
@@ -912,6 +992,8 @@ class Controlador:
         e = g['etapa']
         if e == 'avanzar':
             self._paso_enderezar(ahora, g, frente, izq, der)
+        elif e == 'brusca':
+            self._paso_brusca(ahora, g, frente, izq, der)
         elif e == 'girando':
             self._paso_arco(ahora, g, frente, izq, der)
         elif e == 'pensar':

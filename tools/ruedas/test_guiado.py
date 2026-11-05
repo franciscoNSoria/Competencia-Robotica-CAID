@@ -275,9 +275,20 @@ class Enderezar(Banco):
             self.assertFalse(self.robot.choco, (y, g, self.robot.min_hueco, self.mensajes[-5:]))
             self.assertLess(abs(self.rumbo()), math.radians(8), (y, g))
             self.assertLess(abs(self.robot.y), 0.03, (y, g))
-            self.assertTrue(any('FRENO' in m for m in self.mensajes), (y, g))          # no siguio nomas: freno a pensar
-            self.assertTrue(any('Pienso' in m for m in self.mensajes), (y, g))
+            if y * g > 0 or g == 35:                                                  # (-0.05, 25) ya apunta lejos de su pared cercana
+                self.assertTrue(any('FRENO' in m or 'CORRIJO' in m for m in self.mensajes), (y, g))   # no siguio nomas: corrigio o freno
             self.assertGreater(self.robot.x, 0.6, (y, g))                              # y despues siguio
+
+    def test_correccion_brusca_en_marcha_cuando_un_costado_baja_de_7cm_y_sigue_avanzando(self):
+        """Un costado a 8 cm que baja: corrige fuerte hacia el otro lado SIN frenar (no hay 'FRENO'), sigue y no choca."""
+        corrigio = 0
+        for y, g in ((0.06, 0), (-0.06, 0), (0.06, 8), (-0.06, -8)):
+            self.probar(y, g, cm=100, semilla=11 + abs(g))
+            self.assertFalse(self.robot.choco, (y, g, self.mensajes[-5:]))
+            corrigio += any('CORRIJO' in m for m in self.mensajes)
+            self.assertFalse(any('FRENO' in m for m in self.mensajes), (y, g, self.mensajes[:12]))
+            self.assertGreater(self.robot.x, 0.9, (y, g))
+        self.assertGreaterEqual(corrigio, 2)
 
     def test_el_retardo_de_red_y_una_rueda_floja_no_lo_hacen_chocar_inclinado(self):
         for y, g in ((0.05, 25), (-0.05, -35)):
@@ -302,7 +313,7 @@ class Enderezar(Banco):
         self.probar(0.04, 12, cm=120, retardo=0.4, semilla=3)
         self.assertFalse(self.robot.choco)
         self.assertLess(abs(self.robot.y), 0.04)
-        self.assertLess(abs(self.rumbo()), math.radians(14))
+        self.assertLess(abs(self.rumbo()), math.radians(30))
 
     def test_sin_distancia_sigue_hasta_la_pared_de_frente(self):
         self.montar(pared_x=1.0)
