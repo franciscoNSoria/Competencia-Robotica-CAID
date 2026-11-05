@@ -30,14 +30,16 @@ MARGEN_M = 0.015             # holgura lateral exigida a cada lado para consider
 CUBO_M = 0.020               # reglamento del desafio, anexo
 CUBO_MASA_KG = 0.0099        # dimensions.yaml: cubo.masa_g (PLA macizo, provisorio)
 
-FLECHA_PUNTA_ANCHO_M = 0.070  # reglamento, anexo (70 +-1 mm), medido perpendicular al eje
-FLECHA_PUNTA_ALTO_M = 0.050   # reglamento, anexo (50 +-1 mm), medido a lo largo del eje
-FLECHA_CUERPO_ANCHO_M = 0.030
-FLECHA_CUERPO_LARGO_M = {1: 0.030, 2: 0.060, 3: 0.100}   # "cerca", "normal", "lejos"
+# Flechas del reglamento (cambio de nov. 2026): cuerpo de 10 mm de ancho, punta de 29 mm de base
+# y 10 mm de alto; largo total 30 / 60 / 95 mm (P3 / P2 / P1), o sea cuerpo de 20 / 50 / 85 mm.
+FLECHA_PUNTA_ANCHO_M = 0.029  # base de la punta, medida perpendicular al eje
+FLECHA_PUNTA_ALTO_M = 0.010   # alto de la punta, medido a lo largo del eje
+FLECHA_CUERPO_ANCHO_M = 0.010
+FLECHA_CUERPO_LARGO_M = {1: 0.020, 2: 0.050, 3: 0.085}   # P3 30 mm, P2 60 mm, P1 95 mm en total
 FLECHA_GROSOR_M = 0.002       # espesor de las flechas del STL del equipo
 FLECHA_ALTURA_CENTRO_M = 0.115  # centro de la flecha sobre el piso (STL del equipo: z = 80..150 mm)
 FLECHA_TILT_MAX_GRADOS = 30.0   # reglamento: inclinacion maxima +-30 grados
-FLECHA_TIRAS_PUNTA = 25         # la punta triangular se arma con 25 tiras de 2 mm (SDF no tiene prismas)
+FLECHA_TIRAS_PUNTA = 10         # la punta triangular se arma con 10 tiras de 1 mm (SDF no tiene prismas)
 
 CANASTO_EXT_M = 0.044         # Canasto_Ficticio.stl: 44 x 44 x 20 mm
 CANASTO_PARED_M = 0.002
@@ -706,7 +708,7 @@ def piezas_flecha(largo):
     paso = FLECHA_PUNTA_ALTO_M / FLECHA_TIRAS_PUNTA
     for i in range(FLECHA_TIRAS_PUNTA):
         um = u0 + Lc + (i + 0.5) * paso
-        alto = FLECHA_PUNTA_ANCHO_M * (1.0 - i / FLECHA_TIRAS_PUNTA)    # la primera tira mide los 70 mm de la punta
+        alto = FLECHA_PUNTA_ANCHO_M * (1.0 - i / FLECHA_TIRAS_PUNTA)    # la primera tira mide los 29 mm de la base
         piezas.append((um, paso, alto))
     return piezas
 

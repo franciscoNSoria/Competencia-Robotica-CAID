@@ -5,10 +5,14 @@ Modelo de cámara estenopeica sin inclinación, sobre el servo de giro (pan). Co
 el ángulo del servo, cada píxel es un rayo en el marco `map`. Con ese rayo:
 
 - **Flechas**: el rayo del cuello de la flecha se cruza con las caras de los bloques que encuentra
-  (recorriendo la grilla). Se vuelven a proyectar la punta, el cuello y la cola sobre el plano de
-  cada cara candidata y se queda la cara en la que la punta mide lo que dice el reglamento (50 mm
-  a lo largo del eje). En esa cara se miden en milímetros el largo del cuerpo (30 / 60 / 100 mm) y
-  hacia qué lado apunta a lo largo de la pared, sin importar la perspectiva ni la inclinación.
+  (recorriendo la grilla). Se vuelven a proyectar los hombros (base de la punta), la punta, el
+  cuello y la cola sobre el plano de cada cara candidata y se queda la cara en la que la base de la
+  punta mide lo que dice el reglamento (29 mm; si el detector no da hombros, el alto de la punta,
+  10 mm). En esa cara se miden en milímetros el largo del cuerpo (20 / 50 / 85 mm) y hacia qué
+  lado apunta a lo largo de la pared, sin importar la perspectiva ni la inclinación.
+
+  Flechas del reglamento (nov. 2026): cuerpo de 10 mm de ancho, punta de 29 mm de base y 10 mm de
+  alto, largo total 30 / 60 / 95 mm (cuerpo 20 / 50 / 85 mm).
 
 Viene del navegador de la rama claude/happy-sagan-hzyge3, recortado a la parte de flechas.
 """
@@ -19,8 +23,9 @@ from caid_navigation.geometria import (
     a_mundo, CAMARA_ADELANTE, CAMARA_ALTO, CAMARA_ALTURA, CAMARA_ANCHO, CAMARA_EJE_X, CAMARA_HFOV,
     celda_de, centro, PASOS)
 
-FLECHA_PUNTA_LARGO = 0.050    # R: alto de la punta (a lo largo del eje)
-LARGO_CUERPO = (0.045, 0.080)  # cortes entre 30 / 60 / 100 mm
+FLECHA_PUNTA_ANCHO = 0.029    # base de la punta (entre los hombros), perpendicular al eje
+FLECHA_PUNTA_LARGO = 0.010    # alto de la punta (a lo largo del eje): se usa si no hay hombros
+LARGO_CUERPO = (0.035, 0.0675)  # cortes entre cuerpos de 20 / 50 / 85 mm
 
 
 class Camara:
@@ -136,18 +141,21 @@ def ubicar_flecha(con, cam, pose, pan, det, tolerancia=0.25):
         normal = PASOS[dpared]
         if abs(d[0] * normal[0] + d[1] * normal[1]) / nd < 0.4:
             continue        # pared vista muy de costado (más de 66°): la medida no es confiable
+        uvs = [det['punta'], det['cuello'], det['cola']] + list(det.get('hombros') or [])
         pts = []
-        for clave in ('punta', 'cuello', 'cola'):
-            oo, dd = cam.rayo(pose, pan, *det[clave])
+        for uv in uvs:
+            oo, dd = cam.rayo(pose, pan, *uv)
             p = _en_plano(oo, dd, celda, dpared)
             if p is None:
                 break
             pts.append(p)
-        if len(pts) < 3:
+        if len(pts) < len(uvs):
             continue
-        punta, cuello, cola = pts
-        largo_punta = math.dist(punta, cuello)
-        error = abs(largo_punta / FLECHA_PUNTA_LARGO - 1)
+        punta, cuello, cola = pts[:3]
+        if len(pts) == 5:       # base de la punta: 29 mm, mucho más fácil de medir que el alto
+            error = abs(math.dist(pts[3], pts[4]) / FLECHA_PUNTA_ANCHO - 1)
+        else:
+            error = abs(math.dist(punta, cuello) / FLECHA_PUNTA_LARGO - 1)
         if error > tolerancia or (mejor is not None and error >= mejor['error']):
             continue
         if not (0.0 < cuello[2] < 0.30):

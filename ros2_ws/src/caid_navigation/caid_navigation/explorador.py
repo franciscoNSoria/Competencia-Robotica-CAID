@@ -37,7 +37,7 @@ Máquina de estados: ESPERA -> MEDIR -> (GIRAR -> MEDIR | AVANZAR | CARGAR) ... 
 Modo de la misión:   BUSCAR (explorar o ir al cubo) -> VOLVER (a la entrada) -> SALIR (una celda
 afuera: entrega) -> ENTRAR (a la entrada) -> BUSCAR el próximo ... -> TERMINADO
 """
-from collections import deque
+from collections import Counter, deque
 import json
 import math
 import statistics
@@ -57,6 +57,7 @@ from sensor_msgs.msg import Range
 from std_msgs.msg import String
 from tf2_ros import TransformBroadcaster
 from visualization_msgs.msg import MarkerArray
+import yaml
 
 LADOS = ('frente', 'izquierda', 'derecha')
 CANASTO_ANCHO = 0.044    # m, Canasto_Ficticio.stl
@@ -107,7 +108,13 @@ class Explorador(Node):
             # la celda de atrás de la partida (mundos sin canastos, como chico y maze_2).
             'canastos_con_camara': False,
             'confirmar_canasto': 2,     # imágenes con el canasto en la misma celda para anotarlo
-            'confirmar_flecha': 2,      # imágenes iguales para usar una flecha
+            # Flecha: con la primera imagen cercana queda anotada en su celda (hasta un remapeo).
+            # Dirección y largo se siguen reevaluando: vale la mayoría de las últimas
+            # ventana_flecha imágenes cercanas.
+            'ventana_flecha': 10,
+            # De lejos la flecha solo se ve: dirección y tamaño se votan recién con la cámara a
+            # esta distancia (m) o menos de la pared de la flecha.
+            'distancia_decision_flecha': 0.50,
             'tam_celda': 0.45,          # m, lado de la celda del laberinto
             'sensor_frente_x': 0.1399,  # m, desde el centro del robot (dimensions.yaml)
             'sensor_lateral_y': 0.0815,
@@ -121,6 +128,9 @@ class Explorador(Node):
             # Celdas [x_min, x_max, y_min, y_max] en el marco de la odometría; afuera es pared.
             # Todo en 0 = sin límites. Hace falta con áreas abiertas sin paredes (E6).
             'limites': [0, 0, 0, 0],
+            # YAML de calibración de la cámara real (K a 640x480, ver hardware/camara). Vacío =
+            # FOV de 60° de la simulación.
+            'calibracion': '',
         }
         for nombre, valor in p.items():
             self.declare_parameter(nombre, valor)
@@ -131,6 +141,9 @@ class Explorador(Node):
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.cargar = ActionClient(self, Cargar, '/cargar')
         self.pub_rviz = self.create_publisher(MarkerArray, '/nav/mapa_rviz', latched)
+        # /nav/estado: qué busca, flechas anotadas y la última decisión de giro (JSON)
+        self.pub_estado = self.create_publisher(String, '/nav/estado', latched)
+        self.ultima_decision = None
         self.tf = TransformBroadcaster(self)
         self.create_subscription(Odometry, self.cfg['odom_topic'], self.on_odom, 10)
         self.create_subscription(Point, self.cfg['cubo_topic'], self.on_cubo, 10)
@@ -159,10 +172,11 @@ class Explorador(Node):
         self.agotados = set()             # colores que no aparecieron explorando todo
         self.llevando = None              # color del cubo cargado
         self.rastro = []                  # poses corregidas, para RViz
-        self.cam = Camara()
+        self.cam = self.crear_camara(self.cfg['calibracion'])
         self.vista = VistaDeParedes(self.mapa)
         self.flechas = {}                 # celda -> {color: dirección de la flecha}
-        self.vistas_flecha = {}           # (celda, dirección) -> imágenes que la mostraron
+        self.vistas_flecha = {}           # (celda, color) -> últimas (dirección, largo) vistas
+        self.largo_flecha = {}            # (celda, color) -> largo fijo: 1 = P3, 2 = P2, 3 = P1
         geometria.fijar_celda(self.cfg['tam_celda'])
         self.estado = 'ESPERA'
         self.t_estado = self.ahora()
@@ -171,6 +185,17 @@ class Explorador(Node):
         self.carga = None                 # None, 'enviada' o el resultado (True / False)
         self.create_timer(0.05, self.tick)
         self.create_timer(1.0, self.publicar_rviz)
+
+    def crear_camara(self, ruta):
+        """Cámara con la K calibrada (si hay YAML) o con el FOV de la simulación."""
+        if not ruta:
+            return Camara()
+        with open(ruta) as fh:
+            d = yaml.safe_load(fh)
+        k = [float(x) for x in d['K']]
+        self.get_logger().info(f'Calibración de cámara: fx={k[0]:.1f} fy={k[4]:.1f} '
+                               f'cx={k[2]:.1f} cy={k[5]:.1f} ({d["width"]}x{d["height"]})')
+        return Camara(ancho=d['width'], alto=d['height'], fx=k[0], fy=k[4], cx=k[2], cy=k[5])
 
     # ---------- entradas ----------
 
@@ -244,15 +269,35 @@ class Explorador(Node):
             r = ubicar_flecha(self.vista, self.cam, self.pose(), 0.0, f)
             if r is None:
                 continue
-            clave = (r['celda'], f['color'], r['dir'])
-            self.vistas_flecha[clave] = self.vistas_flecha.get(clave, 0) + 1
-            pistas = self.flechas.setdefault(r['celda'], {})
-            if self.vistas_flecha[clave] >= self.cfg['confirmar_flecha'] \
-                    and pistas.get(f['color']) != r['dir']:
-                pistas[f['color']] = r['dir']
-                self.get_logger().info(
-                    f'Flecha {f["color"]} en la celda {r["celda"]}: apunta a '
-                    f'{NOMBRE_DIR[r["dir"]]} (a {r["distancia"]:.2f} m)')
+            self.votar_flecha(r['celda'], f['color'], r['dir'], r['distancia'], r['largo'])
+
+    def votar_flecha(self, celda, color, direccion, distancia, largo=None):
+        """
+        Suma una lectura cercana de la flecha.
+
+        La flecha queda anotada con la primera y no se borra; dirección y largo son la mayoría de
+        las últimas ventana_flecha lecturas (se siguen reevaluando). De lejos (más de
+        distancia_decision_flecha) no vota: la medida no es confiable.
+        """
+        if distancia > self.cfg['distancia_decision_flecha']:
+            return                          # se ve, pero todavía está lejos para decidir
+        lecturas = self.vistas_flecha.setdefault(
+            (celda, color), deque(maxlen=self.cfg['ventana_flecha']))
+        lecturas.append((direccion, largo))
+        dirs = Counter(d for d, _ in lecturas)
+        largos = Counter(lg for _, lg in lecturas if lg is not None)
+        nueva = dirs.most_common(1)[0][0]
+        nuevo_largo = largos.most_common(1)[0][0] if largos else None
+        pistas = self.flechas.setdefault(celda, {})
+        antes = (pistas.get(color), self.largo_flecha.get((celda, color)))
+        pistas[color] = nueva
+        self.largo_flecha[(celda, color)] = nuevo_largo
+        if antes != (nueva, nuevo_largo):
+            nombre = {1: 'P3', 2: 'P2', 3: 'P1'}.get(nuevo_largo, '?')
+            que = 'anotada' if antes[0] is None else 'cambia'
+            self.get_logger().info(
+                f'Flecha {color} {nombre} en la celda {celda}: apunta a {NOMBRE_DIR[nueva]} '
+                f'(a {distancia:.2f} m, {dirs[nueva]} de {len(lecturas)} lecturas) -> {que}')
 
     def ubicar_canasto(self, k):
         """
@@ -323,7 +368,7 @@ class Explorador(Node):
                                f'{self.celda} (vez {self.remapeos})')
         self.mapa.reiniciar()
         for tabla in (self.cubos, self.dir_cubo, self.canastos, self.votos_canasto,
-                      self.flechas, self.vistas_flecha):
+                      self.flechas, self.vistas_flecha, self.largo_flecha):
             tabla.clear()
         self.agotados.clear()
         self.cambiar('MEDIR')
@@ -430,6 +475,21 @@ class Explorador(Node):
             d = self.mapa.decidir(self.celda, rumbo, preferida=preferida)
         if preferida is not None and d == preferida:
             self.get_logger().info(f'Sigo la flecha {col} hacia {NOMBRE_DIR[d]}')
+        if d is None:
+            motivo = 'nada'
+        elif preferida is not None and d == preferida:
+            motivo = f'flecha {col}'
+        elif destino is not None and self.mapa.camino(self.celda, lambda c: c == destino):
+            motivo = 'camino al destino'
+        else:
+            motivo = 'tremaux' + (f' (flecha {col} ignorada: ese camino ya se recorrió o '
+                                  'tiene pared)' if preferida is not None else '')
+        self.ultima_decision = {
+            'celda': list(self.celda), 'rumbo': NOMBRE_DIR[rumbo], 'modo': self.modo,
+            'busca': col, 'gira_hacia': NOMBRE_DIR[d] if d is not None else None,
+            'motivo': motivo,
+            'flecha_en_celda': NOMBRE_DIR[preferida] if preferida is not None else None}
+        self.publicar_estado()
         self.get_logger().info(
             f'{self.modo} {col or ""} celda {self.celda} rumbo {rumbo} paso {hay_paso} '
             f'({", ".join(f"{m:.3f}" for m in dist)}) -> {d}')
@@ -534,7 +594,22 @@ class Explorador(Node):
         self.mover(v, limitar(w, self.cfg['vel_angular']))
         self.corregir_posicion(d)
 
+    def publicar_estado(self):
+        """JSON en /nav/estado: qué busca, en qué orden, flechas anotadas y última decisión."""
+        nombres = {1: 'P3', 2: 'P2', 3: 'P1'}
+        flechas = [{'celda': list(c), 'color': col, 'apunta': NOMBRE_DIR[d],
+                    'largo': nombres.get(self.largo_flecha.get((c, col)))}
+                   for c, pistas in sorted(self.flechas.items()) for col, d in pistas.items()]
+        estado = {
+            'busca': self.buscado(), 'orden_colores': list(self.cfg['colores']),
+            'entregados': list(self.entregados), 'llevando': self.llevando,
+            'modo': self.modo, 'estado': self.estado, 'celda': list(self.celda),
+            'flechas': flechas, 'ultima_decision': self.ultima_decision,
+        }
+        self.pub_estado.publish(String(data=json.dumps(estado, ensure_ascii=False)))
+
     def publicar_rviz(self):
+        self.publicar_estado()
         self.pub_rviz.publish(marcadores(
             self.mapa, self.cfg['tam_celda'], self.rastro,
             self.cubos.get(self.buscado()) if self.modo == 'BUSCAR' else None,

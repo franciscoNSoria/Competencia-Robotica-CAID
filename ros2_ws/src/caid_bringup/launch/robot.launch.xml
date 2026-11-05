@@ -2,16 +2,41 @@
   <!-- Argumentos: se pueden cambiar al lanzar -->
   <arg name="fuente" default="0"
        description="'0' = webcam  |  'http://IP:81/stream' = ESP32-CAM"/>
+  <arg name="fps" default="15"
+       description="cuadros por segundo que publica camara_node (la ESP32 manda ~19-27)"/>
+  <arg name="calibracion" default=""
+       description="YAML de la lente (K, D), ej. $(find-pkg-share caid_vision)/config/calibracion_esp32cam.yaml. Vacío = sin calibración"/>
+  <arg name="colores" default="$(find-pkg-share caid_vision)/config/colores.yaml"
+       description="YAML de calibrar_colores: rangos de color y ajustes de la ESP32-CAM"/>
+  <arg name="distancia_flecha" default="0.5"
+       description="m: a esta distancia o menos de la flecha se decide su dirección y tamaño"/>
+  <arg name="ventana_flecha" default="10"
+       description="la dirección y el tamaño de una flecha son la mayoría de estas últimas lecturas cercanas"/>
+  <arg name="visor" default="false"
+       description="true abre la ventana del visor (detecciones, fps y retraso)"/>
   <arg name="esp32_falsa" default="true"
        description="false cuando este la ESP32 real con micro-ROS"/>
 
   <!-- Camara: publica /camera/image_raw y /camera/camera_info -->
   <node pkg="caid_vision" exec="camara_node" name="camara_node" output="screen">
     <param name="fuente" value="$(var fuente)"/>
+    <param name="fps" value="$(var fps)"/>
+    <param name="calibracion" value="$(var calibracion)"/>
+    <param name="ajustes_camara" value="$(var colores)"/>
   </node>
 
-  <!-- Vision: publica /vision/cubo/* y /vision/debug -->
-  <node pkg="caid_vision" exec="vision_node" name="vision_node" output="screen"/>
+  <!-- Vision: publica /vision/cubo/* y /vision/debug/compressed.
+       Lee la imagen en JPEG: la cruda (900 KB) pierde cuadros en DDS -->
+  <node pkg="caid_vision" exec="vision_node" name="vision_node" output="screen">
+    <param name="imagen_topic" value="/camera/image_raw/compressed"/>
+    <param name="colores" value="$(var colores)"/>
+    <param name="calibracion" value="$(var calibracion)"/>
+    <param name="distancia_decision" value="$(var distancia_flecha)"/>
+    <param name="ventana_flecha" value="$(var ventana_flecha)"/>
+  </node>
+
+  <!-- Visor: ventana con las detecciones, fps y retraso. Solo si visor:=true (necesita pantalla) -->
+  <node pkg="caid_vision" exec="visor" name="visor" output="screen" if="$(var visor)"/>
 
   <!-- ESP32 falsa: solo si esp32_falsa:=true -->
   <node pkg="caid_pruebas" exec="esp32_falsa" name="esp32_falsa" output="screen"
