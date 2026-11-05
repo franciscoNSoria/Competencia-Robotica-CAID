@@ -64,7 +64,8 @@ class RobotLaberinto(tg.RobotPasillo):
 
 
 def correr(nombre_o_texto, semilla=1, t_max=900.0, ganancia_giro=0.74, retardo=0.0, factor_der=1.0, imprimir=None, corr90=10.0,
-           corr180=0.0, vel_dps=153.0, ruido=0.002):
+           corr180=0.0, vel_dps=153.0, ruido=0.002, cada_tick=None):
+    """cada_tick(robot, rec): se llama en cada paso (para inyectar flechas y cubos de una camara simulada)."""
     import tempfile
     import laberinto_ruedas as lr
     import ruedas_logica as rl
@@ -83,5 +84,7 @@ def correr(nombre_o_texto, semilla=1, t_max=900.0, ganancia_giro=0.74, retardo=0
         robot.avanzar(0.05)
         c.tick()
         rec.tick()
+        if cada_tick:
+            cada_tick(robot, rec)
     c.cerrar()
     return robot, rec, log

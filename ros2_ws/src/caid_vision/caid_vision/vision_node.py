@@ -14,7 +14,7 @@ Publica:
   /vision/proximo_giro (String) JSON con el PRÓXIMO GIRO: {"giro": "derecha" | "izquierda",
                                 "color", "tamano", "distancia", "busca"}. Sale de la flecha FIJA
                                 (a distancia_fija, 30 cm) del color que busca el explorador
-                                (/nav/estado) o, si no se sabe, de la más cercana. Solo se
+                                (/nav/estado) o, si no se sabe, de la P3 (y la más cerca). Solo se
                                 publica cuando hay giro: sin flecha que seguir, no sale nada
   /vision/cubo/<color> (Point)  x,y = centro en px, z = area           (como antes)
   /vision/flecha       (String) "color,direccion,angulo,tamaño" de cada flecha anotada
@@ -249,7 +249,11 @@ class Vision(Node):
                 candidatas.append((self.dist_flecha.get(k, 9.9), k, color, direccion, tam))
         if not candidatas:
             return None
-        dist, _, color, direccion, tam = min(candidatas)
+        # Sin color buscado (al arrancar) con varias flechas a la vista: la P3 primero (la más
+        # chica = el camino más corto a su objetivo), después P2 y P1; a igual tamaño, la más cerca.
+        # El que navega adopta ese color y lo devuelve por /nav/estado, así no salta a otra.
+        orden = {'P3': 0, 'P2': 1, 'P1': 2}
+        dist, _, color, direccion, tam = min(candidatas, key=lambda x: (orden.get(x[4], 3), x[0]))
         return {'giro': direccion, 'color': color, 'tamano': tam,
                 'distancia': round(dist, 3), 'busca': busca}
 

@@ -3,6 +3,10 @@
 Por cada celda de 40 cm:
   1. MIDE quieto en el centro: frente, izquierda y derecha con los sonares -> Mapa de caid_navigation (el Tremaux del repo).
   2. DECIDE con mapa.decidir (sigue derecho si puede, si no el camino mas corto a lo que falta; al terminar vuelve a la partida).
+     Si la camara FIJO una flecha (/vision/proximo_giro, ver recibir_flecha) el giro de esta celda lo manda la flecha, una sola
+     vez; si ese lado tiene pared se la ignora y sigue Trémaux. Sigue siempre el mismo color: el primero que adopta.
+OBJETIVO (por ahora): llegar al CUBO del color que sigue. Cuando la camara lo ve a DIST_CUBO_M o menos (recibir_cubo) frena en
+el acto y termina. No hay vuelta a la partida ni fin por el mapa: el mapa de celdas solo sirve para moverse entre flechas.
   3. GIRA con Controlador.girar(±(90 + sumador del Giro 90 del panel)) o giro_180_hacia_la_pared (dos giros de 90).
   4. AVANZA UNA CELDA con Controlador.enderezar_avanzando (LINEA RECTA enderezando: corrige en marcha, se separa de la pared).
 Si algo sale mal (no logra separarse de una pared, el pivote no arranca, una pared lateral no deja girar) se DETIENE y lo dice:
@@ -17,7 +21,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(AQUI, '..', '..', 'ros2_ws', 'src', 'caid_navigation', 'caid_navigation'))
 import ruedas_logica as rl  # noqa: E402
-from mapa import Mapa, vecina  # noqa: E402
+from mapa import girar, Mapa, vecina  # noqa: E402
 
 CELDA = 0.40
 F_X = 0.1399                          # el sonar frontal esta 14 cm adelante del centro
@@ -28,6 +32,11 @@ LATERAL_PARED_M = 0.25                # un lateral lee menos que esto: hay pared
 POS_TOLERANCIA_M = 0.03               # pasado o corto del centro mas que esto: se corre antes de girar
 T_ASENTAR_S, T_MEDIR_S = 0.4, 0.9      # quieto: espera que se asiente y mide hasta aqui (antes 0,7 y 1,5 s: tardaba mucho en decidir)
 NOMBRES = ('+x', '+y', '-x', '-y')
+VIGENCIA_FLECHA_S = 3.0               # el ultimo giro de la vision mas viejo que esto no se usa
+DIST_CUBO_M = 0.20                    # cubo del color seguido a esto o menos de la camara: llegue
+CUBO_LADO_M = 0.020
+FX_CAMARA_PX = 950.0                  # calibracion_esp32cam.yaml (640x480)
+SORDO_TRAS_GIRO_S = 2.5               # tras girar, la vision sigue mandando la flecha vieja hasta 2 s (vigencia_giro_s): se ignora
 
 
 class Recorrido:
@@ -44,7 +53,52 @@ class Recorrido:
         self.intentos = {}
         self.pasos = 0
         self.cuenta_celdas = 0
+        self.busca = None                 # color de la flecha que se sigue (el primero que llega; la vision prefiere la P3)
+        self.flecha = None                # ultimo giro de la vision: {'giro', 'color', 'tamano', 't'}
+        self.sordo_hasta = 0.0
+        self.dist_cubo, self.fx = DIST_CUBO_M, FX_CAMARA_PX
+        self.al_adoptar_color = None      # callback(color): laberinto_real avisa a la vision por /nav/estado
         c.ajustar_frenado = False
+
+    # ---- flechas (las manda laberinto_real desde /vision/proximo_giro)
+    def recibir_flecha(self, datos):
+        """datos: el JSON de /vision/proximo_giro ya leido ({'giro': 'derecha'|'izquierda', 'color', 'tamano', ...})."""
+        ahora = self.reloj()
+        giro, color = datos.get('giro'), datos.get('color')
+        if giro not in ('derecha', 'izquierda') or ahora < self.sordo_hasta:
+            return
+        if self.busca is None and color:
+            self.busca = color
+            self.imprimir('  flecha: sigo el color %s (%s)' % (color, datos.get('tamano', '?')))
+            if self.al_adoptar_color:
+                self.al_adoptar_color(color)
+        if color != self.busca:
+            return
+        nueva = self.flecha is None or self.flecha['giro'] != giro
+        self.flecha = {'giro': giro, 'color': color, 'tamano': datos.get('tamano'), 't': ahora}
+        if nueva:
+            self.imprimir('  flecha %s %s: el proximo giro es a la %s' % (color, datos.get('tamano', '?'), giro.upper()))
+
+    def recibir_cubo(self, color, area):
+        """Cubo visto por la camara (area en px²). Si es del color seguido (o todavia no hay color) y esta cerca: llegue."""
+        if self.estado in ('espera', 'fin', 'detenido') or area <= 0:
+            return
+        if self.busca is not None and color != self.busca:
+            return
+        dist = self.fx * CUBO_LADO_M / area ** 0.5
+        if dist > self.dist_cubo:
+            return
+        self.c.parar()
+        self.estado = 'fin'
+        self.motivo = 'cubo %s' % color
+        self.imprimir('== LLEGUE AL CUBO %s (a ~%.0f cm, celda %s) ==' % (color.upper(), 100 * dist, self.celda))
+
+    def _preferida_flecha(self, ahora):
+        """Direccion absoluta que pide la flecha vigente, o None."""
+        f = self.flecha
+        if f is None or ahora - f['t'] > VIGENCIA_FLECHA_S:
+            return None
+        return girar(self.rumbo, 1 if f['giro'] == 'izquierda' else 3)
 
     # ---- control
     def arrancar(self):
@@ -99,11 +153,20 @@ class Recorrido:
         self.imprimir('  celda %s mirando %s: frente %s | izq %s | der %s | pos %+.1f cm  (f=%s i=%s d=%s)' % (
             self.celda, NOMBRES[self.rumbo], 'paso' if frente else 'PARED', 'paso' if izq else 'PARED', 'paso' if der else 'PARED',
             100 * self.pos, self._cm(f), self._cm(i), self._cm(d)))
-        dire = self.mapa.decidir(self.celda, self.rumbo)
+        pref = self._preferida_flecha(ahora)
+        dire = self.mapa.decidir(self.celda, self.rumbo, preferida=pref, insistir=True)
+        f_usada = None
+        if pref is not None:
+            fl = f_usada = self.flecha
+            self.flecha = None                                     # una flecha manda un solo giro
+            if dire == pref:
+                self.imprimir('  sigo la flecha %s: giro a la %s' % (fl['color'], fl['giro']))
+            elif frente:                                           # la flecha esta en una pared mas adelante: es para otro cruce
+                self.flecha, f_usada = fl, None
+            else:
+                self.imprimir('  flecha %s a la %s ignorada: ese lado tiene pared' % (fl['color'], fl['giro']))
         if dire is None:
-            self.estado = 'fin'
-            self.imprimir('== TERMINE: %s ==' % ('recorri todo y volvi a la partida' if self.celda == self.mapa.inicio
-                                                 else 'no hay camino a la partida desde %s' % (self.celda,)))
+            self.detener('recorri todo el laberinto y no llegue al cubo%s' % (' ' + self.busca if self.busca else ''))
             return
         self.dire = dire
         rel = (dire - self.rumbo) % 4
@@ -118,6 +181,8 @@ class Recorrido:
         k = (self.celda, self.rumbo)
         if self.pos < -POS_TOLERANCIA_M and not (f is not None and f < 0.2) and self.intentos.get(k, 0) < 1:
             self.intentos[k] = 1
+            if f_usada is not None:                                # todavia no giro: la flecha sigue valiendo
+                self.flecha = dict(f_usada, t=ahora)
             self._corrida(-self.pos, 'estoy %.0f cm corto del centro: avanzo antes de girar' % abs(100 * self.pos))
             return
         self._ir('girar', 'giro 90° a la %s' % ('izquierda' if rel == 1 else 'derecha') if rel in (1, 3) else 'callejon: dos giros de 90°')
@@ -161,6 +226,7 @@ class Recorrido:
         rel = (self.nuevo_rumbo - self.rumbo) % 4
         avance = self.c.odo.s - self._s_ini
         self.pos = -(self.pos + avance) if rel == 2 else 0.0      # media vuelta: lo que estaba adelante queda atras
+        self.flecha, self.sordo_hasta = None, ahora + SORDO_TRAS_GIRO_S
         self.rumbo = self.nuevo_rumbo
         self._revisar_fin()
         if self.estado != 'detenido':
