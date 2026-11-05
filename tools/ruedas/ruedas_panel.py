@@ -505,11 +505,12 @@ class Panel:
             if cm is None:
                 return
             despues = cm / 100.0
-        if vel is None or corr is None:
+        corr90 = self._numero(self.corr90, 'Sumador del giro de 90°', -45.0, 45.0)
+        if vel is None or corr is None or corr90 is None:
             return
         self._texto180()
         self._antes_de_maniobra()
-        self.c.giro_180_hacia_la_pared(vel, corr, despues)
+        self.c.giro_180_hacia_la_pared(vel, corr, despues, corr90)
 
     def _giro90(self):
         """Giro de 90 mas el sumador de grados (se ajusta con -1 / +1 hasta que el robot gire 90 reales)."""

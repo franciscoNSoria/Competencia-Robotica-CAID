@@ -431,13 +431,20 @@ class Giro180(Banco):
             self.assertFalse(self.robot.choco, (frente, self.robot.min_hueco, self.mensajes[-6:]))
             self.assertTrue(any('retrocedo' in m and 'antes de girar' in m for m in self.mensajes))
 
-    def test_si_algo_se_acerca_en_pleno_giro_frena_piensa_y_se_endereza(self):
-        self.montar(y=0.0, ancho=0.345, deriva=0.013)                               # justo: la esquina llega a la pared a ~90° y salta la alerta
+    def test_centrado_gira_en_dos_pivotes_de_90_sin_chocar(self):
+        for ancho, y in ((0.40, 0.0), (0.40, 0.02), (0.40, -0.03), (0.46, 0.04)):
+            self.montar(y=y, ancho=ancho, ganancia_giro=1.0, semilla=int(100 * ancho + 1000 * abs(y)))     # (el 90 real ya anda: sin subgiro)
+            self.assertTrue(self.c.giro_180_hacia_la_pared(40))
+            self.assertTrue(self.correr_hasta(self.terminado, 60))
+            self.assertFalse(self.robot.choco, (ancho, y, self.robot.min_hueco, self.mensajes[-4:]))
+            self.assertTrue(any('Giro 1/2' in m for m in self.mensajes) and any('Giro 2/2' in m for m in self.mensajes))
+            self.assertFalse(any('arco con retroceso' in m for m in self.mensajes))
+            self.assertLess(abs(abs(self.rumbo()) - math.pi), math.radians(20), (ancho, y))   # el simulador se pasa ~10° en cada pivote: es lo que el sumador corrige
+
+    def test_corrido_del_eje_usa_el_arco_con_retroceso(self):
+        self.montar(y=0.055)
         self.assertTrue(self.c.giro_180_hacia_la_pared(150))
-        self.assertTrue(self.correr_hasta(self.terminado, 60))                      # (aca no se mide si roza: es el limite fisico)
-        self.assertTrue(any('FRENO a' in m for m in self.mensajes))
-        self.assertTrue(any('Pienso' in m for m in self.mensajes))
-        self.assertTrue(any('Me enderezo' in m for m in self.mensajes))
+        self.assertTrue(any('arco con retroceso' in m for m in self.mensajes))
 
     def test_sin_sonares_no_gira(self):
         self.montar()
