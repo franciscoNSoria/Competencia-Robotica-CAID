@@ -475,9 +475,8 @@ class Controlador:
         if self.maniobra is not None or self.marcha is not None or self.guiado is not None:
             self.imprimir('Ya hay una maniobra en curso (PARAR la cancela).')
             return False
-        if self.cola:
-            self.imprimir('Un momento: todavia se esta enviando la configuracion a la ESP32.')
-            return False
+        while self.cola:                                         # configuracion todavia en cola: se manda ya (antes el click se perdia y habia que tocar dos veces)
+            self._cmd(*self.cola.popleft())
         self.objetivo = [0.0] * 4
         self.aplicado = [0.0] * 4
         return True

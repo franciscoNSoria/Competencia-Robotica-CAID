@@ -531,13 +531,17 @@ class Maniobras(Banco):
         filas = list(csv.reader(open(os.path.join(self.dir.name, 'ruedas_maniobras.csv'))))
         self.assertEqual(filas[1][7], '4.0')
 
-    def test_no_se_arranca_con_la_configuracion_a_medio_enviar(self):
+    def test_con_la_configuracion_a_medio_enviar_se_manda_primero_y_el_boton_anda_a_la_primera(self):
+        """Antes se rechazaba ('todavia se esta enviando...') y habia que tocar el boton dos veces: ahora la config sale ya, antes de la maniobra."""
         self.conectar()
         self.c._mandar_config(diametro=0.066)
-        self.assertFalse(self.c.distancia(1.0, 0.2))
-        self.assertTrue(any('todavia se esta enviando' in m for m in self.mensajes))
-        self.correr(1.0)
         self.assertTrue(self.c.distancia(1.0, 0.2))
+        self.assertFalse(self.c.cola)
+        self.assertFalse(any('todavia se esta enviando' in m for m in self.mensajes))
+        self.correr(0.5)
+        ids = [a[0] for a in self.ordenes()]
+        self.assertIn(5, ids)                                              # la config (orden 5) salio ...
+        self.assertLess(ids.index(5), ids.index(3))                        # ... antes de la orden de la maniobra (3)
 
     def test_un_adelanto_de_frenado_de_cero_es_valido(self):
         self.conectar()
