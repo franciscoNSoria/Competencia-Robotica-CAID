@@ -23,19 +23,21 @@ from mapa import Mapa, vecina  # noqa: E402
 CELDA = 0.40
 F_X = 0.1399                          # el sonar frontal esta 14 cm adelante del centro
 F_CENTRO = CELDA / 2 - F_X            # lo que lee el frontal en el centro de la celda mirando una pared (6 cm)
-FRENTE_PARED_M = 0.16                 # el frontal lee menos que esto: hay pared de enfrente (abierto lee 40 cm o mas)
+FRENTE_GIRO_M = 0.19                  # el avance frena cuando el frontal lee esto; por inercia queda a ~15 cm y ahi gira
+FRENTE_PARED_M = 0.22                 # el frontal lee menos que esto: hay pared de enfrente (abierto lee 40 cm o mas)
 FRENTE_REFERENCIA_M = 1.2             # el frontal sirve de referencia hasta esta distancia (el HC-SR04 es poco confiable mas lejos)
 LATERAL_PARED_M = 0.25                # un lateral lee menos que esto: hay pared (a 8,15 cm del eje, centrado lee ~12 cm)
 POS_TOLERANCIA_M = 0.03               # pasado o corto del centro mas que esto: se corre antes de girar
 T_ASENTAR_S, T_MEDIR_S = 0.4, 0.9      # quieto: espera que se asiente y mide hasta aqui (antes 0,7 y 1,5 s: tardaba mucho en decidir)
 NOMBRES = ('+x', '+y', '-x', '-y')
-PARADA_CUBO_M = 0.04                  # se detiene a esto del cubo
+PARADA_CUBO_M = 0.10                  # se detiene a esto del cubo (nunca mas cerca de 10 cm)
+CUBO_STOP_FRENTE_M = 0.08             # mientras se acerca al cubo el frontal no lo frena a 15 cm (eso es para paredes): solo a esto, por seguridad
 V_CUBO_MS = 0.08
 CUBO_REACCION_M = 0.50                # el cubo a esta distancia o menos: empieza a acercarse despacio
 CUBO_ANTES_M = 0.10                   # el avance guiado lo deja a esta distancia; el resto lo hace una orden de distancia
 CUBO_LADO_M = 0.020
 FX_CAMARA_PX = 950.0
-_SIN_CUBO = ('espera', 'fin', 'detenido', 'esperar_y', 'cubo_fino', 'cubo_llego', 'media_cubo', 'media_cubo_fin', 'canasto', 'esperar_canasto')
+_SIN_CUBO = ('espera', 'fin', 'detenido', 'esperar_y', 'cubo_fino', 'cubo_llego', 'media_cubo', 'media_cubo_fin', 'canasto', 'esperar_canasto', 'pausa_reentrar', 'reentrar_giro')
 
 
 class Recorrido:
@@ -56,6 +58,9 @@ class Recorrido:
         self.parada_cubo_m = PARADA_CUBO_M
         self.camino = [('celda', (0, 0), 0)]   # lo andado: celdas visitadas y giros, para el mapa del cubo
         self.cubo_lect, self.cubo_color, self.cubo_frenando = [], None, False
+        self.ignora = set()                    # colores ya entregados: sus cubos (y sus flechas, para la vision) no cuentan
+        self.al_cambiar_estado = None          # callback(ignora): laberinto_real avisa a la vision por /nav/estado
+        self.entregado = False                 # el cubo en curso ya se dejo en el canasto
         self.volviendo = False                 # con el cubo ya 'capturado': vuelve a la partida (donde esta el canasto)
         c.ajustar_frenado = False
 
@@ -68,9 +73,19 @@ class Recorrido:
     def confirmar(self):
         """Tecla Y: frente al cubo, da media vuelta, cuenta el mapa y vuelve a la partida; en la partida (canasto), cierra la entrega."""
         if self.estado == 'esperar_canasto':
-            self.imprimir('  OK: cubo %s entregado en el canasto.' % (self.cubo_color or '?').upper())
-            self.estado = 'fin'
-            self.imprimir('== TERMINE: cubo entregado. q para salir ==')
+            color = (self.cubo_color or '?')
+            self.imprimir('  OK: cubo %s entregado en el canasto.' % color.upper())
+            if self.cubo_color:
+                self.ignora.add(self.cubo_color)               # ese color ya salio: ni su cubo ni sus flechas cuentan de ahora en mas
+                self._avisar_estado()
+            self.entregado = True
+            self._pausa_reentrar('PAUSA: cubo %s entregado.' % color.upper())
+            return True
+        if self.estado == 'pausa_reentrar':
+            self.imprimir('  OK: giro 180° y vuelvo a entrar a buscar el resto (ignoro: %s).' % (', '.join(sorted(self.ignora)) or 'nada'))
+            self.c.giro_180_hacia_la_pared(self.vel_dps, self.corr180, None, self.corr90)
+            self._s_ini = self.c.odo.s
+            self._ir('reentrar_giro')
             return True
         if self.estado != 'esperar_y':
             self.imprimir('  (el OK solo vale cuando estoy esperando frente al cubo)')
@@ -79,9 +94,29 @@ class Recorrido:
         self._ir('media_cubo')
         return True
 
+    def _avisar_estado(self):
+        if self.al_cambiar_estado:
+            self.al_cambiar_estado(sorted(self.ignora))
+
+    def _pausa_reentrar(self, texto):
+        self.imprimir('== %s Esperando el OK (tecla Y): con el OK giro 180° y vuelvo a entrar a buscar el resto de los cubos ==' % texto)
+        self._ir('pausa_reentrar')
+
+    def _reentrar_giro(self, ahora):
+        """Termino el 180° en la partida: borra lo del cubo anterior y vuelve a explorar (el mapa que ya conoce se conserva)."""
+        avance = self.c.odo.s - self._s_ini
+        self.pos = -(self.pos + avance)
+        self.rumbo = (self.rumbo + 2) % 4
+        self.volviendo, self.entregado = False, False
+        self.cubo_frenando, self.cubo_lect, self.cubo_color = False, [], None
+        self.camino, self.cuenta_celdas, self.intentos = [('celda', self.celda, self.rumbo)], 0, {}
+        self._revisar_fin()
+        if self.estado != 'detenido':
+            self._ir('medir', 'vuelvo a entrar: celda %s mirando %s, busco el siguiente cubo' % (self.celda, NOMBRES[self.rumbo]))
+
     def recibir_cubo(self, color, area):
         """/vision/cubo/<color> (area en px2): si esta cerca, deja de explorar y se acerca despacio hasta pararse."""
-        if self.volviendo or (self.estado in _SIN_CUBO and self.estado != 'cubo_fino') or area <= 0:
+        if self.volviendo or color in self.ignora or (self.estado in _SIN_CUBO and self.estado != 'cubo_fino') or area <= 0:
             return
         dist = self.fx * CUBO_LADO_M / math.sqrt(area)
         ahora = self.reloj()
@@ -94,7 +129,8 @@ class Recorrido:
         g = self.c.guiado
         if self.estado == 'avanzar_fin' and g is not None:           # esta avanzando: baja la velocidad y lo deja a CUBO_ANTES_M
             g['v'] = V_CUBO_MS
-            g['dist'] = (self.c.odo.s - g['s0']) + max(0.01, dist - CUBO_ANTES_M)
+            g['stop_frente'] = CUBO_STOP_FRENTE_M                # el cubo adelante no es una pared: no frena a los 15 cm de las paredes
+            g['dist'] = (self.c.odo.s - g['s0']) + max(0.01, dist - max(CUBO_ANTES_M, self.parada_cubo_m) - self.frenada_m)
 
     def detener(self, motivo='detenido'):
         self.c.parar()
@@ -117,7 +153,7 @@ class Recorrido:
 
     # ---- bucle (llamar despues de Controlador.tick)
     def tick(self):
-        if self.estado in ('espera', 'fin', 'detenido', 'esperar_y', 'esperar_canasto') or self._ocupado():
+        if self.estado in ('espera', 'fin', 'detenido', 'esperar_y', 'esperar_canasto', 'pausa_reentrar') or self._ocupado():
             return
         ahora = self.reloj()
         getattr(self, '_' + self.estado)(ahora)
@@ -151,7 +187,8 @@ class Recorrido:
             if self.celda == self.mapa.inicio:
                 self._ir('canasto')
             else:
-                self.detener('no conozco un camino a la partida desde %s' % (self.celda,))
+                self.volviendo = False
+                self._pausa_reentrar('PAUSA: no conozco un camino a la partida desde %s (se perdio el camino; el cubo %s NO lo di por entregado).' % (self.celda, (self.cubo_color or '?').upper()))
             return
         if dire is None:
             self.estado = 'fin'
@@ -225,7 +262,7 @@ class Recorrido:
     def _avanzar(self, ahora):
         dist = max(0.10, CELDA - self.pos - self.frenada_m)
         self._s_ini = self.c.odo.s
-        if not self.c.enderezar_avanzando(dist, self.v):
+        if not self.c.enderezar_avanzando(dist, self.v, FRENTE_GIRO_M):
             self.mapa.bloquear(self.celda, self.rumbo)            # frente pegado a una pared: no hay paso
             self.imprimir('  no avanzo: pared de enfrente; la marco y vuelvo a decidir')
             self._ir('medir')
@@ -241,7 +278,7 @@ class Recorrido:
             self.pos = hecho
             self._ir('cubo_fino')
             return
-        if hecho >= CELDA - 0.12:                                  # llego (o casi: la pared de enfrente lo hizo frenar)
+        if hecho >= CELDA - 0.19:                                  # llego (o casi: la pared de enfrente lo hizo frenar)
             self.mapa.recorrer(self.celda, self.rumbo)
             self.celda = vecina(self.celda, self.rumbo)
             self.pos = hecho - CELDA

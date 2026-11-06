@@ -356,6 +356,46 @@ class Enderezar(Banco):
         self.assertTrue(self.c._puede_retroceder(g))
         self.assertEqual(g['n_retro'], 0)
 
+    # ---- prevencion de choque: una pared que se achica respecto de la otra
+    @staticmethod
+    def _buf(izq, der, dt=0.1, ds=0.01):
+        return [(100.0 + k * dt, i, d, k * ds) for k, (i, d) in enumerate(zip(izq, der))]
+
+    def test_detecta_la_pared_izquierda_que_se_achica_y_la_derecha_que_se_aleja(self):
+        self.montar()
+        n = 14
+        izq = [0.115 - 0.0025 * k for k in range(n)]                  # 11,5 -> 8,3 cm
+        der = [0.118 + 0.0015 * k for k in range(n)]
+        self.assertEqual(self.c._pared_que_se_achica(self._buf(izq, der)), +1)
+        self.assertEqual(self.c._pared_que_se_achica(self._buf(der, izq)), -1)                   # espejo: la derecha
+
+    def test_no_dispara_si_el_pasillo_se_angosta_parejo_si_esta_quieto_o_si_hubo_un_cruce(self):
+        self.montar()
+        n = 14
+        igual = [0.115 - 0.0025 * k for k in range(n)]
+        self.assertEqual(self.c._pared_que_se_achica(self._buf(igual, igual)), 0)                # las dos bajan igual: pasillo que se angosta
+        izq = [0.115 - 0.0025 * k for k in range(n)]
+        der = [0.118 + 0.0015 * k for k in range(n)]
+        self.assertEqual(self.c._pared_que_se_achica(self._buf(izq, der, ds=0.0)), 0)            # no avanzo: nada que prevenir
+        self.assertEqual(self.c._pared_que_se_achica(self._buf(izq, der)[:5]), 0)                # poca historia
+        izq_salto = [0.28] + [0.06] * (n - 1)
+        self.assertEqual(self.c._pared_que_se_achica(self._buf(izq_salto, der)), 0)              # salto de 28 a 6 cm: entrada a un pasillo
+        izq_abierto = [None] * 3 + [0.10] * (n - 3)
+        self.assertEqual(self.c._pared_que_se_achica(self._buf(izq_abierto, der)), 0)            # sin eco: no es una pared
+
+    def test_la_prevencion_gira_30_grados_sin_retroceder_y_no_choca(self):
+        self.montar(y=0.0, ganancia_giro=1.0)
+        self.robot.th = math.radians(9)
+        self.assertTrue(self.c.enderezar_avanzando(1.2))
+        buf = self._buf([0.115 - 0.0025 * k for k in range(14)], [0.118 + 0.0015 * k for k in range(14)])
+        g = self.c.guiado
+        g['pbuf'] = buf
+        self.c._prevenir_choque(g, 100.0 + 1.3, +1)
+        self.assertTrue(any('PREVENCION 1/3' in m and 'giro 30° a la derecha sin retroceder' in m for m in self.mensajes), self.mensajes)
+        self.assertTrue(self.correr_hasta(self.terminado, 60))
+        self.assertFalse(self.robot.choco)
+        self.assertFalse([a for t, a in self.robot.enviadas if t == 'vel' and a[0] < 0])         # no retrocedio
+
     def test_sin_distancia_sigue_hasta_la_pared_de_frente(self):
         self.montar(pared_x=1.0)
         self.assertTrue(self.c.enderezar_avanzando(None))

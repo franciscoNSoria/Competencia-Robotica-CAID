@@ -30,11 +30,18 @@ def tecla():
 
 
 def conectar_vision(enlace, rec):
-    """/vision/cubo/<color> -> recorrido (area del cubo en px2 en Point.z)."""
+    """/vision/cubo/<color> -> recorrido (area del cubo en px2 en Point.z); los colores entregados salen por /nav/estado (latched) para que la
+    vision ignore sus cubos y sus flechas."""
+    import json
     from geometry_msgs.msg import Point
+    from rclpy.qos import DurabilityPolicy, QoSProfile
+    from std_msgs.msg import String
+    pub = enlace.create_publisher(String, '/nav/estado', QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
+    rec.al_cambiar_estado = lambda ignora: pub.publish(String(data=json.dumps({'busca': None, 'ignora': ignora})))
+    pub.publish(String(data=json.dumps({'busca': None, 'ignora': []})))
     for col in ('rojo', 'verde', 'azul'):
         enlace.create_subscription(Point, '/vision/cubo/' + col, lambda m, col=col: rec.recibir_cubo(col, m.z), 10)
-    print('Vision: escucho /vision/cubo/* (con el cubo cerca frena, espera la Y, da media vuelta y cuenta el camino)')
+    print('Vision: escucho /vision/cubo/* y aviso por /nav/estado los colores entregados (con el cubo cerca frena, espera la Y, 180°, mapa, vuelve al canasto, OK, pausa, OK y vuelve a entrar)')
 
 
 def main():

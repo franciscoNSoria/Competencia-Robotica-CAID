@@ -212,6 +212,18 @@ PRIOR_PIVOTE_RAD = 0.17                # sin los dos laterales no hay suma: pivo
 SEPARADO_M = 0.075                     # el despegue termina cuando el lateral cercano vuelve a medir esto
 RECTO_TRAS_BRUSCA_M = 0.09             # despues de la correccion brusca avanza derecho esto mientras se vuelve a medir el rumbo
 ESPERA_BRUSCA_M = 0.05                 # avance minimo despues de una correccion brusca antes de juzgar de nuevo (el sonar tarda en reflejarlo)
+PREV_VENTANA_S = 1.2                   # prevencion de choque: buffer corto de los laterales (el sonar lateral se actualiza cada ~0,24 s)
+PREV_MIN_S = 0.8                       # ... hace falta al menos esto de historia
+PREV_BAJA_M = 0.015                    # una pared se 'achica' si su distancia filtrada bajo esto en la ventana (promedio del final - del principio)
+PREV_REL_M = 0.025                      # ... y la otra no la acompaña: la diferencia entre lados crecio al menos esto (no es un pasillo que se angosta)
+PREV_DIST_M = 0.10                     # ... y la pared ya esta a esto o menos (centrado lee ~12 cm)
+PREV_PARED_MAX_M = 0.30                # ... y en toda la ventana los dos laterales vieron una pared (<= esto): un cruce abierto no cuenta
+PREV_PSI_MIN_DEG = 3.0                 # ... y el rumbo estimado todavia apunta hacia esa pared al menos esto (si ya se aleja, el control lo esta resolviendo)
+PREV_GIRO_MIN_DEG, PREV_MARGEN_DEG = 12.0, 10.0   # el giro de la prevencion: la inclinacion estimada + 10°, entre 12° y PREV_GIRO_DEG
+PREV_AVANCE_M = 0.04                   # ... y el robot avanzo al menos esto en la ventana (quieto no hay nada que prevenir)
+PREV_ESPERA_M = 0.15                   # despues de prevenir, no vuelve a hacerlo hasta avanzar esto
+PREV_GIRO_DEG = 30.0                   # giro de la prevencion hacia el lado contrario de la pared (el escape del panel usa 45 y retrocede; este no retrocede)
+MAX_PREVENCIONES = 3                   # seguidas (se cuentan de nuevo tras avanzar AVANCE_REPETIDO_M)
 SALTO_SONAR_M = 0.04                   # un lateral que cambia mas que esto entre dos lecturas no es una pared continua
 
 
@@ -681,7 +693,7 @@ class Controlador:
     def _etapa(self, g, nombre, ahora):
         g['etapa'], g['t_etapa'] = nombre, ahora
 
-    def enderezar_avanzando(self, distancia_m=None, v_ms=V_LENTA_MS):
+    def enderezar_avanzando(self, distancia_m=None, v_ms=V_LENTA_MS, frente_m=None):
         """Linea recta por el pasillo: avanza despacio y se mantiene alineado y centrado con los sonares laterales (EstimadorPasillo
         y timon_pasillo, con termino integral). `distancia_m` None o 0: sigue hasta que haya una pared de frente (STOP_FRENTE_M) o
         PARAR. Si un costado se acerca demasiado (o va a estarlo en 10 cm segun el rumbo estimado) NO sigue: frena, piensa,
@@ -693,8 +705,9 @@ class Controlador:
             self.imprimir('La ESP32 no informa los sonares (hace falta el firmware con sonares: /wheel_state de 34 valores).')
             return False
         frente, izq, der = son
-        if frente is not None and frente <= STOP_FRENTE_M:
-            self.imprimir(f'No avanzo: hay una pared de frente a {100 * frente:.1f} cm (el minimo es {100 * STOP_FRENTE_M:.0f} cm). '
+        stop_frente = STOP_FRENTE_M if frente_m is None else frente_m          # el frontal a esto o menos: frena (el laberinto fija el suyo)
+        if frente is not None and frente <= stop_frente:
+            self.imprimir(f'No avanzo: hay una pared de frente a {100 * frente:.1f} cm (el minimo es {100 * stop_frente:.0f} cm). '
                           'Poné el robot mirando hacia el lado abierto del pasillo.')
             return False
         if not distancia_m or distancia_m <= 0:
@@ -702,7 +715,7 @@ class Controlador:
         ahora = self.reloj()
         self.guiado = {'tipo': 'enderezar', 'etapa': 'avanzar', 't_etapa': ahora, 's0': self.odo.s, 'dist': distancia_m, 'v': v_ms,
                        't0': ahora, 'proximo_envio': ahora, 'proximo_log': ahora, 'est': EstimadorPasillo(), 'despues': None,
-                       'sesgo': 0.0, 't_ant': ahora}
+                       'sesgo': 0.0, 't_ant': ahora, 'stop_frente': stop_frente}
         donde = 'hasta la pared del frente' if distancia_m == float('inf') else f'{100 * distancia_m:.0f} cm'
         self.imprimir(f'== linea recta enderezando: {donde} a {v_ms:.2f} m/s ==')
         self.imprimir('  Al arrancar: ' + self.texto_sonares(son))
@@ -1045,13 +1058,57 @@ class Controlador:
         self._vel_guiada(g, ahora, v, w)
 
     # ---- el avance recto
+    @staticmethod
+    def _filtrado(buf, i):
+        """(promedio del primer cuarto, promedio del ultimo cuarto) de la columna i del buffer [(t, izq, der, s)], sin los None."""
+        n = max(2, len(buf) // 4)
+        ini = [x[i] for x in buf[:n] if x[i] is not None]
+        fin = [x[i] for x in buf[-n:] if x[i] is not None]
+        if not ini or not fin:
+            return None
+        return sum(ini) / len(ini), sum(fin) / len(fin)
+
+    def _pared_que_se_achica(self, buf):
+        """+1 si la pared IZQUIERDA se achica respecto de la derecha, -1 si la DERECHA, 0 si ninguna. `buf` = [(t, izq, der, s)] de los
+        ultimos PREV_VENTANA_S. Filtro: se comparan promedios del principio y del final del buffer (el sonar mide a +-2 mm)."""
+        if len(buf) < 8 or buf[-1][0] - buf[0][0] < PREV_MIN_S or buf[-1][3] - buf[0][3] < PREV_AVANCE_M:
+            return 0
+        if any(x[1] is None or x[2] is None or x[1] > PREV_PARED_MAX_M or x[2] > PREV_PARED_MAX_M for x in buf):
+            return 0                                             # un lado estuvo abierto o sin eco: un cruce no es una pared que se achica
+        if any(abs(b[k] - a[k]) > SALTO_SONAR_M for a, b in zip(buf, buf[1:]) for k in (1, 2)):
+            return 0                                             # un salto entre dos lecturas no es una pared continua (entrada a un pasillo, esquina)
+        fi, fd = self._filtrado(buf, 1), self._filtrado(buf, 2)
+        if fi is None or fd is None:
+            return 0
+        di, dd = fi[1] - fi[0], fd[1] - fd[0]                    # cambio de cada lado en la ventana (- = se achica)
+        if -di >= PREV_BAJA_M and (dd - di) >= PREV_REL_M and fi[1] <= PREV_DIST_M and fi[1] < fd[1]:
+            return +1
+        if -dd >= PREV_BAJA_M and (di - dd) >= PREV_REL_M and fd[1] <= PREV_DIST_M and fd[1] < fi[1]:
+            return -1
+        return 0
+
+    def _prevenir_choque(self, g, ahora, lado, psi=None):
+        """Una pared se achica: frena y gira PREV_GIRO_DEG hacia el lado contrario (como el escape del panel pero sin retroceder y a 30° en
+        lugar de 45°), decidido con los sonares; despues sigue derecho."""
+        grados = abs(self.cal.get('prev_giro_deg', PREV_GIRO_DEG))
+        if psi is not None:                                      # no se pasa: lo que apunta hacia la pared mas un margen, con tope en PREV_GIRO_DEG
+            grados = min(grados, max(PREV_GIRO_MIN_DEG, abs(math.degrees(psi)) + PREV_MARGEN_DEG))
+        delta = -lado * math.radians(grados)
+        self._parar_motores()
+        g['n_prev'] = g.get('n_prev', 0) + 1
+        g['s_prev'] = self.odo.s
+        g['hist'], g['pbuf'] = [], []
+        self.imprimir(f'  PREVENCION {g["n_prev"]}/{MAX_PREVENCIONES}: la pared {"izquierda" if lado > 0 else "derecha"} se achica respecto de la otra: '
+                      f'giro {grados:.0f}° a la {"derecha" if delta < 0 else "izquierda"} sin retroceder.')
+        self._iniciar_pivote(g, ahora, delta, 'pivotar')
+
     def _paso_enderezar(self, ahora, g, frente, izq, der):
         recorrido = self.odo.s - g['s0']
         lateral = min([d for d in (izq, der) if d is not None], default=None)
         motivo = None
         if recorrido >= g['dist']:
             motivo = f'Llegue: avance {100 * recorrido:.0f} cm.'
-        elif frente is not None and frente <= STOP_FRENTE_M:
+        elif frente is not None and frente <= g.get('stop_frente', STOP_FRENTE_M):
             motivo = f'Frene: pared de frente a {100 * frente:.1f} cm (avance {100 * recorrido:.0f} cm).'
         elif ahora - g['t0'] > 90.0:
             motivo = 'Frene: tarde mas de 90 s.'
@@ -1064,6 +1121,20 @@ class Controlador:
         if lateral is not None and lateral <= STOP_LATERAL_M + 0.005:
             self._frenar_y_pensar(g, ahora, f'una pared lateral a {100 * lateral:.1f} cm')
             return
+        # Prevencion de choque: una pared que se achica respecto de la otra (buffer corto filtrado) -> gira PREV_GIRO_DEG alejandose, sin retroceder
+        pb = g.setdefault('pbuf', [])
+        pb.append((ahora, izq, der, self.odo.s))
+        while pb and ahora - pb[0][0] > PREV_VENTANA_S:
+            pb.pop(0)
+        if g.get('n_prev') and self.odo.s - g.get('s_prev', self.odo.s) >= AVANCE_REPETIDO_M:
+            g['n_prev'] = 0
+        if g.get('n_prev', 0) < MAX_PREVENCIONES and self.odo.s - g.get('s_prev', -9.0) >= PREV_ESPERA_M:
+            lado = self._pared_que_se_achica(pb)
+            if lado and psi is not None and psi * lado < math.radians(PREV_PSI_MIN_DEG):
+                lado = 0                                         # el control ya lo esta enderezando (no apunta hacia esa pared): no hace falta
+            if lado:
+                self._prevenir_choque(g, ahora, lado, psi)
+                return
         # Correccion brusca en marcha: un costado que baja de ~7,5 cm y se sigue acercando (o ya esta a 5,5 cm) -> gira rapido hacia
         # el otro lado SIN frenar y sigue avanzando; despues vuelve al control normal, que vigila que no se siga acercando.
         h = g.setdefault('hist', [])
