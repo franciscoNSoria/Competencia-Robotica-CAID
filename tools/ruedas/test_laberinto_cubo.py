@@ -117,7 +117,49 @@ T2 = """\
 """
 
 
+T3 = """\
+#########
+#S..#####
+###.#####
+###.....#
+#####.###
+#########
+"""        # igual que T2 pero con una salida señuelo hacia abajo en la corrida de abajo (queda a la IZQUIERDA al volver hacia el oeste)
+
+
 class TestCuentaGiros(unittest.TestCase):
+    def _correr(self, texto, ganancia=0.74, semilla=3):
+        robot = sim.RobotLaberinto(texto, semilla=semilla, ganancia_giro=ganancia)
+        log = []
+        c = rl.Controlador(robot, carpeta=tempfile.mkdtemp(), reloj=lambda: 100.0 + robot.t, imprimir=lambda m: None)
+        rec = lr.Recorrido(c, corr90=10.0, imprimir=log.append, reloj=lambda: 100.0 + robot.t, cuenta_giros=True)
+        for _ in range(8):
+            robot.avanzar(0.05)
+            c.tick()
+        self.addCleanup(c.cerrar)
+        rec.arrancar()
+        ok = False
+        while robot.t < 900.0 and rec.estado != 'esperar_canasto' and not rec.terminado() and not robot.choco:
+            robot.avanzar(0.05)
+            c.tick()
+            rec.tick()
+            if robot.y < -0.7 and robot.x > 0.9 and not rec.volviendo and rec.estado not in ('esperar_y', 'media_cubo', 'media_cubo_fin'):
+                rec.recibir_cubo('verde', area(max(0.03, 2.6 - (robot.x + 0.14))))
+            if rec.estado == 'esperar_y' and not ok:
+                ok = True
+                rec.confirmar()
+        return robot, rec, '\n'.join(log)
+
+    def test_dobla_en_el_primer_espacio_libre_del_lado_del_giro_invertido_e_ignora_el_otro_lado(self):
+        robot, rec, texto = self._correr(T3)
+        self.assertFalse(robot.choco, texto)
+        self.assertEqual(rec.estado, 'esperar_canasto', texto)
+        self.assertIn('voy derecho hasta el primer espacio libre a la DERECHA', texto)    # ida: ... IZQ al final -> vuelta: primero DERECHA
+        self.assertIn('espacio libre a la derecha: sigo 12 cm y doblo', texto)
+        self.assertIn('voy derecho hasta el primer espacio libre a la IZQUIERDA', texto)  # y despues IZQUIERDA (inverso del primer giro de ida)
+        self.assertLess(abs(robot.x), 0.35, (robot.x, robot.y))
+        self.assertLess(abs(robot.y), 0.2, (robot.x, robot.y))
+
     def test_vuelve_a_ciegas_repitiendo_al_reves_los_giros_anotados_sin_usar_el_mapa(self):
         robot = sim.RobotLaberinto(T2, semilla=3, ganancia_giro=0.74)
         log = []

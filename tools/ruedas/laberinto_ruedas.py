@@ -19,7 +19,7 @@ sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(AQUI, '..', '..', 'ros2_ws', 'src', 'caid_navigation', 'caid_navigation'))
 import ruedas_logica as rl  # noqa: E402
 from mapa import Mapa, vecina  # noqa: E402
-from seguidor import Seguidor  # noqa: E402   (solo su compactar(): une rectos y cancela las idas y vueltas a un callejon)
+from seguidor import Seguidor, LATERAL_ABIERTO_M, T_ABIERTO_S, AVANCE_GIRO_M, MIN_RECTO_M  # noqa: E402   (compactar() y los umbrales del lateral abierto)
 
 CELDA = 0.40
 F_X = 0.1399                          # el sonar frontal esta 14 cm adelante del centro
@@ -38,7 +38,8 @@ CUBO_REACCION_M = 0.50                # el cubo a esta distancia o menos: empiez
 CUBO_ANTES_M = 0.10                   # el avance guiado lo deja a esta distancia; el resto lo hace una orden de distancia
 CUBO_LADO_M = 0.020
 FX_CAMARA_PX = 950.0
-_SIN_CUBO = ('espera', 'fin', 'detenido', 'esperar_y', 'cubo_fino', 'cubo_llego', 'media_cubo', 'media_cubo_fin', 'canasto', 'esperar_canasto', 'pausa_reentrar', 'reentrar_giro', 'retorno')
+RETORNO_TOPE_EXTRA_M = 0.40           # a ciegas: el recto hasta la bifurcacion no pasa de lo anotado + esto (por si el lateral nunca ve nada)
+_SIN_CUBO = ('espera', 'fin', 'detenido', 'esperar_y', 'cubo_fino', 'cubo_llego', 'media_cubo', 'media_cubo_fin', 'canasto', 'esperar_canasto', 'pausa_reentrar', 'reentrar_giro', 'retorno', 'retorno_recto')
 
 
 class Recorrido:
@@ -46,6 +47,7 @@ class Recorrido:
         self.c, self.imprimir = c, imprimir
         self.cuenta_giros = cuenta_giros       # True: anota todos los rectos y giros hasta el cubo y vuelve repitiendolos al reves, a ciegas
         self.log, self.s_tramo0, self.plan = [], 0.0, None
+        self._t_abierto, self._lado_ret = None, 0
         self.vel_dps, self.corr90, self.corr180, self.v, self.frenada_m = vel_dps, corr90, corr180, v, frenada_m
         self.reloj = reloj or c.reloj
         self.mapa = Mapa(inicio=(0, 0))
@@ -158,6 +160,9 @@ class Recorrido:
 
     # ---- bucle (llamar despues de Controlador.tick)
     def tick(self):
+        if self.estado == 'retorno_recto':
+            self._paso_retorno_recto()
+            return
         if self.estado in ('espera', 'fin', 'detenido', 'esperar_y', 'esperar_canasto', 'pausa_reentrar') or self._ocupado():
             return
         ahora = self.reloj()
@@ -391,7 +396,15 @@ class Recorrido:
             return
         ev = self.plan.pop(0)
         self.imprimir('  [retorno] %s (%d paso(s) mas)' % (self.texto_plan([ev])[0], len(self.plan)))
-        if ev[0] == 'recto':
+        if ev[0] == 'recto' and self.plan and self.plan[0][0] == 'giro':
+            lado = self.plan[0][1]                                  # + izquierda / - derecha: el giro que sigue
+            self.imprimir('  voy derecho hasta el primer espacio libre a la %s (o la pared de frente) y ahi doblo' % ('IZQUIERDA' if lado > 0 else 'DERECHA'))
+            self._lado_ret, self._t_abierto = lado, None
+            if not self.c.enderezar_avanzando(ev[1] + RETORNO_TOPE_EXTRA_M, self.v, FRENTE_GIRO_M):
+                self.imprimir('  (pared de frente: ya estoy en la esquina)')
+                return
+            self._ir('retorno_recto')
+        elif ev[0] == 'recto':
             if not self.c.enderezar_avanzando(ev[1], self.v, FRENTE_GIRO_M):
                 self.imprimir('  (pared de frente en el camino de vuelta: sigo con el paso que sigue)')
         elif ev[0] == 'giro':
@@ -399,6 +412,31 @@ class Recorrido:
                 self.detener('no pude empezar un giro de la vuelta')
         else:
             self.c.giro_180_hacia_la_pared(self.vel_dps, self.corr180, None, self.corr90)
+
+    def _paso_retorno_recto(self):
+        """Mientras avanza: el lateral del lado del giro que sigue ve espacio libre (bifurcacion) durante T_ABIERTO_S -> sigue AVANCE_GIRO_M y para."""
+        c, g, ahora = self.c, self.c.guiado, self.reloj()
+        if g is None and c.maniobra is None and not c.cola:         # termino el recto (espacio libre, pared de frente o tope): sigue con el giro
+            self._revisar_fin()
+            if self.estado != 'detenido':
+                self._ir('retorno')
+            return
+        if g is None or g.get('abierto_visto'):
+            return
+        hecho = c.odo.s - g['s0']
+        son = c.sonares()
+        if son is None or hecho < MIN_RECTO_M:
+            return
+        d = son[1] if self._lado_ret > 0 else son[2]
+        if d is None or d > LATERAL_ABIERTO_M:
+            if self._t_abierto is None:
+                self._t_abierto = ahora
+            elif ahora - self._t_abierto >= T_ABIERTO_S:
+                g['abierto_visto'] = True
+                g['dist'] = max(hecho + 0.01, hecho + AVANCE_GIRO_M)
+                self.imprimir('  espacio libre a la %s: sigo %.0f cm y doblo' % ('izquierda' if self._lado_ret > 0 else 'derecha', 100 * AVANCE_GIRO_M))
+        else:
+            self._t_abierto = None
 
     def _canasto(self, ahora):
         self.imprimir('== LLEGUE A LA PARTIDA %s (el canasto). ESPERANDO el OK (tecla Y) para dar el cubo por entregado ==' % (self.mapa.inicio,))
