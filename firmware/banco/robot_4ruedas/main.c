@@ -94,13 +94,13 @@
 #define PWM_MAX 1023                /* 10 bits */
 
 /* Calibrar con la prueba del metro (docs de calibracion): el diametro efectivo y la trocha efectiva salen de medir */
-#define DIAMETRO_RUEDA_M 0.067f     /* CAD (dimensions.yaml); el valor en uso se cambia con /robot_cmd id 5 */
-#define TROCHA_M 0.131f             /* centro a centro (dimensions.yaml); en skid-steer la efectiva es mayor: calibrar con un giro */
-#define FRENADO_M 0.030f            /* se corta esto antes de llegar para que la inercia complete el recorrido; la PC lo ajusta sola */
+#define DIAMETRO_RUEDA_M 0.065f     /* medido (calibracion.json); el valor en uso se cambia con /robot_cmd id 5. Es lo que vale tras un REINICIO de la ESP32: tiene que ser el calibrado */
+#define TROCHA_M 0.300f             /* efectiva medida con giros (calibracion.json); el CAD dice 0,131 pero en skid-steer es mayor. Tras un reinicio vale esto */
+#define FRENADO_M 0.0108f           /* (calibrado) se corta esto antes de llegar para que la inercia complete el recorrido; la PC lo ajusta sola */
 #define ACEL_FLANCOS_S2 100.0f      /* rampa de arranque y de frenado en los movimientos de distancia (0,53 m/s2) */
 #define VEL_MOV_DEFECTO 40.0f       /* flancos/s (0,21 m/s) */
-#define FRENADO_GIRO_M 0.005f       /* en los giros: arco (por rueda) que se corta antes de llegar; 5 mm = 4,4 grados con trocha 0,131 (P: ajustar) */
-#define VEL_GIRO_DEFECTO 30.0f      /* flancos/s por rueda en un giro: 0,16 m/s, unos 138 grados/s con trocha 0,131 */
+#define FRENADO_GIRO_M 0.0122f      /* (calibrado) en los giros: arco (por rueda) que se corta antes de llegar; 12 mm = 4,7 grados con trocha 0,300 */
+#define VEL_GIRO_DEFECTO 30.0f      /* flancos/s por rueda en un giro: 0,16 m/s, unos 61 grados/s con trocha 0,300 */
 #define GIRO_MAX_RAD 12.6f          /* un giro pedido no pasa de 12,6 rad (721 grados) */
 #define MOV_ESPERA_CICLOS 150       /* 1,5 s para que termine de rodar antes de dar el recorrido final */
 #define MOV_MAX_CICLOS 2000         /* 20 s: tope de un movimiento */
