@@ -423,6 +423,18 @@ class Controlador:
         self.imprimir(f'Giros: delanteras x{factor:g}, empujon de arranque nivel {nivel}.')
         return True
 
+    def config_pre_fr(self, duty_pct, ms):
+        """Pre-arranque de FR en los giros de ~90 grados: FR recibe `duty_pct` % de duty durante `ms` ms ANTES de mandar el giro,
+        asi ya viene rodando y no queda de ancla (0 = apagado). Solo software: no hace falta reflashear la ESP32."""
+        if not 0 <= duty_pct <= 100 or not 0 <= ms <= 500:
+            self.imprimir('Pre-arranque de FR: duty de 0 a 100 % y tiempo de 0 a 500 ms.')
+            return False
+        self.cal['fr_pre_duty_pct'] = duty_pct
+        self.cal['fr_pre_ms'] = ms
+        guardar_cal(self.cal, self.ruta_cal)
+        self.imprimir(f'Pre-arranque de FR en los giros de 90: {duty_pct:g} % durante {ms:g} ms' + (' (apagado).' if not duty_pct or not ms else '.'))
+        return True
+
     # --- barras
     def poner_modo(self, modo):
         if modo != self.modo:
@@ -490,6 +502,9 @@ class Controlador:
         sentido = 'izquierda' if grados > 0 else 'derecha'
         self._nueva_maniobra('giro', f'giro de {abs(grados):g} grados a la {sentido}', grados,
                              (7, math.radians(grados), vel), self.reloj())
+        duty, ms = self.cal.get('fr_pre_duty_pct', 0.0), self.cal.get('fr_pre_ms', 0.0)
+        if duty > 0 and ms > 0 and 60.0 <= abs(grados) <= 120.0:          # solo los giros de ~90
+            self.maniobra['pre'] = {'duty': math.copysign(duty / 100.0, grados), 'ms': ms, 't_ini': None}
         self.imprimir(f'== {self.maniobra["nombre"]} (ruedas a {vel:.0f} flancos/s = {vel_dps:.0f} grados/s pedidos) ==')
         return True
 
@@ -936,6 +951,15 @@ class Controlador:
         m['recorrido'] = e[17]
         if not m['activa'] and e[16] > 0.5:
             m['activa'] = True
+        pre = m.get('pre')
+        if pre is not None and not m['activa']:                # FR arranca primero (lazo abierto) y despues va el giro
+            if pre['t_ini'] is None:
+                pre['t_ini'] = ahora
+            if ahora - pre['t_ini'] < pre['ms'] / 1000.0:
+                self._cmd(1, 0.0, pre['duty'], 0.0, 0.0)       # solo FR; + = adelante (grados + = izquierda: la derecha avanza)
+                return
+            m['pre'] = None
+            m['proximo_envio'] = ahora
         if not m['activa']:
             if ahora >= m['proximo_envio']:                  # se repite hasta que la ESP32 arranca: UDP puede perder uno
                 self._cmd(*m['orden'])

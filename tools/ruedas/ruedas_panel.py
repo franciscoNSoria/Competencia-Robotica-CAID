@@ -115,6 +115,8 @@ class Panel:
         self.cm_despues = tk.StringVar(value='20')
         self.f_del = tk.StringVar(value='1.15')              # giros: delanteras = factor x traseras
         self.k_del = tk.StringVar(value='0')                 # giros: nivel del empujon de arranque de FL y FR
+        self.pre_duty = tk.StringVar(value='0')              # giros de 90: duty (%) con el que FR arranca antes
+        self.pre_ms = tk.StringVar(value='100')              # ... y cuantos ms antes
         self.esc_atras = tk.StringVar(value='6')             # escape de pared: cm que retrocede (una vez)
         self.esc_giro = tk.StringVar(value='45')             # ... y grados que gira hacia el lado contrario de la pared
         self.esc_lado = tk.IntVar(value=0)                   # 0 = la pared mas cercana (sonares), +1 pared a la izquierda, -1 a la derecha
@@ -139,6 +141,8 @@ class Panel:
         self.esc_giro.set(f"{self.c.cal.get('escape_giro_deg', 45.0):g}")
         self.f_del.set(f"{self.c.cal.get('giro_factor_del', 1.15):g}")
         self.k_del.set(str(int(self.c.cal.get('kick_del', 0))))
+        self.pre_duty.set(f"{self.c.cal.get('fr_pre_duty_pct', 0.0):g}")
+        self.pre_ms.set(f"{self.c.cal.get('fr_pre_ms', 100.0):g}")
         self.real = tk.StringVar()
         self.desplaz = tk.StringVar()
         self.grabar = tk.BooleanVar(value=False)
@@ -292,6 +296,15 @@ class Panel:
         self._etiqueta(f, 'las traseras; empujon de arranque delanteras (0-3, traseras = 2):').pack(side='left')
         self._entrada(f, self.k_del, 3).pack(side='left', padx=3)
         self._boton(f, 'APLICAR', self._aplicar_delanteras).pack(side='left', padx=6)
+
+        f = tk.Frame(t, bg=TARJETA, pady=3)
+        f.pack(fill='x')
+        self._etiqueta(f, 'Giro 90: FR arranca antes con duty').pack(side='left')
+        self._entrada(f, self.pre_duty, 4).pack(side='left', padx=3)
+        self._etiqueta(f, '% durante').pack(side='left')
+        self._entrada(f, self.pre_ms, 4).pack(side='left', padx=3)
+        self._etiqueta(f, 'ms (duty 0 = apagado)').pack(side='left')
+        self._boton(f, 'APLICAR', self._aplicar_pre_fr).pack(side='left', padx=6)
 
         f = tk.Frame(t, bg=TARJETA, pady=3)
         f.pack(fill='x')
@@ -557,6 +570,13 @@ class Panel:
         if None in (fac, niv):
             return
         self.c.config_delanteras(fac, int(round(niv)))
+
+    def _aplicar_pre_fr(self):
+        d = self._numero(self.pre_duty, 'Pre-arranque FR: duty (%)', 0, 100)
+        ms = self._numero(self.pre_ms, 'Pre-arranque FR: ms', 0, 500)
+        if None in (d, ms):
+            return
+        self.c.config_pre_fr(d, ms)
 
     def _escape(self):
         """Retrocede una vez y gira hacia el lado contrario de la pared (cm y grados ajustables; quedan en calibracion.json)."""

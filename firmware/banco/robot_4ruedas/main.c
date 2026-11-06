@@ -93,6 +93,10 @@
 #define PWM_HZ 5000
 #define PWM_MAX 1023                /* 10 bits */
 
+/* Dominio ROS de este robot. El agente micro-ROS crea su participante en el dominio que le pide la ESP32 (no el ROS_DOMAIN_ID de la PC):
+ * en TODAS las terminales de la PC hay que usar el mismo (export ROS_DOMAIN_ID=71) o no ven los topicos. Cambiarlo requiere regrabar. */
+#define ROS_DOMINIO 71
+
 /* Calibrar con la prueba del metro (docs de calibracion): el diametro efectivo y la trocha efectiva salen de medir */
 #define DIAMETRO_RUEDA_M 0.065f     /* medido (calibracion.json); el valor en uso se cambia con /robot_cmd id 5. Es lo que vale tras un REINICIO de la ESP32: tiene que ser el calibrado */
 #define TROCHA_M 0.300f             /* efectiva medida con giros (calibracion.json); el CAD dice 0,131 pero en skid-steer es mayor. Tras un reinicio vale esto */
@@ -1195,6 +1199,11 @@ void micro_ros_task(void *arg)
 		printf("uros: no se pudieron crear las opciones\n");
 		vTaskDelete(NULL);
 	}
+	if (rcl_init_options_set_domain_id(&init_options, ROS_DOMINIO) != RCL_RET_OK) {
+		printf("uros: dominio ROS invalido\n");
+		vTaskDelete(NULL);
+	}
+	printf("uros: dominio ROS %d\n", ROS_DOMINIO);
 	rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
 	if (rmw_uros_options_set_udp_address(CONFIG_MICRO_ROS_AGENT_IP, CONFIG_MICRO_ROS_AGENT_PORT, rmw_options) != RCL_RET_OK) {
 		printf("uros: direccion del agente invalida\n");

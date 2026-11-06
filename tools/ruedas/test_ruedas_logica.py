@@ -489,6 +489,24 @@ class Maniobras(Banco):
         t = self.c.resultado['ticks']
         self.assertTrue(t[0] < 0 and t[2] < 0 and t[1] > 0 and t[3] > 0)           # izquierda atras, derecha adelante
 
+    def test_pre_arranque_de_fr_solo_en_el_giro_de_90_y_antes_de_la_orden_7(self):
+        self.c.ajustar_frenado = False
+        self.conectar()
+        self.assertFalse(self.c.config_pre_fr(150, 100))
+        self.assertTrue(self.c.config_pre_fr(60, 100))
+        self.correr(1.0)
+        self.c.girar(90, 120)
+        self.correr_hasta_resultado()
+        env = [a for a in self.ordenes() if a[0] in (1, 7)]
+        pre = [a for a in env if a[0] == 1]
+        self.assertTrue(pre and all(a[1:] == (0.0, 0.6, 0.0, 0.0) for a in pre))      # solo FR, hacia adelante (giro a la izquierda)
+        self.assertEqual(env[0][0], 1)                                                  # el pre-arranque va primero
+        self.assertEqual(env[-1][0], 7)
+        self.robot.enviadas.clear()
+        self.c.girar(-180, 120)                                                         # el de 180 no lleva pre-arranque
+        self.correr_hasta_resultado()
+        self.assertEqual([a for a in self.ordenes() if a[0] == 1], [])
+
     def test_giro_a_la_derecha_y_velocidad_en_flancos(self):
         self.c.ajustar_frenado = False
         self.conectar()
