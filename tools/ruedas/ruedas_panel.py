@@ -115,6 +115,7 @@ class Panel:
         self.cm_despues = tk.StringVar(value='20')
         self.f_del = tk.StringVar(value='1.15')              # giros: delanteras = factor x traseras
         self.k_del = tk.StringVar(value='0')                 # giros: nivel del empujon de arranque de FL y FR
+        self.lados = [tk.DoubleVar(value=100.0) for _ in range(4)]   # % de velocidad de giro: der(izq,der), izq(izq,der)
         self.pre_duty = tk.StringVar(value='0')              # giros de 90: duty (%) con el que FR arranca antes
         self.pre_ms = tk.StringVar(value='100')              # ... y cuantos ms antes
         self.pre_ini = tk.StringVar(value='0')               # ... con rampa desde este duty (%); 0 = sin rampa, duty fijo
@@ -142,6 +143,8 @@ class Panel:
         self.esc_giro.set(f"{self.c.cal.get('escape_giro_deg', 45.0):g}")
         self.f_del.set(f"{self.c.cal.get('giro_factor_del', 1.15):g}")
         self.k_del.set(str(int(self.c.cal.get('kick_del', 0))))
+        for v, k in zip(self.lados, self.c.LADOS_GIRO):
+            v.set(self.c.cal.get(k, 100.0))
         self.pre_duty.set(f"{self.c.cal.get('fr_pre_duty_pct', 0.0):g}")
         self.pre_ms.set(f"{self.c.cal.get('fr_pre_ms', 100.0):g}")
         self.pre_ini.set(f"{self.c.cal.get('fr_pre_ini_pct', 0.0):g}")
@@ -298,6 +301,19 @@ class Panel:
         self._etiqueta(f, 'las traseras; empujon de arranque delanteras (0-3, traseras = 2):').pack(side='left')
         self._entrada(f, self.k_del, 3).pack(side='left', padx=3)
         self._boton(f, 'APLICAR', self._aplicar_delanteras).pack(side='left', padx=6)
+
+        f = tk.Frame(t, bg=TARJETA, pady=3)
+        f.pack(fill='x')
+        self._etiqueta(f, 'VELOCIDAD DE GIRO por lado (% del firmware, 100 = igual)').pack(side='left')
+        self._boton(f, 'GUARDAR', lambda: self._lados_giro(True)).pack(side='left', padx=6)
+        self._boton(f, 'Restablecer 100', self._lados_giro_100).pack(side='left')
+        for titulo, i in (('Giro a la DERECHA', 0), ('Giro a la IZQUIERDA', 2)):
+            g = tk.Frame(t, bg=TARJETA, pady=1)
+            g.pack(fill='x')
+            self._etiqueta(g, f'{titulo}:  ruedas izq.').pack(side='left')
+            self._barra_lado(g, self.lados[i])
+            self._etiqueta(g, 'ruedas der.').pack(side='left', padx=(8, 0))
+            self._barra_lado(g, self.lados[i + 1])
 
         f = tk.Frame(t, bg=TARJETA, pady=3)
         f.pack(fill='x')
@@ -574,6 +590,26 @@ class Panel:
         if None in (fac, niv):
             return
         self.c.config_delanteras(fac, int(round(niv)))
+
+    def _barra_lado(self, padre, var):
+        tk.Scale(padre, from_=30, to=200, orient='horizontal', length=190, variable=var, showvalue=True, bg=TARJETA, fg=TEXTO,
+                 troughcolor='#2b2b33', highlightthickness=0, bd=0, resolution=1,
+                 command=lambda _v: self._lados_giro(False)).pack(side='left')
+        self._boton(padre, '-', lambda: self._paso_lado(var, -1), padx=4).pack(side='left')
+        self._boton(padre, '+', lambda: self._paso_lado(var, +1), padx=4).pack(side='left')
+
+    def _paso_lado(self, var, d):
+        var.set(max(30, min(200, var.get() + d)))
+        self._lados_giro(False)
+
+    def _lados_giro(self, guardar):
+        """Se aplica al mover una barra (en memoria); GUARDAR lo deja en calibracion.json."""
+        self.c.config_lados_giro(*[v.get() for v in self.lados], guardar=guardar)
+
+    def _lados_giro_100(self):
+        for v in self.lados:
+            v.set(100.0)
+        self._lados_giro(False)
 
     def _aplicar_pre_fr(self):
         d = self._numero(self.pre_duty, 'Pre-arranque FR: duty (%)', 0, 100)

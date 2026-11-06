@@ -185,6 +185,7 @@ MARGEN_RUEDA_MS = 0.012                # m/s sobre el minimo de rueda que se dej
 STOP_FRENTE_M, STOP_LATERAL_M = 0.14, 0.03   # frena si el frente llega a 14 cm (el robot sigue unos cm: queda a ~10 cm o mas de la pared) o un costado a 3
 ALERTA_LATERAL_M = 0.055               # un costado a menos de esto (o que lo va a estar en 10 cm): frena, piensa, se endereza y sigue
 ANTICIPO_M = 0.15                      # ... se mira lo que va a medir el lateral dentro de este avance (el robot sigue ~8 cm despues de la orden de frenar)
+PERMITIR_RETROCESO = False             # False: en el laberinto el robot NUNCA retrocede (ni antes de girar ni para despegarse)
 F_RETROCESO_M = 0.10                   # antes de girar 180, si el frente esta a menos de esto retrocede (el giro en el lugar 'avanza un poco')
 ATRAS_MAX_M = 0.06                     # lo maximo que retrocede de una vez (atras no hay sonar)
 V_ATRAS_RECTO_MS = 0.14                # retroceso en recto: las ruedas por encima del minimo del firmware
@@ -423,6 +424,25 @@ class Controlador:
         self.imprimir(f'Giros: delanteras x{factor:g}, empujon de arranque nivel {nivel}.')
         return True
 
+    LADOS_GIRO = ('giro_der_izq', 'giro_der_der', 'giro_izq_izq', 'giro_izq_der')    # en calibracion.json, en % (100 = igual)
+
+    def config_lados_giro(self, der_izq, der_der, izq_izq, izq_der, guardar=False):
+        """Velocidades de giro por lado y por sentido, en % (100 = la del firmware; 30 a 200), solo PC, sin reflashear:
+        al girar a la DERECHA las ruedas del lado izquierdo (adelante) van a der_izq % y las del derecho (atras) a der_der %;
+        al girar a la IZQUIERDA, izq_izq % y izq_der %. Con todo en 100 el giro es el normal del firmware; si no, girar() lo hace
+        la PC (orden 2 por rueda, corta con la odometria). `guardar` lo deja en calibracion.json."""
+        v = (der_izq, der_der, izq_izq, izq_der)
+        if not all(30 <= x <= 200 for x in v):
+            self.imprimir('Velocidades de giro: cada una va de 30 a 200 %.')
+            return False
+        for k, x in zip(self.LADOS_GIRO, v):
+            self.cal[k] = float(x)
+        if guardar:
+            guardar_cal(self.cal, self.ruta_cal)
+            self.imprimir(f'Velocidades de giro GUARDADAS: derecha (izq {der_izq:g} % / der {der_der:g} %), '
+                          f'izquierda (izq {izq_izq:g} % / der {izq_der:g} %).')
+        return True
+
     def config_pre_fr(self, duty_pct, ms, ini_pct=0.0):
         """Pre-arranque de FR en los giros de ~90 grados: FR recibe duty ANTES de mandar el giro, asi ya viene rodando y no queda de ancla
         (0 = apagado). El duty sube en RAMPA de `ini_pct` % a `duty_pct` % a lo largo de `ms` ms (con ini_pct = 0 no hay rampa: va
@@ -506,6 +526,10 @@ class Controlador:
         arco_ms = math.radians(abs(vel_dps)) * self.trocha / 2.0                   # m/s de cada rueda
         vel = limitar(flancos_de_ms(arco_ms, self.diametro), VEL_MIN_FLANCOS, VEL_MAX_FLANCOS)
         sentido = 'izquierda' if grados > 0 else 'derecha'
+        k1, k2 = ('giro_izq_izq', 'giro_izq_der') if grados > 0 else ('giro_der_izq', 'giro_der_der')
+        fi, fd = self.cal.get(k1, 100.0) / 100.0, self.cal.get(k2, 100.0) / 100.0
+        if (fi, fd) != (1.0, 1.0):
+            return self._girar_compensado(grados, arco_ms, fi, fd)
         self._nueva_maniobra('giro', f'giro de {abs(grados):g} grados a la {sentido}', grados,
                              (7, math.radians(grados), vel), self.reloj())
         duty, ms = self.cal.get('fr_pre_duty_pct', 0.0), self.cal.get('fr_pre_ms', 0.0)
@@ -514,6 +538,24 @@ class Controlador:
             self.maniobra['pre'] = {'duty': math.copysign(duty / 100.0, grados), 'ms': ms, 't_ini': None,
                                     'ini': math.copysign(ini / 100.0, grados) if ini > 0 else None}
         self.imprimir(f'== {self.maniobra["nombre"]} (ruedas a {vel:.0f} flancos/s = {vel_dps:.0f} grados/s pedidos) ==')
+        return True
+
+    def _girar_compensado(self, grados, arco_ms, fi, fd):
+        """Giro en el lugar hecho desde la PC con las velocidades por lado: ruedas de la izquierda a -signo x arco x fi y de la
+        derecha a +signo x arco x fd (m/s, orden 2); se corta cuando la odometria completa los grados menos lo que sigue por inercia."""
+        ahora = self.reloj()
+        lim = 0.40
+        vi = max(-lim, min(lim, -math.copysign(arco_ms * fi, grados)))
+        vd = max(-lim, min(lim, math.copysign(arco_ms * fd, grados)))
+        adelanto = math.degrees(self.cal.get('frenado_giro_m', FRENADO_GIRO_M) / (self.trocha / 2.0))
+        self.resultado = None
+        self.marcha = {'v': 0.0, 'w': 0.0, 't': 1e9, 't0': ahora, 'odo0': self.odo.foto(),
+                       'ticks0': list(self.enlace.ticks or [0] * 4), 'proximo_envio': ahora, 'vel_muestras': [],
+                       'comp': {'vel': (vi, vd, vi, vd), 'meta': math.copysign(math.radians(abs(grados) - adelanto), grados),
+                                'pedido': grados, 'tope_s': 6.0 + abs(grados) / 20.0}}
+        sentido = 'izquierda' if grados > 0 else 'derecha'
+        self.imprimir(f'== giro de {abs(grados):g} grados a la {sentido} hecho por la PC (lado izq x{fi:g}, lado der x{fd:g}: '
+                      f'izq {vi:+.2f} m/s, der {vd:+.2f} m/s; corta {adelanto:.1f}° antes) ==')
         return True
 
     # --- sonares (del /wheel_state del firmware: [26] frente, [27] izquierdo, [28] derecho, en m; -1 = sin eco)
@@ -679,7 +721,7 @@ class Controlador:
         self.guiado = g
         self.imprimir(f'== giro de 180° = dos giros de 90° hacia la {"izquierda" if lado > 0 else "derecha"} (pared mas cercana) ==')
         self.imprimir('  Antes del giro: ' + self.texto_sonares(son))
-        if frente is not None and frente < F_RETROCESO_M:
+        if PERMITIR_RETROCESO and frente is not None and frente < F_RETROCESO_M:
             g['atras'] = {'dist': min(ATRAS_MAX_M, F_RETROCESO_M - frente + 0.01), 's0': self.odo.s, 'siguiente': 'girando'}
             self._etapa(g, 'atras', ahora)
             self.imprimir(f'  Frente a {100 * frente:.1f} cm: retrocedo {100 * g["atras"]["dist"]:.0f} cm antes de girar.')
@@ -695,7 +737,7 @@ class Controlador:
         """Quieto 0,6 s para tener medidas firmes; despues retrocede si el frente esta cerca y se separa de la pared."""
         if ahora - g['t_etapa'] < 0.6:
             return
-        if frente is not None and frente < F_RETROCESO_M:
+        if PERMITIR_RETROCESO and frente is not None and frente < F_RETROCESO_M:
             d_atras = min(ATRAS_MAX_M, F_RETROCESO_M - frente + 0.01)
             g['atras'] = {'dist': d_atras, 's0': self.odo.s, 'siguiente': 'despegar'}
             self.imprimir(f'  Pienso: {self.texto_sonares((frente, izq, der))} -> retrocedo {100 * d_atras:.0f} cm (frente cerca) y me separo.')
@@ -744,10 +786,14 @@ class Controlador:
         girado = (self.odo.theta - b['theta0']) * b['signo']
         cerca = izq if b['izq'] else der
         if frente is not None and frente <= STOP_FRENTE_M + 0.03:
-            self._parar_motores()                                # no hay lugar adelante: retrocede recto y reintenta
-            self.imprimir(f'  Frente a {100 * frente:.1f} cm: retrocedo antes de separarme.')
-            g['atras'] = {'dist': ATRAS_MAX_M, 's0': self.odo.s, 'siguiente': 'despegar'}
-            self._etapa(g, 'atras', ahora)
+            self._parar_motores()                                # no hay lugar adelante
+            if PERMITIR_RETROCESO:                               # retrocede recto y reintenta
+                self.imprimir(f'  Frente a {100 * frente:.1f} cm: retrocedo antes de separarme.')
+                g['atras'] = {'dist': ATRAS_MAX_M, 's0': self.odo.s, 'siguiente': 'despegar'}
+                self._etapa(g, 'atras', ahora)
+            else:                                                # sin retroceso: corta el arco aca y vuelve a medir
+                self.imprimir(f'  Frente a {100 * frente:.1f} cm: corto el arco (no retrocedo).')
+                self._etapa(g, 'asentar_despegue', ahora)
             return
         separado = cerca is not None and cerca >= SEPARADO_M and girado >= 0.12
         if separado or girado >= b['ang'] - W_DESPEGUE_RAD_S * 0.2 or ahora - b['t0'] > 2.5:
@@ -1032,6 +1078,9 @@ class Controlador:
 
     def _procesar_marcha(self, ahora):
         k = self.marcha
+        if k.get('comp') is not None:
+            self._procesar_giro_compensado(ahora)
+            return
         if ahora >= k['proximo_envio'] - TOLERANCIA_RELOJ_S:
             self.enlace.enviar_vel(k['v'], k['w'])
             k['proximo_envio'] = ahora + PERIODO_ORDEN_S
@@ -1055,6 +1104,22 @@ class Controlador:
                           '  '.join(f'{n} {p:.3f}' for n, p in zip(RUEDAS, prom)))
             self.resultado = r
             self.imprimir('  Mide el avance con cinta y cargalo en el panel (o REGISTRAR sin corregir).')
+
+    def _procesar_giro_compensado(self, ahora):
+        k = self.marcha
+        c = k['comp']
+        hecho = self.odo.theta - k['odo0']['theta']
+        llego = abs(hecho) >= abs(c['meta'])
+        if not llego and ahora - k['t0'] < c['tope_s']:
+            if ahora >= k['proximo_envio'] - TOLERANCIA_RELOJ_S:
+                self._cmd(2, *c['vel'])
+                k['proximo_envio'] = ahora + PERIODO_ORDEN_S
+            return
+        self.marcha = None
+        for _ in range(3):
+            self._cmd(4)
+        self.imprimir(('  Giro compensado terminado: ' if llego else '  Giro compensado CORTADO por tiempo: ') +
+                      f'odometria {math.degrees(hecho):+.1f}° (pedido {c["pedido"]:+g}°). Mide el real y ajusta el sumador o los velocidades.')
 
     def registrar(self, real=None, desplazamiento_cm=None, corregir=False):
         """Anota la ultima maniobra en ruedas_maniobras.csv con lo medido a mano. Si `corregir`, usa `real` para corregir el

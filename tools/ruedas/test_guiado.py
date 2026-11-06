@@ -475,7 +475,14 @@ class Giro180(Banco):
         self.assertTrue(self.correr_hasta(lambda: self.c.guiado is None and any('Llegue' in m or 'Frene' in m for m in self.mensajes), 80))
         self.assertTrue(any('linea recta enderezando: 25 cm' in m for m in self.mensajes))
 
+    def test_no_retrocede_si_el_retroceso_esta_apagado(self):
+        self.montar(y=0.0, pared_x=0.1399 + 0.06, ganancia_giro=1.0)
+        self.assertTrue(self.c.giro_180_hacia_la_pared(40))
+        self.assertFalse(any('retrocedo' in m for m in self.mensajes))
+
     def test_solo_retrocede_un_poco_si_el_frente_esta_muy_cerca(self):
+        rl.PERMITIR_RETROCESO = True
+        self.addCleanup(setattr, rl, 'PERMITIR_RETROCESO', False)
         self.montar(y=0.0, pared_x=0.1399 + 0.06, ganancia_giro=1.0)
         self.assertTrue(self.c.giro_180_hacia_la_pared(40))
         self.assertTrue(self.correr_hasta(self.terminado, 60))
