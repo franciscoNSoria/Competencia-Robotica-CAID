@@ -29,10 +29,20 @@ def tecla():
     return None
 
 
+def conectar_vision(enlace, rec):
+    """/vision/cubo/<color> -> recorrido (area del cubo en px2 en Point.z)."""
+    from geometry_msgs.msg import Point
+    for col in ('rojo', 'verde', 'azul'):
+        enlace.create_subscription(Point, '/vision/cubo/' + col, lambda m, col=col: rec.recibir_cubo(col, m.z), 10)
+    print('Vision: escucho /vision/cubo/* (con el cubo cerca frena, espera la Y, da media vuelta y cuenta el camino)')
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--v', type=float, default=rl.V_LENTA_MS, help='velocidad de avance, m/s (0.16)')
     ap.add_argument('--vel-giro', type=float, default=153.0, help='velocidad de giro, grados/s (153 = maximo)')
+    ap.add_argument('--fx', type=float, default=lr.FX_CAMARA_PX, help='foco de la camara en px para medir el cubo (950)')
+    ap.add_argument('--parada-cubo', type=float, default=lr.PARADA_CUBO_M, help='distancia a la que se detiene del cubo, m (0.04)')
     ap.add_argument('--frenada', type=float, default=0.03, help='m que el robot sigue despues de la orden de frenar (0.03)')
     a = ap.parse_args()
     enlace = rp.crear_enlace_ros()
@@ -40,8 +50,10 @@ def main():
     corr90 = float(c.cal.get('giro90_corr_deg', 0.0))
     corr180 = float(c.cal.get('giro180_corr_deg', 0.0))
     rec = lr.Recorrido(c, vel_dps=a.vel_giro, corr90=corr90, corr180=corr180, v=a.v, frenada_m=a.frenada)
+    rec.fx, rec.parada_cubo_m = a.fx, a.parada_cubo
+    conectar_vision(enlace, rec)
     print('Giro 90: se piden %g° | sumador 180: %+g° | avance %.2f m/s | giro %.0f °/s' % (90 + corr90, corr180, a.v, a.vel_giro))
-    print('  g arrancar    ESPACIO o p frenar    q salir')
+    print('  g arrancar    Y OK frente al cubo (180° + mapa)    ESPACIO o p frenar    q salir')
     ant = termios.tcgetattr(sys.stdin)
     tty.setcbreak(sys.stdin.fileno())
     try:
@@ -56,6 +68,8 @@ def main():
                     print('La ESP32 todavia no esta conectada.')
                 else:
                     rec.arrancar()
+            elif k in ('y', 'Y'):
+                rec.confirmar()
             elif k in (' ', 'p'):
                 rec.detener('frenado con el teclado')
             elif k == 'q':

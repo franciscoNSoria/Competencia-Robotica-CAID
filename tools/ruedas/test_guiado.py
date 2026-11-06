@@ -78,6 +78,8 @@ class RobotPasillo:
         if ident == 4:
             self.cola_obj.append((self.t, [0.0, 0.0]))
             self.mov = None
+        elif ident == 2 and self.mov is None:                                       # velocidad por rueda en m/s: FL, FR, RL, RR
+            self.cola_obj.append((self.t + self.retardo, [(a[0] + a[2]) / 2 * self.fpm, (a[1] + a[3]) / 2 * self.fpm]))
         elif ident == 7 and self.mov is None:
             self.cola_cmd.append((self.t + self.retardo, a))
         elif ident == 3 and self.mov is None:                                       # mover una distancia en recto (con signo)
@@ -488,6 +490,16 @@ class Giro180(Banco):
         self.assertTrue(self.correr_hasta(self.terminado, 60))
         self.assertTrue(any('retrocedo' in m and 'antes de girar' in m for m in self.mensajes))
         self.assertLess(-min(0.0, self.robot.x), 0.10)                              # unos cm (la pared estaba a 6 cm del frente)
+
+    def test_el_180_con_velocidades_por_lado_sigue_girando_unos_180(self):
+        self.montar(y=0.0, ganancia_giro=1.0)
+        self.c.cal.update({'giro_der_izq': 110.0, 'giro_der_der': 90.0, 'giro_izq_izq': 90.0, 'giro_izq_der': 110.0})
+        self.assertTrue(self.c.giro_180_hacia_la_pared(40))
+        self.assertTrue(self.correr_hasta(self.terminado, 60))
+        self.correr_hasta(lambda: False, 1.0)
+        self.assertLess(abs(abs(self.rumbo()) - math.pi), math.radians(30), math.degrees(self.rumbo()))
+        self.assertTrue([a for t, a in self.robot.enviadas if t == 'cmd' and a[0] == 2])          # lo hizo la PC (orden 2)
+        self.assertFalse([a for t, a in self.robot.enviadas if t == 'cmd' and a[0] == 7])          # y no el firmware
 
     def test_sin_sonares_no_gira(self):
         self.montar()

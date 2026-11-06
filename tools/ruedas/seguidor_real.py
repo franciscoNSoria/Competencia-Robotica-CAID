@@ -76,6 +76,7 @@ def main():
     ap.add_argument('--fx', type=float, default=sg.FX_CAMARA_PX, help='foco de la camara en px para medir el cubo (950)')
     ap.add_argument('--vel-giro', type=float, default=153.0, help='velocidad de giro, grados/s')
     ap.add_argument('--color', default='', help='color de flecha a seguir desde el principio (rojo/verde/azul)')
+    ap.add_argument('--volver', action='store_true', help='tras el OK volver solo a la entrada (por defecto: media vuelta, mapa y se queda)')
     ap.add_argument('--detalle', action='store_true', help='mostrar todo lo del controlador')
     a = ap.parse_args()
     enlace = rp.crear_enlace_ros()
@@ -83,12 +84,12 @@ def main():
     corr90 = float(c.cal.get('giro90_corr_deg', 0.0))
     corr180 = float(c.cal.get('giro180_corr_deg', 0.0))
     seg = sg.Seguidor(c, vel_dps=a.vel_giro, corr90=corr90, corr180=corr180, v=a.v, v_lento=a.v_lento, lento_m=a.lento_m,
-                      avance_giro_m=a.avance_giro, parada_cubo_m=a.parada_cubo)
+                      avance_giro_m=a.avance_giro, parada_cubo_m=a.parada_cubo, volver=a.volver)
     seg.fx = a.fx
     conectar_vision(enlace, seg, a.color or None)
     print('Giro 90: se piden %g° | avance %.2f m/s, lento %.2f m/s en %.0f cm | doblo %.0f cm despues del pasillo libre | paro a %.0f cm del cubo' % (
         90 + corr90, a.v, a.v_lento, 100 * a.lento_m, 100 * a.avance_giro, 100 * a.parada_cubo))
-    print('  g arrancar    y capturar cubo (simulado)    ESPACIO o p frenar    q salir')
+    print('  g arrancar    y OK frente al cubo (180° + mapa)    ESPACIO o p frenar    q salir')
     ant = termios.tcgetattr(sys.stdin)
     tty.setcbreak(sys.stdin.fileno())
     try:

@@ -42,8 +42,10 @@ MIN_RECTO_M = 0.08                # tras un giro no se mira el lateral hasta hab
 
 class Seguidor:
     def __init__(self, c, vel_dps=153.0, corr90=0.0, corr180=0.0, v=V_NORMAL_MS, v_lento=V_LENTO_MS, lento_m=LENTO_M,
-                 avance_giro_m=AVANCE_GIRO_M, parada_cubo_m=PARADA_CUBO_M, imprimir=print, reloj=None):
+                 avance_giro_m=AVANCE_GIRO_M, parada_cubo_m=PARADA_CUBO_M, imprimir=print, reloj=None, volver=False):
         self.c, self.imprimir = c, imprimir
+        self.volver = volver                # True: tras el OK vuelve solo a la entrada; False: gira 180, muestra el mapa y se queda
+        self.odo0 = None                    # odometria de la partida (la entrada): el mapa se da respecto de ella
         self.reloj = reloj or c.reloj
         self.vel_dps, self.corr90, self.corr180 = vel_dps, corr90, corr180
         self.v, self.v_lento, self.lento_m = v, v_lento, lento_m
@@ -74,6 +76,7 @@ class Seguidor:
     # ------------------------------------------------------------------ control desde afuera
     def arrancar(self):
         self.imprimir('== ARRANCO: avanzo derecho y espero las flechas ==')
+        self.odo0 = self.c.odo.foto()
         self._iniciar_recto(lento=False)
 
     def confirmar(self):
@@ -81,8 +84,12 @@ class Seguidor:
         if self.estado != 'esperar_y':
             self.imprimir('  (la Y solo vale cuando estoy esperando frente al cubo)')
             return False
-        self.imprimir('  Y: cubo %s capturado (simulado). Vuelvo por el camino hacia la entrada.' % (self.cubo_color or '?'))
-        self._ir('retorno_giro')
+        if self.volver:
+            self.imprimir('  Y: cubo %s capturado (simulado). Vuelvo por el camino hacia la entrada.' % (self.cubo_color or '?'))
+            self._ir('retorno_giro')
+        else:
+            self.imprimir('  Y: OK. Giro 180° y te cuento el camino que hice.')
+            self._ir('media_cubo')
         return True
 
     def detener(self, motivo='detenido'):
@@ -300,6 +307,35 @@ class Seguidor:
                     continue
             out.append(ev)
         return out
+
+    @staticmethod
+    def texto_camino(camino):
+        """['recto 80 cm', 'giro IZQ', ...]: el camino compactado, en palabras."""
+        return ['recto %.0f cm' % (100 * e[1]) if e[0] == 'recto' else (('giro 90° IZQ' if e[1] > 0 else 'giro 90° DER') if e[0] == 'giro' else 'media vuelta')
+                for e in camino]
+
+    def _media_cubo(self, ahora):
+        """Tras el OK frente al cubo: gira 180° (queda mirando a la salida) y cuenta como llego (el mapa del camino)."""
+        self._cerrar_tramo()
+        camino = self.compactar(self.log)
+        pasos = self.texto_camino(camino)
+        self.imprimir('== MAPA: asi llegue al cubo %s (%d paso(s)) ==' % ((self.cubo_color or '?').upper(), len(pasos)))
+        for i, t in enumerate(pasos, 1):
+            self.imprimir('   %d. %s' % (i, t))
+        if self.odo0 is not None:
+            o, o0 = self.c.odo.foto(), self.odo0
+            dx, dy = o['x'] - o0['x'], o['y'] - o0['y']
+            th = -o0['theta']                                   # ejes de la entrada: +x hacia adentro, +y a la izquierda
+            x, y = dx * math.cos(th) - dy * math.sin(th), dx * math.sin(th) + dy * math.cos(th)
+            giro = math.degrees(o['theta'] - o0['theta'])
+            self.imprimir('   Posicion segun la odometria, respecto de la entrada: %.0f cm adentro, %.0f cm a la %s; giro acumulado %+.0f°' % (
+                100 * x, 100 * abs(y), 'izquierda' if y >= 0 else 'derecha', giro))
+        self.c.giro_180_hacia_la_pared(self.vel_dps, self.corr180, None, self.corr90)
+        self._ir('media_cubo_fin')
+
+    def _media_cubo_fin(self, ahora):
+        self.imprimir('== Listo: di media vuelta frente al cubo y me quedo esperando (no vuelvo todavia). q para salir ==')
+        self._ir('fin')
 
     def _retorno_giro(self, ahora):
         self._cerrar_tramo()

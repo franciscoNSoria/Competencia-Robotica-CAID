@@ -1,4 +1,5 @@
 """Seguidor de flechas reactivo en el simulador de laberinto (sin ROS ni camara: las flechas y el cubo se inyectan a mano)."""
+import math
 import os
 import sys
 import tempfile
@@ -83,7 +84,7 @@ class TestSeguidor(unittest.TestCase):
                 estado['cubo'] = True
                 estado['y'] = (robot.x, robot.y)
                 s.confirmar()
-        robot, s, log, estados = correr(T, escena, t_max=400.0, hasta=lambda r, s: s.estado in ('reentrar', 'reentrar_listo'))
+        robot, s, log, estados = correr(T, escena, t_max=400.0, volver=True, hasta=lambda r, s: s.estado in ('reentrar', 'reentrar_listo'))
         texto = '\n'.join(log)
         self.assertFalse(robot.choco, texto)
         self.assertIn('retorno', estados)
@@ -94,6 +95,29 @@ class TestSeguidor(unittest.TestCase):
         self.assertEqual(s.ignora, {'verde'})
         self.assertLess(robot.x, 0.6, (robot.x, robot.y, s.estado))                # volvio a la entrada (x chica, el brazo y el pasillo desandados)
         self.assertLess(abs(robot.y), 0.3)
+
+    def test_tras_el_ok_frente_al_cubo_gira_180_y_cuenta_el_mapa_sin_volver(self):
+        estado = {'cubo': False}
+
+        def escena(robot, s):
+            flecha('izquierda')(robot, s)
+            if s.estado == 'recto' and robot.y > 0.45 and not estado['cubo']:
+                s.recibir_cubo('verde', (950 * 0.02 / 0.35) ** 2)
+            if s.estado == 'cubo_fino':
+                s.recibir_cubo('verde', (950 * 0.02 / 0.14) ** 2)
+            if s.estado == 'esperar_y' and not estado['cubo']:
+                estado['cubo'] = True
+                estado['rumbo'] = robot.th
+                s.confirmar()
+        robot, s, log, estados = correr(T, escena, t_max=400.0)
+        texto = '\n'.join(log)
+        self.assertFalse(robot.choco, texto)
+        self.assertEqual(s.estado, 'fin', texto)
+        self.assertIn('MAPA: asi llegue al cubo VERDE', texto)
+        self.assertIn('giro 90° IZQ', texto)
+        self.assertIn('Posicion segun la odometria, respecto de la entrada', texto)
+        self.assertNotIn('retorno', estados)                                    # no vuelve solo
+        self.assertGreater(abs(math.remainder(robot.th - estado['rumbo'], 2 * math.pi)), math.radians(140))   # dio la media vuelta
 
     def test_ignora_las_flechas_del_color_entregado(self):
         s = sg.Seguidor.__new__(sg.Seguidor)

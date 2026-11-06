@@ -191,6 +191,8 @@ ATRAS_MAX_M = 0.06                     # lo maximo que retrocede de una vez (atr
 V_ATRAS_RECTO_MS = 0.14                # retroceso en recto: las ruedas por encima del minimo del firmware
 W_PIVOTE_RAD_S = 1.2                   # pivote en el lugar para enderezarse (cada rueda a 0,18 m/s: por encima del minimo)
 ADELANTO_PIVOTE_RAD = 0.08             # el robot sigue girando un poco despues de cortar
+PASO_TANTEO_RAD = 0.14                 # pivote de cada tanteo para enderezarse (8°)
+PRIMER_PASO_RAD = 0.09                 # ... el primero es mas chico (5°): si va para el lado equivocado, empeora poco
 PIVOTE_FLANCOS = 40.0                  # velocidad del pivote (orden 7 del firmware: lo cierra la ESP32 con los encoders, sin retardo de red)
 LAT_DISPARO_M = 0.075                  # un costado a menos de esto Y acercandose (o a menos de LAT_CRITICO_M): correccion brusca EN MARCHA
 LAT_CRITICO_M = 0.055                  # ... a esta distancia corrige aunque no se vea que se acerca
@@ -202,6 +204,9 @@ ANG_BRUSCO_TOPE_RAD = 0.75
 AVANCE_REPETIDO_M = 0.30               # si vuelve a necesitar corregir antes de avanzar esto, cuenta como 'sigue pasando lo mismo'
 W_DESPEGUE_RAD_S = 1.2                 # separarse de una pared a ~3 cm: arco hacia adelante alejandose de ella
 ANG_DESPEGUE_RAD = 0.35                # giro maximo del primer despegue (cada reintento suma 0,15)
+MIN_CAMBIO_SUMA_M = 0.004              # cambio de (izq + der) que cuenta como 'mejoro' o 'empeoro' (el sonar mide a +-2 mm)
+MAX_TANTEOS = 7
+PRIOR_PIVOTE_RAD = 0.17                # sin los dos laterales no hay suma: pivota ~10° para alejar el frente de la pared mas cercana
 SEPARADO_M = 0.075                     # el despegue termina cuando el lateral cercano vuelve a medir esto
 RECTO_TRAS_BRUSCA_M = 0.09             # despues de la correccion brusca avanza derecho esto mientras se vuelve a medir el rumbo
 ESPERA_BRUSCA_M = 0.05                 # avance minimo despues de una correccion brusca antes de juzgar de nuevo (el sonar tarda en reflejarlo)
@@ -526,8 +531,7 @@ class Controlador:
         arco_ms = math.radians(abs(vel_dps)) * self.trocha / 2.0                   # m/s de cada rueda
         vel = limitar(flancos_de_ms(arco_ms, self.diametro), VEL_MIN_FLANCOS, VEL_MAX_FLANCOS)
         sentido = 'izquierda' if grados > 0 else 'derecha'
-        k1, k2 = ('giro_izq_izq', 'giro_izq_der') if grados > 0 else ('giro_der_izq', 'giro_der_der')
-        fi, fd = self.cal.get(k1, 100.0) / 100.0, self.cal.get(k2, 100.0) / 100.0
+        fi, fd = self._factores_giro(grados)
         if (fi, fd) != (1.0, 1.0):
             return self._girar_compensado(grados, arco_ms, fi, fd)
         self._nueva_maniobra('giro', f'giro de {abs(grados):g} grados a la {sentido}', grados,
@@ -540,6 +544,16 @@ class Controlador:
         self.imprimir(f'== {self.maniobra["nombre"]} (ruedas a {vel:.0f} flancos/s = {vel_dps:.0f} grados/s pedidos) ==')
         return True
 
+    def _adelanto_giro_deg(self, grados):
+        """Grados antes de la meta en que se corta la orden (el robot sigue girando por inercia); en giros chicos, a lo sumo la mitad."""
+        a = math.degrees(self.cal.get('frenado_giro_m', FRENADO_GIRO_M) / (self.trocha / 2.0))
+        return min(a, 0.5 * abs(grados))
+
+    def _factores_giro(self, grados):
+        """(izq, der) de las velocidades de giro por lado para un giro de `grados` (+ izquierda); (1, 1) = el giro normal del firmware."""
+        k1, k2 = ('giro_izq_izq', 'giro_izq_der') if grados > 0 else ('giro_der_izq', 'giro_der_der')
+        return self.cal.get(k1, 100.0) / 100.0, self.cal.get(k2, 100.0) / 100.0
+
     def _girar_compensado(self, grados, arco_ms, fi, fd):
         """Giro en el lugar hecho desde la PC con las velocidades por lado: ruedas de la izquierda a -signo x arco x fi y de la
         derecha a +signo x arco x fd (m/s, orden 2); se corta cuando la odometria completa los grados menos lo que sigue por inercia."""
@@ -547,7 +561,7 @@ class Controlador:
         lim = 0.40
         vi = max(-lim, min(lim, -math.copysign(arco_ms * fi, grados)))
         vd = max(-lim, min(lim, math.copysign(arco_ms * fd, grados)))
-        adelanto = math.degrees(self.cal.get('frenado_giro_m', FRENADO_GIRO_M) / (self.trocha / 2.0))
+        adelanto = self._adelanto_giro_deg(grados)
         self.resultado = None
         self.marcha = {'v': 0.0, 'w': 0.0, 't': 1e9, 't0': ahora, 'odo0': self.odo.foto(),
                        'ticks0': list(self.enlace.ticks or [0] * 4), 'proximo_envio': ahora, 'vel_muestras': [],
@@ -740,11 +754,11 @@ class Controlador:
         if PERMITIR_RETROCESO and frente is not None and frente < F_RETROCESO_M:
             d_atras = min(ATRAS_MAX_M, F_RETROCESO_M - frente + 0.01)
             g['atras'] = {'dist': d_atras, 's0': self.odo.s, 'siguiente': 'despegar'}
-            self.imprimir(f'  Pienso: {self.texto_sonares((frente, izq, der))} -> retrocedo {100 * d_atras:.0f} cm (frente cerca) y me separo.')
+            self.imprimir(f'  Pienso: {self.texto_sonares((frente, izq, der))} -> retrocedo {100 * d_atras:.0f} cm (frente cerca) y me enderezo.')
             self._etapa(g, 'atras', ahora)
         else:
-            self.imprimir(f'  Pienso: {self.texto_sonares((frente, izq, der))} -> me separo de la pared.')
-            self._despegar_desde_sonares(g, ahora, izq, der)
+            self.imprimir(f'  Pienso: {self.texto_sonares((frente, izq, der))} -> me enderezo girando en el lugar.')
+            self._enderezar_o_despegar(g, ahora, izq, der)
 
     def _despegar_desde_sonares(self, g, ahora, izq, der):
         cerca = min([d for d in (izq, der) if d is not None], default=0.1)
@@ -768,6 +782,14 @@ class Controlador:
         if a['siguiente'] == 'girando':                          # solo retrocedia para despejar el frente antes de girar
             self._etapa(g, 'girando', ahora)
             g['theta0'] = self.odo.theta
+        else:
+            self._enderezar_o_despegar(g, ahora, izq, der)
+
+    def _enderezar_o_despegar(self, g, ahora, izq, der):
+        """Linea recta: primero se endereza con el tanteo (si esta pegado Y paralelo, el tanteo mismo pasa a despegar)."""
+        if g.get('tipo') == 'enderezar':
+            g['cerca_izq'] = izq is not None and (der is None or izq <= der)
+            self._empezar_tanteo(g, ahora, izq, der)
         else:
             self._despegar_desde_sonares(g, ahora, izq, der)
 
@@ -821,6 +843,62 @@ class Controlador:
         self._etapa(g, 'avanzar', ahora)
 
     # ---- pivotar en el lugar (orden 7 del firmware: la ESP32 cuenta los encoders y corta sola; aca solo se espera que termine)
+    # ---- tanteo: pivotes chicos en el lugar hasta que la suma izq+der de los sonares laterales sea minima (= paralelo a las paredes)
+    def _empezar_tanteo(self, g, ahora, izq, der):
+        cerca = min([d for d in (izq, der) if d is not None], default=None)
+        tilt = inclinacion_por_suma(izq, der)
+        if cerca is not None and cerca <= ALERTA_LATERAL_M and (tilt is None or tilt < math.radians(10)):
+            # pegado a una pared y paralelo: lo que falta es separarse, no pivotar en el lugar
+            self._empezar_despegue(g, ahora, izq is not None and (der is None or izq <= der), cerca)
+            return
+        # tipicamente esta inclinado hacia la pared cercana: el primer pivote es para alejar el frente de ella
+        sentido = -1.0 if g.get('cerca_izq', True) else 1.0
+        if izq is None or der is None or izq > 0.30 or der > 0.30:
+            self.imprimir('  Solo veo una pared: giro ~10° para alejar el frente de ella y sigo corrigiendo en marcha.')
+            g['t'] = None
+            self._iniciar_pivote(g, ahora, sentido * PRIOR_PIVOTE_RAD, 'pivotar')
+            return
+        g['t'] = {'dir': sentido, 'S': izq + der, 'S_mejor': izq + der, 'n': 0, 'pos': 0.0, 'mejor_pos': 0.0}
+        self._tantear_pivote(g, ahora, g['t']['dir'] * PRIMER_PASO_RAD)
+
+    def _tantear_pivote(self, g, ahora, delta):
+        t = g['t']
+        t['n'] += 1
+        t['pos'] += delta
+        self._iniciar_pivote(g, ahora, delta, 'pivotar_t')
+
+    def _asentar_tanteo(self, g, ahora, frente, izq, der):
+        if ahora - g['t_etapa'] < 0.7:
+            return
+        t = g['t']
+        if izq is None or der is None or izq > 0.30 or der > 0.30:
+            self._terminar_tanteo(g, ahora, 'perdi una pared de vista')
+            return
+        S = izq + der
+        cambio = S - t['S']
+        self.imprimir(f'  Tanteo {t["n"]}: giro {math.degrees(t["pos"]):+.0f}° | izq+der {100 * S:.1f} cm ({100 * cambio:+.1f} cm)')
+        if cambio < -MIN_CAMBIO_SUMA_M:                          # mejoro: sigue para el mismo lado
+            t['S'], t['S_mejor'], t['mejor_pos'] = S, S, t['pos']
+            if t['n'] >= MAX_TANTEOS:
+                self._terminar_tanteo(g, ahora, 'maximo de tanteos')
+            else:
+                self._tantear_pivote(g, ahora, t['dir'] * PASO_TANTEO_RAD)
+        elif cambio > MIN_CAMBIO_SUMA_M:                          # empeoro
+            if t['n'] == 1:                                       # el primer paso fue para el lado equivocado: prueba el otro
+                t['dir'] = -t['dir']
+                t['S'] = S
+                self._tantear_pivote(g, ahora, t['dir'] * (PRIMER_PASO_RAD + PASO_TANTEO_RAD))   # deshace el paso y prueba el otro lado
+            else:                                                 # se paso del minimo: vuelve al mejor
+                delta = t['mejor_pos'] - t['pos']
+                t['pos'] = t['mejor_pos']
+                self._iniciar_pivote(g, ahora, delta, 'pivotar')
+        else:                                                     # no cambia: ya esta (casi) paralelo
+            self._terminar_tanteo(g, ahora, 'ya esta paralelo')
+
+    def _terminar_tanteo(self, g, ahora, motivo):
+        self.imprimir(f'  Enderezado ({motivo}).')
+        self._iniciar_pivote(g, ahora, 0.0, 'pivotar')
+
     def _iniciar_pivote(self, g, ahora, delta, etapa, clave='pivote', flancos=PIVOTE_FLANCOS):
         g[clave] = {'delta': delta, 'seq0': self.estado[19], 'activa': False, 'proximo': ahora, 't0': ahora, 'flancos': flancos}
         self._etapa(g, etapa, ahora)
@@ -829,6 +907,10 @@ class Controlador:
         pv = g[clave]
         if abs(pv['delta']) < math.radians(3):                   # nada que girar
             self._etapa(g, siguiente or 'asentar_pivote', ahora)
+            return
+        fi, fd = self._factores_giro(pv['delta'])
+        if (fi, fd) != (1.0, 1.0):                                # velocidades de giro por lado del panel: el pivote lo hace la PC
+            self._pivotar_compensado(g, ahora, pv, fi, fd, siguiente)
             return
         e = self.estado
         if not pv['activa'] and e[16] > 0.5:
@@ -844,6 +926,48 @@ class Controlador:
             self._etapa(g, siguiente or 'asentar_pivote', ahora)
         elif ahora - pv['t0'] > 12.0:
             self._fin_guiado('ME DETENGO: el pivote tardo mas de 12 s.')
+
+    def _pivotar_compensado(self, g, ahora, pv, fi, fd, siguiente):
+        """Pivote en el lugar con las velocidades por lado (orden 2 por rueda), cortado por la odometria; misma salida que _pivotar."""
+        if 'c_theta0' not in pv:
+            pv['c_theta0'], pv['c_t0'], pv['c_fin'] = self.odo.theta, ahora, None
+            fl = max(pv.get('flancos', PIVOTE_FLANCOS), VEL_MIN_FLANCOS)
+            arco = fl / flancos_por_m(self.diametro)                # m/s de cada rueda
+            lim = 0.40
+            sg = 1.0 if pv['delta'] > 0 else -1.0
+            vi, vd = max(-lim, min(lim, -sg * arco * fi)), max(-lim, min(lim, sg * arco * fd))
+            pv['c_vel'] = (vi, vd, vi, vd)
+            pv['c_meta'] = sg * (abs(pv['delta']) - math.radians(self._adelanto_giro_deg(math.degrees(pv['delta']))))
+            pv['c_proximo'] = ahora
+        if pv['c_fin'] is not None:                               # ya freno: espera a que se asiente y sigue
+            if ahora - pv['c_fin'] >= 0.35:
+                self._etapa(g, siguiente or 'asentar_pivote', ahora)
+            return
+        hecho = self.odo.theta - pv['c_theta0']
+        if abs(hecho) >= abs(pv['c_meta']) or ahora - pv['c_t0'] > 6.0:
+            for _ in range(3):
+                self._cmd(4)
+            pv['c_fin'] = ahora
+            return
+        if ahora >= pv['c_proximo'] - TOLERANCIA_RELOJ_S:
+            self._cmd(2, *pv['c_vel'])
+            pv['c_proximo'] = ahora + PERIODO_ORDEN_S
+
+    def _asentar_pivote(self, g, ahora, frente, izq, der):
+        if ahora - g['t_etapa'] < 0.4:
+            return
+        self.imprimir('  Enderezado: ' + self.texto_sonares((frente, izq, der)) + '. Sigo.')
+        cerca = min([d for d in (izq, der) if d is not None], default=None)
+        if g['tipo'] == 'enderezar' and cerca is not None and cerca <= ALERTA_LATERAL_M:
+            self._empezar_despegue(g, ahora, izq is not None and (der is None or izq <= der), cerca)   # derecho pero pegado: se separa
+            return
+        if g['tipo'] == 'enderezar':
+            g['est'] = EstimadorPasillo()
+            g['t_ant'] = ahora
+            self._etapa(g, 'avanzar', ahora)
+        else:
+            g['theta0'] = self.odo.theta - g['pos_giro']          # el giro sigue desde donde quedo
+            self._etapa(g, 'girando', ahora)
 
     # ---- correccion brusca en marcha: giro rapido alejandose de la pared sin frenar
     def _empezar_brusca(self, g, ahora, d, hacia, psi):
@@ -968,6 +1092,14 @@ class Controlador:
             self._paso_brusca(ahora, g, frente, izq, der)
         elif e == 'girando':
             self._empezar_giro_d(g, ahora, 1)
+        elif e == 'pivotar':
+            self._pivotar(g, ahora, frente, izq, der)
+        elif e == 'pivotar_t':
+            self._pivotar(g, ahora, frente, izq, der, siguiente='asentar_tanteo')
+        elif e == 'asentar_tanteo':
+            self._asentar_tanteo(g, ahora, frente, izq, der)
+        elif e == 'asentar_pivote':
+            self._asentar_pivote(g, ahora, frente, izq, der)
         elif e == 'pivotar_d1':
             self._pivotar(g, ahora, frente, izq, der, clave='pivote_d1', siguiente='pausa_d')
         elif e == 'pausa_d':
