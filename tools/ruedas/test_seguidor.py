@@ -119,17 +119,62 @@ class TestSeguidor(unittest.TestCase):
         self.assertNotIn('retorno', estados)                                    # no vuelve solo
         self.assertGreater(abs(math.remainder(robot.th - estado['rumbo'], 2 * math.pi)), math.radians(140))   # dio la media vuelta
 
-    def test_ignora_las_flechas_del_color_entregado(self):
-        s = sg.Seguidor.__new__(sg.Seguidor)
+    @staticmethod
+    def _seguidor_con_reloj():
+        t = {'now': 100.0}
         robot = sim.RobotLaberinto(T)
-        c = rl.Controlador(robot, carpeta=tempfile.mkdtemp(), reloj=lambda: 100.0, imprimir=lambda m: None)
-        s.__init__(c, imprimir=lambda m: None, reloj=lambda: 100.0)
+        c = rl.Controlador(robot, carpeta=tempfile.mkdtemp(), reloj=lambda: t['now'], imprimir=lambda m: None)
+        s = sg.Seguidor(c, imprimir=lambda m: None, reloj=lambda: t['now'])
+        return s, t
+
+    def test_ignora_las_flechas_del_color_entregado(self):
+        s, t = self._seguidor_con_reloj()
         s.ignora = {'verde'}
         s.recibir_flecha({'giro': 'izquierda', 'color': 'verde', 'tamano': 'P3'})
+        s._adoptar(t['now'] + 5)
         self.assertIsNone(s.flecha)
+        self.assertIsNone(s.busca)
         s.recibir_flecha({'giro': 'derecha', 'color': 'rojo', 'tamano': 'P3'})
+        t['now'] += sg.VENTANA_ADOPTAR_S + 0.1
+        s._adoptar(t['now'])
         self.assertEqual(s.busca, 'rojo')
         self.assertEqual(s.flecha['giro'], 'derecha')
+
+    def test_sin_color_adopta_el_de_la_flecha_mas_larga_P1_antes_que_P2_y_P3(self):
+        s, t = self._seguidor_con_reloj()
+        s.recibir_flecha({'giro': 'derecha', 'color': 'rojo', 'tamano': 'P3'})
+        t['now'] += 0.3
+        s.recibir_flecha({'giro': 'izquierda', 'color': 'azul', 'tamano': 'P1'})
+        t['now'] += 0.3
+        s.recibir_flecha({'giro': 'derecha', 'color': 'verde', 'tamano': 'P2'})
+        s._adoptar(t['now'])
+        self.assertIsNone(s.busca)                                              # todavia dentro de la ventana
+        t['now'] += sg.VENTANA_ADOPTAR_S
+        s._adoptar(t['now'])
+        self.assertEqual(s.busca, 'azul')
+        self.assertEqual(s.flecha['giro'], 'izquierda')
+        s2, t2 = self._seguidor_con_reloj()                                      # sin P1: gana P2 sobre P3
+        s2.recibir_flecha({'giro': 'derecha', 'color': 'rojo', 'tamano': 'P3'})
+        s2.recibir_flecha({'giro': 'izquierda', 'color': 'verde', 'tamano': 'P2'})
+        t2['now'] += sg.VENTANA_ADOPTAR_S + 0.1
+        s2._adoptar(t2['now'])
+        self.assertEqual(s2.busca, 'verde')
+
+    def test_con_color_elegido_la_flecha_pendiente_es_la_de_mayor_prioridad(self):
+        s, t = self._seguidor_con_reloj()
+        s.busca = 'verde'
+        s.recibir_flecha({'giro': 'izquierda', 'color': 'verde', 'tamano': 'P2'})
+        s.recibir_flecha({'giro': 'derecha', 'color': 'verde', 'tamano': 'P3'})     # mas corta: no reemplaza a la P2
+        self.assertEqual((s.flecha['giro'], s.flecha['tamano']), ('izquierda', 'P2'))
+        s.recibir_flecha({'giro': 'derecha', 'color': 'verde', 'tamano': 'P1'})     # mas larga: si
+        self.assertEqual((s.flecha['giro'], s.flecha['tamano']), ('derecha', 'P1'))
+        s.recibir_flecha({'giro': 'izquierda', 'color': 'verde', 'tamano': 'P1'})   # misma prioridad: la ultima
+        self.assertEqual(s.flecha['giro'], 'izquierda')
+        s.recibir_flecha({'giro': 'derecha', 'color': 'verde', 'tamano': '?'})      # tamano desconocido: ultimo
+        self.assertEqual(s.flecha['giro'], 'izquierda')
+        t['now'] += sg.VIGENCIA_FLECHA_S + 1                                        # vencida la pendiente, una P3 vuelve a valer
+        s.recibir_flecha({'giro': 'derecha', 'color': 'verde', 'tamano': 'P3'})
+        self.assertEqual((s.flecha['giro'], s.flecha['tamano']), ('derecha', 'P3'))
 
     def test_el_camino_de_vuelta_cancela_las_idas_y_vueltas_a_un_callejon(self):
         log = [('recto', 1.0), ('giro', 1), ('recto', 0.8), ('media',), ('recto', 0.8), ('giro', -1), ('recto', 0.5)]

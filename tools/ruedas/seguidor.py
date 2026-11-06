@@ -35,6 +35,8 @@ CUBO_REACCION_M = 0.60            # el cubo a esta distancia o menos: empieza a 
 CUBO_ANTES_M = 0.10               # el avance guiado lo deja a esta distancia; el resto lo hace una orden de distancia
 CUBO_LADO_M = 0.020
 FX_CAMARA_PX = 950.0
+PRIORIDAD_TAMANO = {'P1': 0, 'P2': 1, 'P3': 2}   # decide por la flecha mas larga primero (P1), despues P2 y por ultima la mas corta (P3)
+VENTANA_ADOPTAR_S = 1.0           # sin color elegido: junta las flechas que se fijan en este tiempo y adopta el color de la de mayor prioridad
 VIGENCIA_FLECHA_S = 10.0          # una flecha fijada sin usar vale esto (hasta llegar al cruce)
 SORDO_TRAS_GIRO_S = 2.5           # tras doblar la vision sigue mandando la flecha vieja un rato: se ignora
 MIN_RECTO_M = 0.08                # tras un giro no se mira el lateral hasta haber avanzado esto
@@ -57,6 +59,7 @@ class Seguidor:
         self.ignora = set()                 # colores ya entregados
         self.al_cambiar_estado = None       # callback(busca, ignora): laberinto/seguidor_real avisa a la vision por /nav/estado
         self.flecha = None                  # {'giro', 'color', 'tamano', 't'}: flecha fijada todavia sin usar
+        self._candidatas, self._t_cand = [], None   # sin color elegido: las flechas fijadas en la ventana, para adoptar la de mayor prioridad
         self.sordo_hasta = 0.0
         self._ult_vista = None
         self.lado_giro = None               # 'izquierda' / 'derecha': el giro que sigue
@@ -121,17 +124,47 @@ class Seguidor:
         giro, color, tam = datos.get('giro'), datos.get('color'), datos.get('tamano', '?')
         if giro not in ('derecha', 'izquierda') or ahora < self.sordo_hasta or color in self.ignora:
             return
-        if self.busca is None and color:
-            self.busca = color
-            self.imprimir('  >> adopto el color %s (%s): de aca en mas sigo solo ese' % (color.upper(), tam))
-            self._avisar_estado()
+        nueva = {'giro': giro, 'color': color, 'tamano': tam, 't': ahora}
+        if self.busca is None and color:                    # todavia sin color: junta candidatas y adopta la de mayor prioridad (ver _adoptar)
+            if self._t_cand is None:
+                self._t_cand = ahora
+            self._candidatas.append(nueva)
+            return
         if color != self.busca:
             return
-        clave = (color, giro, tam)
+        self._tomar_flecha(nueva, ahora)
+
+    @staticmethod
+    def prioridad(tam):
+        """0 = P1 (la mas larga) ... 2 = P3 (la mas corta); un tamano desconocido va al final."""
+        return PRIORIDAD_TAMANO.get(str(tam).upper(), 9)
+
+    def _tomar_flecha(self, nueva, ahora):
+        """Queda pendiente la flecha de mayor prioridad (P1 > P2 > P3); a igual prioridad, la ultima que se vio."""
+        actual = self._flecha_vigente(ahora)
+        if actual is not None and self.prioridad(nueva['tamano']) > self.prioridad(actual['tamano']):
+            return                                          # ya hay una mas larga pendiente: esta no la reemplaza
+        clave = (nueva['color'], nueva['giro'], nueva['tamano'])
         if clave != self._ult_vista:
             self._ult_vista = clave
-            self.imprimir('  vision: flecha %s %s FIJA -> doblo a la %s' % (color.upper(), tam, giro.upper()))
-        self.flecha = {'giro': giro, 'color': color, 'tamano': tam, 't': ahora}
+            self.imprimir('  vision: flecha %s %s FIJA -> doblo a la %s' % (nueva['color'].upper(), nueva['tamano'], nueva['giro'].upper()))
+        self.flecha = nueva
+
+    def _adoptar(self, ahora):
+        """Pasada la ventana: el color elegido es el de la flecha de mayor prioridad (P1, P2, P3 en ese orden; a igual tamano la primera que llego)."""
+        if self.busca is not None or self._t_cand is None or ahora - self._t_cand < VENTANA_ADOPTAR_S:
+            return
+        mejor = min(self._candidatas, key=lambda f: (self.prioridad(f['tamano']), f['t']))
+        self.busca = mejor['color']
+        self.imprimir('  >> adopto el color %s (%s): de aca en mas sigo solo ese (de las flechas vistas, la de mayor prioridad P1>P2>P3)' % (
+            mejor['color'].upper(), mejor['tamano']))
+        self._avisar_estado()
+        propias = [f for f in self._candidatas if f['color'] == self.busca]
+        self._candidatas, self._t_cand = [], None
+        self.flecha = min(propias, key=lambda f: (self.prioridad(f['tamano']), -f['t']))       # la de mayor prioridad; a igual, la ultima
+        if self.flecha is not None:
+            self._ult_vista = (self.flecha['color'], self.flecha['giro'], self.flecha['tamano'])
+            self.imprimir('  vision: flecha %s %s FIJA -> doblo a la %s' % (self.flecha['color'].upper(), self.flecha['tamano'], self.flecha['giro'].upper()))
 
     def recibir_cubo(self, color, area):
         """/vision/cubo/<color> (area en px2): el cubo del color que sigue (o cualquiera no entregado si todavia no hay color)."""
@@ -159,6 +192,7 @@ class Seguidor:
     def tick(self):
         if self.estado in ('espera', 'fin', 'detenido', 'esperar_y'):
             return
+        self._adoptar(self.reloj())
         if self.estado == 'recto':
             if self.c.guiado is None and self.c.maniobra is None and not self.c.cola:
                 self._fin_recto()
@@ -372,6 +406,7 @@ class Seguidor:
         self.imprimir('  vuelvo a entrar a buscar el siguiente cubo (ignoro: %s)' % ', '.join(sorted(self.ignora)))
         self.c.giro_180_hacia_la_pared(self.vel_dps, self.corr180, None, self.corr90)
         self.log, self.tramo, self.flecha, self._ult_vista = [], 0.0, None, None
+        self._candidatas, self._t_cand = [], None
         self.cubo_frenando, self.cubo_lect, self.cubo_color = False, [], None
         self.sordo_hasta = ahora + SORDO_TRAS_GIRO_S
         self._ir('reentrar_listo')
