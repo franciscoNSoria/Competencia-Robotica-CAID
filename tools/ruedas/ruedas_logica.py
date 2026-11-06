@@ -18,7 +18,6 @@ from collections import deque
 
 RUEDAS = ['FL', 'FR', 'RL', 'RR']
 NOMBRES = ['Delantera izq. (FL)', 'Delantera der. (FR)', 'Trasera izq. (RL)', 'Trasera der. (RR)']
-GIRO_FACTOR_DEL_DEFECTO = 1.15           # el del firmware (GIRO_FACTOR_DELANTERAS): si nunca se cambio con la orden 9
 FLANCOS_POR_VUELTA = 40                # 20 ranuras x 2 flancos (M)
 DIAMETRO_M, TROCHA_M, FRENADO_M, FRENADO_GIRO_M = 0.067, 0.131, 0.030, 0.005   # los del firmware; los reales salen de calibrar
 DIAMETRO_RANGO = (0.031, 0.149)        # el firmware descarta un diametro fuera de (0,03 ; 0,15)
@@ -494,31 +493,19 @@ class Controlador:
         self.imprimir(f'== {self.maniobra["nombre"]} a {vel_ms:.2f} m/s ({vel:.0f} flancos/s) ==')
         return True
 
-    def velocidad_giro_traseras(self, vel_flancos):
-        """Velocidad base (traseras) de un giro en el lugar, en flancos/s. En los giros las delanteras (FL y FR) van `factor` x las traseras
-        con tope de 75: si las traseras ya estan en 75 (153 grados/s, el maximo), las delanteras no pueden ir mas rapido y el factor no
-        hace nada. Con 'giro_bajar_traseras' (por defecto si) se BAJAN las traseras a 75 / factor: las delanteras, que son las que
-        se traban (FR), quedan en el maximo y vale la ventaja que se les da. Todo desde la PC: solo cambia la velocidad que se pide."""
-        if not self.cal.get('giro_bajar_traseras', True):
-            return vel_flancos
-        factor = self.cal.get('giro_factor_del', GIRO_FACTOR_DEL_DEFECTO)
-        return min(vel_flancos, VEL_MAX_FLANCOS / max(1.0, factor))
-
     def girar(self, grados, vel_dps):
         """Giro en el lugar de `grados` (+ izquierda, - derecha). vel_dps: velocidad angular maxima, grados/s."""
         if not self._libre() or grados == 0:
             return False
         arco_ms = math.radians(abs(vel_dps)) * self.trocha / 2.0                   # m/s de cada rueda
         vel = limitar(flancos_de_ms(arco_ms, self.diametro), VEL_MIN_FLANCOS, VEL_MAX_FLANCOS)
-        vel = self.velocidad_giro_traseras(vel)
         sentido = 'izquierda' if grados > 0 else 'derecha'
         self._nueva_maniobra('giro', f'giro de {abs(grados):g} grados a la {sentido}', grados,
                              (7, math.radians(grados), vel), self.reloj())
         duty, ms = self.cal.get('fr_pre_duty_pct', 0.0), self.cal.get('fr_pre_ms', 0.0)
         if duty > 0 and ms > 0 and 60.0 <= abs(grados) <= 120.0:          # solo los giros de ~90
             self.maniobra['pre'] = {'duty': math.copysign(duty / 100.0, grados), 'ms': ms, 't_ini': None}
-        front = min(VEL_MAX_FLANCOS, vel * self.cal.get('giro_factor_del', GIRO_FACTOR_DEL_DEFECTO))
-        self.imprimir(f'== {self.maniobra["nombre"]} (traseras a {vel:.0f} flancos/s, delanteras a {front:.0f}; {vel_dps:.0f} grados/s pedidos) ==')
+        self.imprimir(f'== {self.maniobra["nombre"]} (ruedas a {vel:.0f} flancos/s = {vel_dps:.0f} grados/s pedidos) ==')
         return True
 
     # --- sonares (del /wheel_state del firmware: [26] frente, [27] izquierdo, [28] derecho, en m; -1 = sin eco)
@@ -905,7 +892,7 @@ class Controlador:
             g['theta0'] = self.odo.theta
         grados = 90.0 + g['adicional90'] + (g['adicional'] if n == 2 else 0.0)
         arco_ms = math.radians(abs(g['vel_dps'])) * self.trocha / 2.0
-        fl = self.velocidad_giro_traseras(limitar(flancos_de_ms(arco_ms, self.diametro), VEL_MIN_FLANCOS, VEL_MAX_FLANCOS))
+        fl = limitar(flancos_de_ms(arco_ms, self.diametro), VEL_MIN_FLANCOS, VEL_MAX_FLANCOS)
         self.imprimir(f'  Giro {n}/2: {grados:g}° a la {"izquierda" if g["lado"] > 0 else "derecha"} ({fl:.0f} flancos/s).')
         self._iniciar_pivote(g, ahora, g['lado'] * math.radians(grados), f'pivotar_d{n}', clave=f'pivote_d{n}', flancos=fl)
 

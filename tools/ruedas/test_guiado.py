@@ -386,26 +386,6 @@ class Escape(Banco):
         self.assertTrue(any('giro 30° a la izquierda' in m for m in self.mensajes))
 
 
-class VelocidadGiro(Banco):
-    def test_si_las_traseras_estan_al_maximo_se_bajan_para_que_las_delanteras_tengan_margen(self):
-        self.montar()
-        self.assertAlmostEqual(self.c.velocidad_giro_traseras(75.0), 75.0 / 1.15, places=2)   # factor 1,15 por defecto
-        self.assertEqual(self.c.velocidad_giro_traseras(40.0), 40.0)                          # ya tienen margen: no se toca
-        self.c.cal['giro_factor_del'] = 1.3
-        self.assertAlmostEqual(self.c.velocidad_giro_traseras(75.0), 75.0 / 1.3, places=2)
-        self.c.cal['giro_bajar_traseras'] = False                                             # desactivado: como antes
-        self.assertEqual(self.c.velocidad_giro_traseras(75.0), 75.0)
-
-    def test_el_giro_pide_a_la_esp32_las_traseras_bajadas_y_lo_dice(self):
-        self.montar()
-        self.assertTrue(self.c.girar(90.0, 153.0))
-        self.correr_hasta(lambda: False, 0.5)
-        ordenes = [a for t, a in self.robot.enviadas if t == 'cmd' and a[0] == 7]
-        self.assertTrue(ordenes)
-        self.assertAlmostEqual(ordenes[0][2], 75.0 / 1.15, places=2)                          # flancos/s de las traseras
-        self.assertTrue(any('delanteras a 75' in m for m in self.mensajes))
-
-
 class Giro180(Banco):
     """El 180 son dos giros de 90 seguidos (orden 7) hacia la pared lateral mas cercana; solo retrocede un poco si el frente esta muy cerca."""
 

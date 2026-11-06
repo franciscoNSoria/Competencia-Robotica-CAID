@@ -120,7 +120,6 @@ class Panel:
         self.esc_atras = tk.StringVar(value='6')             # escape de pared: cm que retrocede (una vez)
         self.esc_giro = tk.StringVar(value='45')             # ... y grados que gira hacia el lado contrario de la pared
         self.esc_lado = tk.IntVar(value=0)                   # 0 = la pared mas cercana (sonares), +1 pared a la izquierda, -1 a la derecha
-        self.bajar_tras = tk.BooleanVar(value=True)          # giros: si las delanteras no tienen margen (traseras en el maximo), bajar las traseras
         self.sec_d1 = tk.StringVar(value='40')
         self.sec_ang = tk.StringVar(value='90')
         self.sec_d2 = tk.StringVar(value='20')
@@ -141,7 +140,6 @@ class Panel:
         self.esc_atras.set(f"{self.c.cal.get('escape_atras_cm', 6.0):g}")
         self.esc_giro.set(f"{self.c.cal.get('escape_giro_deg', 45.0):g}")
         self.f_del.set(f"{self.c.cal.get('giro_factor_del', 1.15):g}")
-        self.bajar_tras.set(bool(self.c.cal.get('giro_bajar_traseras', True)))
         self.k_del.set(str(int(self.c.cal.get('kick_del', 0))))
         self.pre_duty.set(f"{self.c.cal.get('fr_pre_duty_pct', 0.0):g}")
         self.pre_ms.set(f"{self.c.cal.get('fr_pre_ms', 100.0):g}")
@@ -298,11 +296,6 @@ class Panel:
         self._etiqueta(f, 'las traseras; empujon de arranque delanteras (0-3, traseras = 2):').pack(side='left')
         self._entrada(f, self.k_del, 3).pack(side='left', padx=3)
         self._boton(f, 'APLICAR', self._aplicar_delanteras).pack(side='left', padx=6)
-
-        f = tk.Frame(t, bg=TARJETA, pady=3)
-        f.pack(fill='x')
-        self._casilla(f, 'FR (y FL) al maximo: bajar las traseras a 75/factor si hace falta', self.bajar_tras,
-                      command=self._bajar_traseras).pack(side='left')
 
         f = tk.Frame(t, bg=TARJETA, pady=3)
         f.pack(fill='x')
@@ -577,14 +570,6 @@ class Panel:
         if None in (fac, niv):
             return
         self.c.config_delanteras(fac, int(round(niv)))
-
-    def _bajar_traseras(self):
-        self.c.cal['giro_bajar_traseras'] = bool(self.bajar_tras.get())
-        guardar = getattr(rl, 'guardar_cal', None)
-        if guardar:
-            guardar(self.c.cal, self.c.ruta_cal)
-        self._log('Giros: ' + ('si las delanteras ya estan al maximo, se bajan las traseras a 75/factor.' if self.bajar_tras.get()
-                               else 'las traseras van a la velocidad pedida (las delanteras se recortan en 75).'))
 
     def _aplicar_pre_fr(self):
         d = self._numero(self.pre_duty, 'Pre-arranque FR: duty (%)', 0, 100)
