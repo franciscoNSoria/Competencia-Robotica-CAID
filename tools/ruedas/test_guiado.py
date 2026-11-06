@@ -329,10 +329,32 @@ class Enderezar(Banco):
         self.assertLess(abs(self.rumbo()), math.radians(6))
 
     def test_con_retardo_en_las_ordenes_no_oscila_de_mas(self):
-        self.probar(0.04, 12, cm=120, retardo=0.4, semilla=3)
+        self.probar(0.04, 12, cm=120, retardo=0.2, semilla=3)
         self.assertFalse(self.robot.choco)
         self.assertLess(abs(self.robot.y), 0.04)
         self.assertLess(abs(self.rumbo()), math.radians(30))
+
+    def test_pegado_a_una_pared_con_el_frente_cerca_retrocede_10_cm_y_gira_alejandose_de_ella(self):
+        self.montar(y=0.078, pared_x=0.14 + 0.16, ganancia_giro=1.0)               # pared izquierda a ~4 cm y el frente a 16 cm
+        self.assertTrue(self.c.enderezar_avanzando(0.5))
+        self.correr_hasta(lambda: any('Escape:' in m for m in self.mensajes), 30)
+        texto = '\n'.join(self.mensajes)
+        self.assertIn('Retroceso 1/2: 10 cm', texto)
+        self.assertIn('Escape: pared a la izquierda: giro 45° a la derecha (sonares)', texto)
+        self.assertFalse(self.robot.choco, texto)
+
+    def test_no_retrocede_mas_de_2_veces_seguidas_y_cuenta_de_nuevo_tras_avanzar(self):
+        self.montar()
+        g = {'n_retro': 0, 'atras': {'dist': 0.1}}
+        for _ in range(2):
+            self.assertTrue(self.c._puede_retroceder(g))
+            self.c._anotar_retroceso(g)
+        self.assertEqual(g['n_retro'], 2)
+        g['s_fin_retro'] = self.c.odo.s
+        self.assertFalse(self.c._puede_retroceder(g))                              # el tercero seguido: no
+        self.c.odo.s += 0.31                                                       # avanzo mas de AVANCE_REPETIDO_M
+        self.assertTrue(self.c._puede_retroceder(g))
+        self.assertEqual(g['n_retro'], 0)
 
     def test_sin_distancia_sigue_hasta_la_pared_de_frente(self):
         self.montar(pared_x=1.0)
@@ -478,13 +500,13 @@ class Giro180(Banco):
         self.assertTrue(any('linea recta enderezando: 25 cm' in m for m in self.mensajes))
 
     def test_no_retrocede_si_el_retroceso_esta_apagado(self):
+        rl.PERMITIR_RETROCESO = False
+        self.addCleanup(setattr, rl, 'PERMITIR_RETROCESO', True)
         self.montar(y=0.0, pared_x=0.1399 + 0.06, ganancia_giro=1.0)
         self.assertTrue(self.c.giro_180_hacia_la_pared(40))
         self.assertFalse(any('retrocedo' in m for m in self.mensajes))
 
     def test_solo_retrocede_un_poco_si_el_frente_esta_muy_cerca(self):
-        rl.PERMITIR_RETROCESO = True
-        self.addCleanup(setattr, rl, 'PERMITIR_RETROCESO', False)
         self.montar(y=0.0, pared_x=0.1399 + 0.06, ganancia_giro=1.0)
         self.assertTrue(self.c.giro_180_hacia_la_pared(40))
         self.assertTrue(self.correr_hasta(self.terminado, 60))

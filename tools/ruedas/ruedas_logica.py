@@ -179,26 +179,28 @@ TOLERANCIA_RELOJ_S = 0.01              # el reloj de la ventana tiene jitter: si
 PASILLO_M = 0.40                       # ancho libre del pasillo del reglamento (400 mm)
 SON_LX, SON_LY = 0.096, 0.0815         # sonares laterales: 9,6 cm adelante del centro y 8,15 cm del eje (hardware/cad/dimensions.yaml)
 V_LENTA_MS, V_CURVA_MS = 0.16, 0.24    # avance lento y tope al que sube si hace falta corregir fuerte (la rueda de adentro >= minimo)
-K_Y, K_PSI, W_TOPE = 2.5, 1.5, 0.8     # rumbo deseado = atan(-K_Y y); w = K_PSI (deseado - estimado) + sesgo; rad/s
-K_I, SESGO_TOPE = 0.30, 0.45           # integral del error de rumbo (rad/s por rad y por s): compensa una rueda mas floja que la otra
+K_Y, K_PSI, W_TOPE = 3.5, 2.2, 1.3     # rumbo deseado = atan(-K_Y y); w = K_PSI (deseado - estimado) + sesgo; rad/s
+K_I, SESGO_TOPE = 0.35, 0.50           # integral del error de rumbo (rad/s por rad y por s): compensa una rueda mas floja que la otra
 MARGEN_RUEDA_MS = 0.012                # m/s sobre el minimo de rueda que se deja al corregir
 STOP_FRENTE_M, STOP_LATERAL_M = 0.14, 0.03   # frena si el frente llega a 14 cm (el robot sigue unos cm: queda a ~10 cm o mas de la pared) o un costado a 3
 ALERTA_LATERAL_M = 0.055               # un costado a menos de esto (o que lo va a estar en 10 cm): frena, piensa, se endereza y sigue
 ANTICIPO_M = 0.15                      # ... se mira lo que va a medir el lateral dentro de este avance (el robot sigue ~8 cm despues de la orden de frenar)
-PERMITIR_RETROCESO = False             # False: en el laberinto el robot NUNCA retrocede (ni antes de girar ni para despegarse)
+PERMITIR_RETROCESO = True              # False: en el laberinto el robot NUNCA retrocede
+MAX_RETROCESOS = 2                     # retrocesos seguidos como maximo (se cuentan de nuevo tras avanzar AVANCE_REPETIDO_M)
+ESCAPE_ATRAS_CM, ESCAPE_GIRO_DEG = 10.0, 45.0   # el escape del panel (se leen de calibracion.json: escape_atras_cm / escape_giro_deg)
 F_RETROCESO_M = 0.10                   # antes de girar 180, si el frente esta a menos de esto retrocede (el giro en el lugar 'avanza un poco')
 ATRAS_MAX_M = 0.06                     # lo maximo que retrocede de una vez (atras no hay sonar)
 V_ATRAS_RECTO_MS = 0.14                # retroceso en recto: las ruedas por encima del minimo del firmware
 W_PIVOTE_RAD_S = 1.2                   # pivote en el lugar para enderezarse (cada rueda a 0,18 m/s: por encima del minimo)
 ADELANTO_PIVOTE_RAD = 0.08             # el robot sigue girando un poco despues de cortar
-PASO_TANTEO_RAD = 0.14                 # pivote de cada tanteo para enderezarse (8°)
+PASO_TANTEO_RAD = 0.18                 # pivote de cada tanteo para enderezarse (8°)
 PRIMER_PASO_RAD = 0.09                 # ... el primero es mas chico (5°): si va para el lado equivocado, empeora poco
 PIVOTE_FLANCOS = 40.0                  # velocidad del pivote (orden 7 del firmware: lo cierra la ESP32 con los encoders, sin retardo de red)
 LAT_DISPARO_M = 0.075                  # un costado a menos de esto Y acercandose (o a menos de LAT_CRITICO_M): correccion brusca EN MARCHA
 LAT_CRITICO_M = 0.055                  # ... a esta distancia corrige aunque no se vea que se acerca
 BAJA_DISPARO_M = 0.004                 # 'se acerca': el lateral bajo esto (m) en los ultimos ~0,5 s
-W_BRUSCO_RAD_S = 1.3                   # correccion brusca: giro hacia el lado contrario mientras sigue avanzando
-ANG_BRUSCO_RAD = 0.32                  # ... hasta cambiar el rumbo ~23° (cada repeticion seguida suma BRUSCO_MAS_RAD)
+W_BRUSCO_RAD_S = 1.85                   # correccion brusca: giro hacia el lado contrario mientras sigue avanzando
+ANG_BRUSCO_RAD = 0.55                  # ... hasta cambiar el rumbo ~23° (cada repeticion seguida suma BRUSCO_MAS_RAD)
 BRUSCO_MAS_RAD = 0.15
 ANG_BRUSCO_TOPE_RAD = 0.75
 AVANCE_REPETIDO_M = 0.30               # si vuelve a necesitar corregir antes de avanzar esto, cuenta como 'sigue pasando lo mismo'
@@ -751,9 +753,10 @@ class Controlador:
         """Quieto 0,6 s para tener medidas firmes; despues retrocede si el frente esta cerca y se separa de la pared."""
         if ahora - g['t_etapa'] < 0.6:
             return
-        if PERMITIR_RETROCESO and frente is not None and frente < F_RETROCESO_M:
-            d_atras = min(ATRAS_MAX_M, F_RETROCESO_M - frente + 0.01)
-            g['atras'] = {'dist': d_atras, 's0': self.odo.s, 'siguiente': 'despegar'}
+        if PERMITIR_RETROCESO and frente is not None and frente < F_RETROCESO_M and self._puede_retroceder(g):
+            d_atras = self._escape_atras_m() if g.get('tipo') == 'enderezar' else min(ATRAS_MAX_M, F_RETROCESO_M - frente + 0.01)
+            g['atras'] = {'dist': d_atras, 's0': self.odo.s, 'siguiente': 'escape' if g.get('tipo') == 'enderezar' else 'despegar'}
+            self._anotar_retroceso(g)
             self.imprimir(f'  Pienso: {self.texto_sonares((frente, izq, der))} -> retrocedo {100 * d_atras:.0f} cm (frente cerca) y me enderezo.')
             self._etapa(g, 'atras', ahora)
         else:
@@ -779,11 +782,39 @@ class Controlador:
         if ahora - g['t_etapa'] < 0.5:
             return
         self.imprimir(f'  Retrocedi {100 * (a["s0"] - self.odo.s):.0f} cm: ' + self.texto_sonares((frente, izq, der)))
+        g['s_fin_retro'] = self.odo.s
         if a['siguiente'] == 'girando':                          # solo retrocedia para despejar el frente antes de girar
             self._etapa(g, 'girando', ahora)
             g['theta0'] = self.odo.theta
+        elif a['siguiente'] == 'escape':                         # el escape del panel: despues de retroceder gira alejandose de la pared
+            self._escape_giro(g, ahora, izq, der)
         else:
             self._enderezar_o_despegar(g, ahora, izq, der)
+
+    def _escape_atras_m(self):
+        return abs(self.cal.get('escape_atras_cm', ESCAPE_ATRAS_CM)) / 100.0
+
+    def _puede_retroceder(self, g):
+        """Hasta MAX_RETROCESOS seguidos: el contador vuelve a 0 cuando despues del ultimo retroceso avanzo AVANCE_REPETIDO_M."""
+        n = g.get('n_retro', 0)
+        if n and self.odo.s - g.get('s_fin_retro', self.odo.s) >= AVANCE_REPETIDO_M:
+            g['n_retro'] = n = 0
+        if n >= MAX_RETROCESOS:
+            self.imprimir(f'  (ya retrocedi {n} veces seguidas: no retrocedo mas, me separo en arco)')
+            return False
+        return True
+
+    def _anotar_retroceso(self, g):
+        g['n_retro'] = g.get('n_retro', 0) + 1
+        self.imprimir(f'  Retroceso {g["n_retro"]}/{MAX_RETROCESOS}: {100 * g["atras"]["dist"]:.0f} cm')
+
+    def _escape_giro(self, g, ahora, izq, der):
+        """Despues de retroceder: gira `escape_giro_deg` hacia el lado CONTRARIO de la pared lateral mas cercana (sonares), como el boton ESCAPE."""
+        lado = -1 if (der is not None and (izq is None or der < izq)) else 1          # + pared a la izquierda
+        grados = abs(self.cal.get('escape_giro_deg', ESCAPE_GIRO_DEG))
+        delta = -lado * math.radians(grados)
+        self.imprimir(f'  Escape: pared a la {"izquierda" if lado > 0 else "derecha"}: giro {grados:g}° a la {"derecha" if delta < 0 else "izquierda"} (sonares).')
+        self._iniciar_pivote(g, ahora, delta, 'pivotar')
 
     def _enderezar_o_despegar(self, g, ahora, izq, der):
         """Linea recta: primero se endereza con el tanteo (si esta pegado Y paralelo, el tanteo mismo pasa a despegar)."""
@@ -809,9 +840,10 @@ class Controlador:
         cerca = izq if b['izq'] else der
         if frente is not None and frente <= STOP_FRENTE_M + 0.03:
             self._parar_motores()                                # no hay lugar adelante
-            if PERMITIR_RETROCESO:                               # retrocede recto y reintenta
+            if PERMITIR_RETROCESO and self._puede_retroceder(g):  # retrocede recto (10 cm del panel) y gira alejandose de la pared
                 self.imprimir(f'  Frente a {100 * frente:.1f} cm: retrocedo antes de separarme.')
-                g['atras'] = {'dist': ATRAS_MAX_M, 's0': self.odo.s, 'siguiente': 'despegar'}
+                g['atras'] = {'dist': self._escape_atras_m(), 's0': self.odo.s, 'siguiente': 'escape'}
+                self._anotar_retroceso(g)
                 self._etapa(g, 'atras', ahora)
             else:                                                # sin retroceso: corta el arco aca y vuelve a medir
                 self.imprimir(f'  Frente a {100 * frente:.1f} cm: corto el arco (no retrocedo).')

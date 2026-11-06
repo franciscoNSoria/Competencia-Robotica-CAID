@@ -35,7 +35,7 @@ CUBO_REACCION_M = 0.50                # el cubo a esta distancia o menos: empiez
 CUBO_ANTES_M = 0.10                   # el avance guiado lo deja a esta distancia; el resto lo hace una orden de distancia
 CUBO_LADO_M = 0.020
 FX_CAMARA_PX = 950.0
-_SIN_CUBO = ('espera', 'fin', 'detenido', 'esperar_y', 'cubo_fino', 'cubo_llego', 'media_cubo', 'media_cubo_fin')
+_SIN_CUBO = ('espera', 'fin', 'detenido', 'esperar_y', 'cubo_fino', 'cubo_llego', 'media_cubo', 'media_cubo_fin', 'canasto', 'esperar_canasto')
 
 
 class Recorrido:
@@ -56,16 +56,22 @@ class Recorrido:
         self.parada_cubo_m = PARADA_CUBO_M
         self.camino = [('celda', (0, 0), 0)]   # lo andado: celdas visitadas y giros, para el mapa del cubo
         self.cubo_lect, self.cubo_color, self.cubo_frenando = [], None, False
+        self.volviendo = False                 # con el cubo ya 'capturado': vuelve a la partida (donde esta el canasto)
         c.ajustar_frenado = False
 
     # ---- control
     def arrancar(self):
-        self.pos, self.intentos = 0.0, {}
+        self.pos, self.intentos, self.volviendo = 0.0, {}, False
         self._ir('medir', 'arranco')
         self.imprimir('== Trémaux con las piezas validadas: celda %s mirando %s ==' % (self.celda, NOMBRES[self.rumbo]))
 
     def confirmar(self):
-        """Tecla Y (OK frente al cubo): da media vuelta y cuenta el mapa del camino."""
+        """Tecla Y: frente al cubo, da media vuelta, cuenta el mapa y vuelve a la partida; en la partida (canasto), cierra la entrega."""
+        if self.estado == 'esperar_canasto':
+            self.imprimir('  OK: cubo %s entregado en el canasto.' % (self.cubo_color or '?').upper())
+            self.estado = 'fin'
+            self.imprimir('== TERMINE: cubo entregado. q para salir ==')
+            return True
         if self.estado != 'esperar_y':
             self.imprimir('  (el OK solo vale cuando estoy esperando frente al cubo)')
             return False
@@ -75,7 +81,7 @@ class Recorrido:
 
     def recibir_cubo(self, color, area):
         """/vision/cubo/<color> (area en px2): si esta cerca, deja de explorar y se acerca despacio hasta pararse."""
-        if self.estado in _SIN_CUBO and self.estado != 'cubo_fino' or area <= 0:
+        if self.volviendo or (self.estado in _SIN_CUBO and self.estado != 'cubo_fino') or area <= 0:
             return
         dist = self.fx * CUBO_LADO_M / math.sqrt(area)
         ahora = self.reloj()
@@ -111,7 +117,7 @@ class Recorrido:
 
     # ---- bucle (llamar despues de Controlador.tick)
     def tick(self):
-        if self.estado in ('espera', 'fin', 'detenido', 'esperar_y') or self._ocupado():
+        if self.estado in ('espera', 'fin', 'detenido', 'esperar_y', 'esperar_canasto') or self._ocupado():
             return
         ahora = self.reloj()
         getattr(self, '_' + self.estado)(ahora)
@@ -140,7 +146,13 @@ class Recorrido:
         self.imprimir('  celda %s mirando %s: frente %s | izq %s | der %s | pos %+.1f cm  (f=%s i=%s d=%s)' % (
             self.celda, NOMBRES[self.rumbo], 'paso' if frente else 'PARED', 'paso' if izq else 'PARED', 'paso' if der else 'PARED',
             100 * self.pos, self._cm(f), self._cm(i), self._cm(d)))
-        dire = self.mapa.decidir(self.celda, self.rumbo)
+        dire = self.mapa.decidir(self.celda, self.rumbo, destino=self.mapa.inicio) if self.volviendo else self.mapa.decidir(self.celda, self.rumbo)
+        if dire is None and self.volviendo:
+            if self.celda == self.mapa.inicio:
+                self._ir('canasto')
+            else:
+                self.detener('no conozco un camino a la partida desde %s' % (self.celda,))
+            return
         if dire is None:
             self.estado = 'fin'
             self.imprimir('== TERMINE: %s ==' % ('recorri todo y volvi a la partida' if self.celda == self.mapa.inicio
@@ -235,6 +247,9 @@ class Recorrido:
             self.pos = hecho - CELDA
             self.cuenta_celdas += 1
             self.camino.append(('celda', self.celda, self.rumbo))
+            if self.volviendo and self.celda == self.mapa.inicio:
+                self._ir('canasto')
+                return
         else:
             self.mapa.bloquear(self.celda, self.rumbo)
             self.pos = hecho
@@ -255,6 +270,13 @@ class Recorrido:
         self._ir('cubo_llego')
 
     def _cubo_llego(self, ahora):
+        while self.pos > CELDA / 2:                            # el acercamiento al cubo puede haber cruzado celdas: se anotan
+            self.mapa.recorrer(self.celda, self.rumbo)
+            self.celda = vecina(self.celda, self.rumbo)
+            self.mapa.visitadas.add(self.celda)
+            self.pos -= CELDA
+            self.cuenta_celdas += 1
+            self.camino.append(('celda', self.celda, self.rumbo))
         self.imprimir('== CUBO %s a ~%.0f cm. ESPERANDO el OK (tecla Y) ==' % ((self.cubo_color or '?').upper(), 100 * self.parada_cubo_m))
         self._ir('esperar_y')
 
@@ -277,11 +299,21 @@ class Recorrido:
         for fila in self.mapa.dibujo().split('\n'):
             self.imprimir('     ' + fila)
         self.c.giro_180_hacia_la_pared(self.vel_dps, self.corr180, None, self.corr90)
+        self._s_ini = self.c.odo.s
         self._ir('media_cubo_fin')
 
     def _media_cubo_fin(self, ahora):
-        self.imprimir('== Listo: di media vuelta frente al cubo y me quedo esperando. q para salir ==')
-        self.estado = 'fin'
+        avance = self.c.odo.s - self._s_ini
+        self.pos = -(self.pos + avance)                       # media vuelta: lo que estaba adelante queda atras
+        self.rumbo = (self.rumbo + 2) % 4
+        self.volviendo, self.cubo_frenando, self.cubo_lect = True, False, []
+        self._revisar_fin()
+        if self.estado != 'detenido':
+            self._ir('medir', 'media vuelta hecha: vuelvo a la partida %s por el camino mas corto que conozco' % (self.mapa.inicio,))
+
+    def _canasto(self, ahora):
+        self.imprimir('== LLEGUE A LA PARTIDA %s (el canasto). ESPERANDO el OK (tecla Y) para dar el cubo por entregado ==' % (self.mapa.inicio,))
+        self._ir('esperar_canasto')
 
     # ---- util
     @staticmethod
