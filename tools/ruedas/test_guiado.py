@@ -386,6 +386,41 @@ class Escape(Banco):
         self.assertTrue(any('giro 30° a la izquierda' in m for m in self.mensajes))
 
 
+class PreArranqueFR(Banco):
+    def duties_fr(self):
+        return [a[2] for t, a in self.robot.enviadas if t == 'cmd' and a[0] == 1]
+
+    def test_pre_arranque_fijo_solo_manda_duty_a_fr(self):
+        self.montar()
+        self.assertTrue(self.c.config_pre_fr(60.0, 150.0))
+        self.assertTrue(self.c.girar(90.0, 153.0))
+        self.correr_hasta(lambda: False, 0.5)
+        duties = self.duties_fr()
+        self.assertTrue(duties and all(abs(d - 0.6) < 1e-9 for d in duties), duties)
+        ordenes = [a for t, a in self.robot.enviadas if t == 'cmd' and a[0] == 1]
+        self.assertTrue(all(a[1] == 0.0 and a[3] == 0.0 and a[4] == 0.0 for a in ordenes))      # FL, RL y RR quietas
+
+    def test_pre_arranque_en_rampa_sube_de_a_poco(self):
+        self.montar()
+        self.assertTrue(self.c.config_pre_fr(80.0, 200.0, 30.0))
+        self.assertTrue(self.c.girar(90.0, 153.0))
+        self.correr_hasta(lambda: False, 0.6)
+        duties = self.duties_fr()
+        self.assertGreaterEqual(len(duties), 3)
+        self.assertAlmostEqual(duties[0], 0.3, delta=0.05)                          # arranca en el duty inicial
+        self.assertTrue(all(b >= a - 1e-9 for a, b in zip(duties, duties[1:])), duties)  # y solo sube
+        self.assertLessEqual(max(duties), 0.8 + 1e-9)
+        self.assertGreater(max(duties), 0.55)
+
+    def test_la_rampa_se_guarda_y_no_afecta_si_esta_apagado(self):
+        self.montar()
+        self.c.config_pre_fr(0.0, 100.0, 30.0)
+        self.c.girar(90.0, 153.0)
+        self.correr_hasta(lambda: False, 0.4)
+        self.assertEqual(self.duties_fr(), [])                                      # duty 0 = apagado
+        self.assertEqual(self.c.cal['fr_pre_ini_pct'], 30.0)
+
+
 class Giro180(Banco):
     """El 180 son dos giros de 90 seguidos (orden 7) hacia la pared lateral mas cercana; solo retrocede un poco si el frente esta muy cerca."""
 

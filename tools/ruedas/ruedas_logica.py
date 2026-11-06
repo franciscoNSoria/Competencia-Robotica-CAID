@@ -423,16 +423,23 @@ class Controlador:
         self.imprimir(f'Giros: delanteras x{factor:g}, empujon de arranque nivel {nivel}.')
         return True
 
-    def config_pre_fr(self, duty_pct, ms):
-        """Pre-arranque de FR en los giros de ~90 grados: FR recibe `duty_pct` % de duty durante `ms` ms ANTES de mandar el giro,
-        asi ya viene rodando y no queda de ancla (0 = apagado). Solo software: no hace falta reflashear la ESP32."""
-        if not 0 <= duty_pct <= 100 or not 0 <= ms <= 500:
-            self.imprimir('Pre-arranque de FR: duty de 0 a 100 % y tiempo de 0 a 500 ms.')
+    def config_pre_fr(self, duty_pct, ms, ini_pct=0.0):
+        """Pre-arranque de FR en los giros de ~90 grados: FR recibe duty ANTES de mandar el giro, asi ya viene rodando y no queda de ancla
+        (0 = apagado). El duty sube en RAMPA de `ini_pct` % a `duty_pct` % a lo largo de `ms` ms (con ini_pct = 0 no hay rampa: va
+        fijo en `duty_pct`). Solo FR; solo software: no hace falta reflashear la ESP32."""
+        if not 0 <= duty_pct <= 100 or not 0 <= ms <= 500 or not 0 <= ini_pct <= 100:
+            self.imprimir('Pre-arranque de FR: duty de 0 a 100 %, tiempo de 0 a 500 ms y duty inicial de 0 a 100 %.')
             return False
         self.cal['fr_pre_duty_pct'] = duty_pct
         self.cal['fr_pre_ms'] = ms
+        self.cal['fr_pre_ini_pct'] = ini_pct
         guardar_cal(self.cal, self.ruta_cal)
-        self.imprimir(f'Pre-arranque de FR en los giros de 90: {duty_pct:g} % durante {ms:g} ms' + (' (apagado).' if not duty_pct or not ms else '.'))
+        if not duty_pct or not ms:
+            self.imprimir('Pre-arranque de FR en los giros de 90: apagado.')
+        elif ini_pct > 0:
+            self.imprimir(f'Pre-arranque de FR en los giros de 90: rampa de {ini_pct:g} % a {duty_pct:g} % en {ms:g} ms.')
+        else:
+            self.imprimir(f'Pre-arranque de FR en los giros de 90: {duty_pct:g} % fijo durante {ms:g} ms.')
         return True
 
     # --- barras
@@ -504,7 +511,9 @@ class Controlador:
                              (7, math.radians(grados), vel), self.reloj())
         duty, ms = self.cal.get('fr_pre_duty_pct', 0.0), self.cal.get('fr_pre_ms', 0.0)
         if duty > 0 and ms > 0 and 60.0 <= abs(grados) <= 120.0:          # solo los giros de ~90
-            self.maniobra['pre'] = {'duty': math.copysign(duty / 100.0, grados), 'ms': ms, 't_ini': None}
+            ini = self.cal.get('fr_pre_ini_pct', 0.0)
+            self.maniobra['pre'] = {'duty': math.copysign(duty / 100.0, grados), 'ms': ms, 't_ini': None,
+                                    'ini': math.copysign(ini / 100.0, grados) if ini > 0 else None}
         self.imprimir(f'== {self.maniobra["nombre"]} (ruedas a {vel:.0f} flancos/s = {vel_dps:.0f} grados/s pedidos) ==')
         return True
 
@@ -956,7 +965,11 @@ class Controlador:
             if pre['t_ini'] is None:
                 pre['t_ini'] = ahora
             if ahora - pre['t_ini'] < pre['ms'] / 1000.0:
-                self._cmd(1, 0.0, pre['duty'], 0.0, 0.0)       # solo FR; + = adelante (grados + = izquierda: la derecha avanza)
+                duty = pre['duty']
+                if pre.get('ini') is not None:                 # rampa: del duty inicial al final a lo largo del pre-arranque
+                    frac = max(0.0, min(1.0, (ahora - pre['t_ini']) / (pre['ms'] / 1000.0)))
+                    duty = pre['ini'] + (pre['duty'] - pre['ini']) * frac
+                self._cmd(1, 0.0, duty, 0.0, 0.0)              # solo FR; + = adelante (grados + = izquierda: la derecha avanza)
                 return
             m['pre'] = None
             m['proximo_envio'] = ahora
