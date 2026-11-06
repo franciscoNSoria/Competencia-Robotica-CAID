@@ -108,5 +108,53 @@ class TestLaberintoCubo(unittest.TestCase):
         self.assertEqual(rec.ignora, set())                                       # no se entrego: no se ignora nada
 
 
+T2 = """\
+#########
+#S..#####
+###.#####
+###.....#
+#########
+"""
+
+
+class TestCuentaGiros(unittest.TestCase):
+    def test_vuelve_a_ciegas_repitiendo_al_reves_los_giros_anotados_sin_usar_el_mapa(self):
+        robot = sim.RobotLaberinto(T2, semilla=3, ganancia_giro=0.74)
+        log = []
+        c = rl.Controlador(robot, carpeta=tempfile.mkdtemp(), reloj=lambda: 100.0 + robot.t, imprimir=lambda m: None)
+        rec = lr.Recorrido(c, corr90=10.0, imprimir=log.append, reloj=lambda: 100.0 + robot.t, cuenta_giros=True)
+        for _ in range(8):
+            robot.avanzar(0.05)
+            c.tick()
+        self.addCleanup(c.cerrar)
+        rec.arrancar()
+        h = {'ok1': False}
+        decidir = rec.mapa.decidir
+
+        def sin_mapa(*a, **k):
+            if rec.volviendo:
+                raise AssertionError('la vuelta no tiene que consultar el mapa')
+            return decidir(*a, **k)
+        rec.mapa.decidir = sin_mapa
+        while robot.t < 900.0 and rec.estado != 'esperar_canasto' and not rec.terminado() and not robot.choco:
+            robot.avanzar(0.05)
+            c.tick()
+            rec.tick()
+            if robot.y < -0.7 and robot.x > 0.9 and not rec.volviendo and rec.estado not in ('esperar_y', 'media_cubo', 'media_cubo_fin'):
+                rec.recibir_cubo('verde', area(max(0.03, 2.6 - (robot.x + 0.14))))
+            if rec.estado == 'esperar_y' and not h['ok1']:
+                h['ok1'] = True
+                rec.confirmar()
+        texto = '\n'.join(log)
+        self.assertFalse(robot.choco, texto)
+        self.assertEqual(rec.estado, 'esperar_canasto', texto)
+        self.assertIn('VUELVO A CIEGAS repitiendo al reves', texto)
+        self.assertIn('giro 90° DER', texto)                                       # ida: derecha y despues izquierda; vuelta: al reves e invertidos
+        self.assertIn('giro 90° IZQ', texto)
+        self.assertLess(abs(robot.x), 0.35, (robot.x, robot.y))                    # volvio a la partida
+        self.assertLess(abs(robot.y), 0.2, (robot.x, robot.y))
+        self.assertEqual(rec.celda, (0, 0))
+
+
 if __name__ == '__main__':
     unittest.main()

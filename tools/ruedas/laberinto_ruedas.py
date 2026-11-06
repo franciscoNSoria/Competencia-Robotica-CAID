@@ -19,6 +19,7 @@ sys.path.insert(0, AQUI)
 sys.path.insert(0, os.path.join(AQUI, '..', '..', 'ros2_ws', 'src', 'caid_navigation', 'caid_navigation'))
 import ruedas_logica as rl  # noqa: E402
 from mapa import Mapa, vecina  # noqa: E402
+from seguidor import Seguidor  # noqa: E402   (solo su compactar(): une rectos y cancela las idas y vueltas a un callejon)
 
 CELDA = 0.40
 F_X = 0.1399                          # el sonar frontal esta 14 cm adelante del centro
@@ -37,12 +38,14 @@ CUBO_REACCION_M = 0.50                # el cubo a esta distancia o menos: empiez
 CUBO_ANTES_M = 0.10                   # el avance guiado lo deja a esta distancia; el resto lo hace una orden de distancia
 CUBO_LADO_M = 0.020
 FX_CAMARA_PX = 950.0
-_SIN_CUBO = ('espera', 'fin', 'detenido', 'esperar_y', 'cubo_fino', 'cubo_llego', 'media_cubo', 'media_cubo_fin', 'canasto', 'esperar_canasto', 'pausa_reentrar', 'reentrar_giro')
+_SIN_CUBO = ('espera', 'fin', 'detenido', 'esperar_y', 'cubo_fino', 'cubo_llego', 'media_cubo', 'media_cubo_fin', 'canasto', 'esperar_canasto', 'pausa_reentrar', 'reentrar_giro', 'retorno')
 
 
 class Recorrido:
-    def __init__(self, c, vel_dps=153.0, corr90=0.0, corr180=0.0, v=rl.V_LENTA_MS, frenada_m=0.03, imprimir=print, reloj=None):
+    def __init__(self, c, vel_dps=153.0, corr90=0.0, corr180=0.0, v=rl.V_LENTA_MS, frenada_m=0.03, imprimir=print, reloj=None, cuenta_giros=False):
         self.c, self.imprimir = c, imprimir
+        self.cuenta_giros = cuenta_giros       # True: anota todos los rectos y giros hasta el cubo y vuelve repitiendolos al reves, a ciegas
+        self.log, self.s_tramo0, self.plan = [], 0.0, None
         self.vel_dps, self.corr90, self.corr180, self.v, self.frenada_m = vel_dps, corr90, corr180, v, frenada_m
         self.reloj = reloj or c.reloj
         self.mapa = Mapa(inicio=(0, 0))
@@ -67,6 +70,7 @@ class Recorrido:
     # ---- control
     def arrancar(self):
         self.pos, self.intentos, self.volviendo = 0.0, {}, False
+        self.log, self.s_tramo0, self.rumbo0 = [], self.c.odo.s, self.rumbo
         self._ir('medir', 'arranco')
         self.imprimir('== Trémaux con las piezas validadas: celda %s mirando %s ==' % (self.celda, NOMBRES[self.rumbo]))
 
@@ -110,6 +114,7 @@ class Recorrido:
         self.volviendo, self.entregado = False, False
         self.cubo_frenando, self.cubo_lect, self.cubo_color = False, [], None
         self.camino, self.cuenta_celdas, self.intentos = [('celda', self.celda, self.rumbo)], 0, {}
+        self.log, self.s_tramo0, self.rumbo0 = [], self.c.odo.s, self.rumbo
         self._revisar_fin()
         if self.estado != 'detenido':
             self._ir('medir', 'vuelvo a entrar: celda %s mirando %s, busco el siguiente cubo' % (self.celda, NOMBRES[self.rumbo]))
@@ -232,8 +237,17 @@ class Recorrido:
             self.detener(t)
 
     # ---- 2. girar
+    def _cerrar_tramo(self):
+        """Cuenta giros: anota lo recto avanzado (odometria) desde el ultimo giro."""
+        d = self.c.odo.s - self.s_tramo0
+        if d > 0.02:
+            self.log.append(('recto', d))
+        self.s_tramo0 = self.c.odo.s
+
     def _girar(self, ahora):
         rel = (self.dire - self.rumbo) % 4
+        self._cerrar_tramo()
+        self.log.append(('media',) if rel == 2 else ('giro', 1 if rel == 1 else -1))
         self._s_ini = self.c.odo.s
         if rel == 2:
             self.c.giro_180_hacia_la_pared(self.vel_dps, self.corr180, None, self.corr90)
@@ -251,6 +265,7 @@ class Recorrido:
         rel = (self.nuevo_rumbo - self.rumbo) % 4
         avance = self.c.odo.s - self._s_ini
         self.pos = -(self.pos + avance) if rel == 2 else 0.0      # media vuelta: lo que estaba adelante queda atras
+        self.s_tramo0 = self.c.odo.s                              # lo recto se cuenta desde que termino el giro
         if rel:
             self.camino.append(('giro', rel))
         self.rumbo = self.nuevo_rumbo
@@ -328,6 +343,7 @@ class Recorrido:
         return out
 
     def _media_cubo(self, ahora):
+        self._cerrar_tramo()
         self.imprimir('== MAPA: asi llegue al cubo %s (%d celda(s) avanzadas) ==' % ((self.cubo_color or '?').upper(), self.cuenta_celdas))
         for t in self.texto_camino():
             self.imprimir('   ' + t)
@@ -345,8 +361,44 @@ class Recorrido:
         self.rumbo = (self.rumbo + 2) % 4
         self.volviendo, self.cubo_frenando, self.cubo_lect = True, False, []
         self._revisar_fin()
+        if self.estado != 'detenido' and self.cuenta_giros:
+            self._empezar_retorno_giros()
+            return
         if self.estado != 'detenido':
             self._ir('medir', 'media vuelta hecha: vuelvo a la partida %s por el camino mas corto que conozco' % (self.mapa.inicio,))
+
+    # ---- cuenta giros: vuelve a ciegas repitiendo al reves lo anotado (sin mapa, sin camara, sin mirar bifurcaciones ni cubos)
+    @staticmethod
+    def texto_plan(plan):
+        return ['recto %.0f cm' % (100 * e[1]) if e[0] == 'recto' else (('giro 90° IZQ' if e[1] > 0 else 'giro 90° DER') if e[0] == 'giro' else 'media vuelta')
+                for e in plan]
+
+    def _empezar_retorno_giros(self):
+        camino = Seguidor.compactar(self.log)
+        self.plan = [('giro', -e[1]) if e[0] == 'giro' else e for e in reversed(camino)]       # al reves: los giros se invierten
+        self.imprimir('== VUELVO A CIEGAS repitiendo al reves los giros anotados (%d paso(s)): ==' % len(self.plan))
+        for i, t in enumerate(self.texto_plan(self.plan), 1):
+            self.imprimir('   %d. %s' % (i, t))
+        self._ir('retorno')
+
+    def _retorno(self, ahora):
+        self._revisar_fin()
+        if self.estado == 'detenido':
+            return
+        if not self.plan:                                           # termino lo anotado: esta de nuevo en la partida
+            self.celda, self.rumbo, self.pos = self.mapa.inicio, (self.rumbo0 + 2) % 4, 0.0
+            self._ir('canasto')
+            return
+        ev = self.plan.pop(0)
+        self.imprimir('  [retorno] %s (%d paso(s) mas)' % (self.texto_plan([ev])[0], len(self.plan)))
+        if ev[0] == 'recto':
+            if not self.c.enderezar_avanzando(ev[1], self.v, FRENTE_GIRO_M):
+                self.imprimir('  (pared de frente en el camino de vuelta: sigo con el paso que sigue)')
+        elif ev[0] == 'giro':
+            if not self.c.girar(ev[1] * (90.0 + self.corr90), self.vel_dps):
+                self.detener('no pude empezar un giro de la vuelta')
+        else:
+            self.c.giro_180_hacia_la_pared(self.vel_dps, self.corr180, None, self.corr90)
 
     def _canasto(self, ahora):
         self.imprimir('== LLEGUE A LA PARTIDA %s (el canasto). ESPERANDO el OK (tecla Y) para dar el cubo por entregado ==' % (self.mapa.inicio,))

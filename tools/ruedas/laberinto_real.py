@@ -48,6 +48,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--v', type=float, default=rl.V_LENTA_MS, help='velocidad de avance, m/s (0.16)')
     ap.add_argument('--vel-giro', type=float, default=153.0, help='velocidad de giro, grados/s (153 = maximo)')
+    ap.add_argument('--cuenta-giros', action='store_true', help='anota todos los rectos y giros hasta el cubo y vuelve a ciegas repitiendolos al reves (sin mapa)')
     ap.add_argument('--fx', type=float, default=lr.FX_CAMARA_PX, help='foco de la camara en px para medir el cubo (950)')
     ap.add_argument('--parada-cubo', type=float, default=lr.PARADA_CUBO_M, help='distancia a la que se detiene del cubo, m (0.04)')
     ap.add_argument('--frenada', type=float, default=0.03, help='m que el robot sigue despues de la orden de frenar (0.03)')
@@ -56,7 +57,7 @@ def main():
     c = rl.Controlador(enlace)
     corr90 = float(c.cal.get('giro90_corr_deg', 0.0))
     corr180 = float(c.cal.get('giro180_corr_deg', 0.0))
-    rec = lr.Recorrido(c, vel_dps=a.vel_giro, corr90=corr90, corr180=corr180, v=a.v, frenada_m=a.frenada)
+    rec = lr.Recorrido(c, vel_dps=a.vel_giro, corr90=corr90, corr180=corr180, v=a.v, frenada_m=a.frenada, cuenta_giros=a.cuenta_giros)
     rec.fx, rec.parada_cubo_m = a.fx, a.parada_cubo
     conectar_vision(enlace, rec)
     print('Giro 90: se piden %g° | sumador 180: %+g° | avance %.2f m/s | giro %.0f °/s' % (90 + corr90, corr180, a.v, a.vel_giro))
