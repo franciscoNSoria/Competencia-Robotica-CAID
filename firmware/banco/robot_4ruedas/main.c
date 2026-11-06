@@ -11,6 +11,8 @@
 #include "esp_timer.h"
 #include "esp_wifi.h"
 #include "esp_mac.h"
+#include "esp_event.h"
+#include "esp_system.h"
 
 #include <uros_network_interfaces.h>
 #include <rcl/rcl.h>
@@ -96,6 +98,7 @@
 /* Dominio ROS de este robot. El agente micro-ROS crea su participante en el dominio que le pide la ESP32 (no el ROS_DOMAIN_ID de la PC):
  * en TODAS las terminales de la PC hay que usar el mismo (export ROS_DOMAIN_ID=71) o no ven los topicos. Cambiarlo requiere regrabar. */
 #define ROS_DOMINIO 71
+#define WIFI_TX_POTENCIA 52   /* cuartos de dBm: 52 = 13 dBm (maximo 80 = 20 dBm). Menos potencia = picos de corriente mas chicos si la fuente se hunde */
 
 /* Calibrar con la prueba del metro (docs de calibracion): el diametro efectivo y la trocha efectiva salen de medir */
 #define DIAMETRO_RUEDA_M 0.065f     /* medido (calibracion.json); el valor en uso se cambia con /robot_cmd id 5. Es lo que vale tras un REINICIO de la ESP32: tiene que ser el calibrado */
@@ -1190,6 +1193,30 @@ static void publicar_estado_brazo(void)
 }
 
 /* Esperando agente -> conectado -> (agente perdido) -> esperando agente. Nunca se rinde. */
+/* Diagnostico del Wi-Fi y de los reinicios (todo sale por el puerto serie) */
+static const char *causa_reinicio(esp_reset_reason_t r)
+{
+	switch (r) {
+	case ESP_RST_POWERON:  return "POWERON (se fue y volvio la alimentacion)";
+	case ESP_RST_BROWNOUT: return "BROWNOUT (la tension bajo de 2,4 V)";
+	case ESP_RST_PANIC:    return "PANIC (el programa se cayo)";
+	case ESP_RST_TASK_WDT: case ESP_RST_INT_WDT: case ESP_RST_WDT: return "WATCHDOG (una tarea se colgo)";
+	case ESP_RST_SW:       return "SW (reinicio por software)";
+	case ESP_RST_EXT:      return "EXT (pin EN)";
+	default:               return "otra";
+	}
+}
+
+static void wifi_evento(void *arg, esp_event_base_t base, int32_t id, void *datos)
+{
+	(void)arg;
+	(void)base;
+	if (id == WIFI_EVENT_STA_DISCONNECTED) {
+		wifi_event_sta_disconnected_t *d = (wifi_event_sta_disconnected_t *)datos;
+		printf("wifi: DESCONECTADO del AP, razon %d (200-209 = baliza perdida / sin respuesta, 2 = autenticacion vencida, 15 = clave)\n", d->reason);
+	}
+}
+
 void micro_ros_task(void *arg)
 {
 	(void)arg;
@@ -1226,7 +1253,17 @@ void micro_ros_task(void *arg)
 	int64_t ultimo_ticks_us = 0;
 	int64_t ultimo_estado_us = 0;
 
+	int64_t ultimo_rssi_us = 0;
 	while (1) {
+		if (esp_timer_get_time() - ultimo_rssi_us > 10000000) {
+			ultimo_rssi_us = esp_timer_get_time();
+			wifi_ap_record_t ap;
+			if (esp_wifi_sta_get_ap_info(&ap) == ESP_OK) {
+				printf("wifi: senal %d dBm (canal %d), agente %s\n", ap.rssi, ap.primary, conectado ? "conectado" : "buscando");
+			} else {
+				printf("wifi: SIN ASOCIAR al AP\n");
+			}
+		}
 		if (!conectado) {
 			gpio_set_level(PIN_LED, (esp_timer_get_time() / 250000) % 2);   /* parpadeo: esperando al agente */
 			if (rmw_uros_ping_agent_options(PING_ESPERA_MS, 1, rmw_options) == RMW_RET_OK) {
@@ -1324,7 +1361,10 @@ void app_main(void)
 #ifdef CONFIG_MICRO_ROS_ESP_NETIF_WLAN
 	/* Sin ahorro de energia del Wi-Fi: la ESP32 no duerme entre balizas (menor latencia) */
 	ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+	esp_wifi_set_max_tx_power(WIFI_TX_POTENCIA);
+	esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &wifi_evento, NULL);
 #endif
+	printf("uros: causa del ultimo reinicio: %s\n", causa_reinicio(esp_reset_reason()));
 
 	xTaskCreatePinnedToCore(control_task, "control", 4096, NULL, 6, NULL, 1);
 	xTaskCreatePinnedToCore(tarea_control_brazo, "brazo", 4096, NULL, 6, NULL, 1);
