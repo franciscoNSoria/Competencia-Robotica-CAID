@@ -1,6 +1,6 @@
 # 0003. Firmware de la ESP32 de movimiento con ESP-IDF y micro_ros_espidf_component
 
-- **Estado:** Propuesta
+- **Estado:** Aceptada
 - **Fecha:** 2026-10-24
 
 ## Contexto
