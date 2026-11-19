@@ -66,13 +66,13 @@ class TestGeometria(unittest.TestCase):
         self.assertLess(u[2], 0)
 
     def test_medidas_de_las_flechas_contra_el_reglamento(self):
-        for largo, total in ((1, 0.080), (2, 0.110), (3, 0.150)):
+        for largo, total in ((1, 0.030), (2, 0.060), (3, 0.095)):   # P3, P2, P1 (nov. 2026)
             piezas = g.piezas_flecha(largo)
             u_min = min(c - a / 2 for c, a, _ in piezas)
             u_max = max(c + a / 2 for c, a, _ in piezas)
             self.assertAlmostEqual(u_max - u_min, total, places=6)
-            self.assertAlmostEqual(max(h for _, _, h in piezas), 0.070, places=6)      # ancho de punta
-            self.assertAlmostEqual(piezas[0][2], 0.030, places=6)                        # ancho del cuerpo
+            self.assertAlmostEqual(max(h for _, _, h in piezas), 0.029, places=6)      # ancho de punta
+            self.assertAlmostEqual(piezas[0][2], 0.010, places=6)                        # ancho del cuerpo
             self.assertAlmostEqual(piezas[0][1], g.FLECHA_CUERPO_LARGO_M[largo], places=6)
 
 

@@ -1,0 +1,218 @@
+# Generado con tools/sim/simplificar_laberintos.py a partir de e3_obstaculos.yaml. No editar a mano.
+nombre: 'E3 Obstaculos y zonas prohibidas (simple: sin flechas laterales ni zonas)'
+descripcion: Arbol con tres bifurcaciones en T, distractores de otros colores, bloques chicos pegados a una pared (se pasa
+  por el lado), un ramo ciego tapado con zona roja y un bloque de 20 cm que cierra un pasillo.
+celda_m: 0.4
+alto_pared_m: 0.17
+inicio_dir: E
+canastos_pared: O
+altura_flechas_mm: 115
+altura_apoyo_cubo_mm: 128.5
+altura_borde_canasto_mm: 108.5
+significado_colores:
+  rojo:
+  - R
+  verde:
+  - G
+  azul:
+  - B
+  gris: []
+mapa: |
+  #####################
+  ##########..#########
+  #####.....###########
+  #####.###.###########
+  #1.##.###.##...G#####
+  #2S...###.##.########
+  #3.###.......########
+  ######.#####.########
+  ######.#####.########
+  ######B#####R########
+  #####################
+objetos:
+- tipo: distractor_amarillo
+  celda:
+  - 3
+  - 9
+  lado: auto
+- tipo: distractor_naranja
+  celda:
+  - 6
+  - 10
+  lado: auto
+- tipo: distractor_violeta
+  celda:
+  - 8
+  - 12
+  lado: auto
+- tipo: bloque_8cm
+  celda:
+  - 8
+  - 6
+  lado: E
+- tipo: bloque_8cm
+  celda:
+  - 4
+  - 14
+  lado: S
+- tipo: distractor_amarillo
+  celda:
+  - 1
+  - 11
+  lado: auto
+- tipo: bloque_20cm
+  celda:
+  - 1
+  - 10
+flechas:
+- celda:
+  - 2
+  - 5
+  pared: N
+  dir: E
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 2
+  - 5
+  pared: N
+  dir: E
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 2
+  - 5
+  pared: N
+  dir: E
+  largo: 3
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 2
+  - 9
+  pared: E
+  dir: S
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 2
+  - 9
+  pared: E
+  dir: S
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 2
+  - 9
+  pared: E
+  dir: S
+  largo: 3
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 4
+  - 12
+  pared: N
+  dir: E
+  largo: 3
+  color: verde
+  inclinacion: -21
+- celda:
+  - 5
+  - 5
+  pared: E
+  dir: N
+  largo: 3
+  color: azul
+  desplaza_mm: -80
+- celda:
+  - 5
+  - 5
+  pared: E
+  dir: N
+  largo: 3
+  color: verde
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 5
+  - 5
+  pared: E
+  dir: N
+  largo: 3
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 6
+  - 6
+  pared: O
+  dir: S
+  largo: 3
+  color: azul
+  inclinacion: -15
+- celda:
+  - 6
+  - 9
+  pared: S
+  dir: E
+  largo: 3
+  color: verde
+  desplaza_mm: -80
+- celda:
+  - 6
+  - 9
+  pared: S
+  dir: E
+  largo: 3
+  color: rojo
+  desplaza_mm: 80
+  altura_mm: 125.0
+- celda:
+  - 6
+  - 9
+  pared: S
+  dir: O
+  largo: 3
+  color: azul
+  desplaza_mm: 80
+  altura_mm: 45.0
+- celda:
+  - 6
+  - 12
+  pared: E
+  dir: N
+  largo: 2
+  color: verde
+  desplaza_mm: -80
+- celda:
+  - 6
+  - 12
+  pared: E
+  dir: S
+  largo: 3
+  color: rojo
+  desplaza_mm: 80
+pedestal_forma: cilindro
+pedestal_lado_mm: 80.0
+cubos:
+  R:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
+  G:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
+  B:
+    dx_mm: 0
+    dy_mm: 0
+    bloquea: false
