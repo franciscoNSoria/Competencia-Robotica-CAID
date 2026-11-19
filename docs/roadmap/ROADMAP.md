@@ -1,5 +1,8 @@
 # Roadmap CAID 2026: laberinto inteligente
 
+> **Nota (2026-11-19):** el proyecto se desvió del plan en varios puntos (ESP-IDF en lugar de PlatformIO, navegación por celdas, `tools/` directo a la ESP32).
+> Qué se mantiene y qué se retoma: [`divergencias.md`](divergencias.md).
+
 Las 68 tareas viven en el tablero de GitHub Projects (`CAID 2026 Laberinto`). Este documento es el mapa:
 cómo se organizan, cuándo se integran y qué se demuestra en cada fecha.
 

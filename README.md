@@ -29,9 +29,10 @@ Las razones de cada decisión están en [`docs/decisiones/`](docs/decisiones/).
 |---|---|
 | [`docs/`](docs/) | Reglamento, roadmap, guías, decisiones de arquitectura y memoria técnica |
 | [`hardware/`](hardware/) | STL, CAD, lista de partes y electrónica |
-| [`firmware/`](firmware/) | Proyectos PlatformIO de la ESP32 y la ESP32-CAM |
+| [`firmware/`](firmware/) | Firmware ESP-IDF de la ESP32 (movimiento) y de la ESP32-CAM |
 | [`ros2_ws/`](ros2_ws/) | Workspace de ROS 2 con todos los paquetes |
-| [`tools/`](tools/) | Scripts auxiliares (verificación del entorno, etc.) |
+| [`tools/`](tools/) | Scripts auxiliares: entorno, tablero, generación de mundos, banco de ruedas |
+| [`candidatos/`](candidatos/) | Versiones congeladas que se pueden llevar al robot (script y reglas) |
 
 ## Primeros pasos
 
@@ -49,9 +50,11 @@ Después:
 3. Ver el plan: [`docs/roadmap/ROADMAP.md`](docs/roadmap/ROADMAP.md).
 4. Aprender el flujo de trabajo: [`CONTRIBUTING.md`](CONTRIBUTING.md) y
    [`docs/guias/github-projects.md`](docs/guias/github-projects.md).
-5. Elegir una tarea en el tablero de GitHub Projects y empezar.
+5. Ver en qué estado está el proyecto: [`docs/analisis/estado-repo-2026-11-19.md`](docs/analisis/estado-repo-2026-11-19.md)
+   y qué se desvió del plan: [`docs/roadmap/divergencias.md`](docs/roadmap/divergencias.md).
+6. Elegir una tarea en el tablero de GitHub Projects y empezar.
 
 ## Stack
 
-Ubuntu 24.04 · ROS 2 Jazzy · Gazebo Harmonic · micro-ROS (`micro_ros_platformio`, distro Jazzy) ·
-PlatformIO · Python 3 / OpenCV
+Ubuntu 24.04 · ROS 2 Jazzy · Gazebo Harmonic · micro-ROS (`micro_ros_espidf_component`, distro Jazzy) ·
+ESP-IDF 5.5 · Python 3 / OpenCV

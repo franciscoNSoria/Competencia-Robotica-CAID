@@ -1,6 +1,6 @@
 # 0001. Robot expuesto por tópicos simples de micro-ROS, sin ros2_control
 
-- **Estado:** Propuesta
+- **Estado:** Aceptada
 - **Fecha:** 2026-10-14
 
 ## Contexto
