@@ -1,0 +1,5 @@
+# Generados por idf.py (se regeneran solos)
+sdkconfig
+sdkconfig.old
+managed_components/
+build/

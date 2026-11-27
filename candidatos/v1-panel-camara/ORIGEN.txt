@@ -1,0 +1,18 @@
+version: v1-panel-camara
+congelada: 2026-11-27 19:50
+por: franciscoNSoria
+
+maze = feature/CAM-panel-camara
+     2cbcc4ac6aa70050b294de98ef6f1061fe2edfd9
+     2026-11-27 franciscoNSoria: feat(vision): panel web de la camara y deteccion de ruta con rumbo
+fw = feature/CAM-panel-camara
+     2cbcc4ac6aa70050b294de98ef6f1061fe2edfd9
+     2026-11-27 franciscoNSoria: feat(vision): panel web de la camara y deteccion de ruta con rumbo
+vision = feature/CAM-panel-camara
+     2cbcc4ac6aa70050b294de98ef6f1061fe2edfd9
+     2026-11-27 franciscoNSoria: feat(vision): panel web de la camara y deteccion de ruta con rumbo
+cam = feature/CAM-panel-camara
+     2cbcc4ac6aa70050b294de98ef6f1061fe2edfd9
+     2026-11-27 franciscoNSoria: feat(vision): panel web de la camara y deteccion de ruta con rumbo
+
+Las tres lineas de abajo son la verdad de esta carpeta: si un dia hay dudas, se compara contra estos commits.

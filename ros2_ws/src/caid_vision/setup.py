@@ -26,6 +26,7 @@ setup(
             'camara_node = caid_vision.camara_node:main',
             'vision_node = caid_vision.vision_node:main',
             'visor = caid_vision.visor:main',
+            'panel = caid_vision.panel:main',
             'medir_fx = caid_vision.medir_fx:main',
             'calibrar_colores = caid_vision.calibrar_colores:main',
             'calibrar_lente = caid_vision.calibrar_lente:main',

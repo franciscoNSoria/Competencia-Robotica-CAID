@@ -1,0 +1,4 @@
+# Valores base (los mismos del ejemplo int32_publisher de micro-ROS). Sin secretos.
+# Si cambias algo aca: borra sdkconfig y vuelve a compilar para que se aplique.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=3000
+CONFIG_ESP_TASK_WDT=n

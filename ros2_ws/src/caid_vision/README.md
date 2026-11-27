@@ -41,6 +41,31 @@ ros2 run caid_vision medir_fx --ros-args -p ancho:=0.10 -p distancia:=0.50   # c
 
 La guía paso a paso de las calibraciones está en [docs/guias/calibracion-camara.md](../../../docs/guias/calibracion-camara.md).
 
+## Panel web de la cámara
+
+Video en vivo con las detecciones, fps, ajustes de la ESP32-CAM y el rumbo de la ruta. No necesita
+que el robot ni `vision_node` estén corriendo.
+
+```bash
+ros2 run caid_vision panel --camara http://192.168.1.42      # y abrir http://localhost:8080
+```
+
+- **Un solo cliente de video:** la ESP32-CAM entrega el stream a una conexión a la vez. Si el panel no recibe
+  cuadros, hay otro panel, visor o `camara_node` conectado: cerralo primero.
+- **Detecciones**: cubos, flechas (derecha / izquierda) y canastos, con el mismo detector que `vision_node`.
+- **Ruta y rumbo** (`caid_vision/ruta.py`): toma el color del piso de la franja de abajo de la imagen,
+  marca el piso conectado y mide hasta dónde llega en cada columna. El rumbo apunta al hueco más
+  amplio y profundo (`0°` = derecho, `+` = derecha). Todavía no se publica en ROS ni lo usa el explorador.
+- **Cámara en vivo**: espejar, voltear, brillo, contraste, saturación, calidad, resolución y tope de fps.
+- **Rotar imagen** (0 / 90 / 180 / 270°): solo en el panel; la cámara y ROS no se enteran.
+- **Guardar foto**: guarda el cuadro actual sin dibujos (`_cruda.jpg`), con dibujos (`_anotada.jpg`) y un `.json`
+  con lo detectado y los ajustes de la cámara, en `~/fotos_camara/` (cambiar con `--fotos`). Sirven para ajustar la ruta.
+- **Guardar configuración**: escribe la sección `camara:` de `config/colores.yaml`; `camara_node` se la
+  manda a la ESP32-CAM cada vez que se conecta.
+
+Para que no se pierdan cuadros con el Wi-Fi de la notebook: `nmcli connection modify "<red>" 802-11-wireless.powersave 2`
+(el ahorro de energía del driver `rtw89` agregaba cientos de ms de pausa).
+
 ## Nodos y tópicos
 
 **`camara_node`**: un hilo lee el stream sin parar y se queda solo con el último cuadro (sin la cola de cuadros viejos de OpenCV). Al conectarse le manda a la ESP32-CAM la sección `camara` de `colores.yaml` (brillo, exposición...).

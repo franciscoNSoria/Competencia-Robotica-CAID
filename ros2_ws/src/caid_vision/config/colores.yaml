@@ -16,4 +16,5 @@ rangos:
   azul:   # 2026-11-05: H>=98 y V>=130; la parte azulada del fondo da H 82-96 y V 71-110
   - - [98, 60, 130]
     - [124, 255, 255]
-camara: {brightness: 2}   # el giro de 180° de la cámara está en el firmware (vflip 0, hmirror 1)
+# ajustes de la ESP32-CAM, guardados desde el panel el 2026-11-27 19:44
+camara: {hmirror: 1, vflip: 0, brightness: 0, contrast: -2, saturation: -1, quality: 4, framesize: 10, fps_max: 30}
